@@ -1,7 +1,7 @@
 <!-- components/Conturi.svelte -->
 <script>
   import { accounts, addAccount, deleteAccount, computeAccountBalance, fmt } from '../lib/store.js';
-  import { toast } from '../components/Toast.svelte';
+  import { toast } from '../lib/toastStore.js';
   
   // Form state - exact ca în HTML
   let accName = '';

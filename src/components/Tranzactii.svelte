@@ -12,7 +12,7 @@
     today,
     currentMonth
   } from '../lib/store.js';
-  import { toast } from '../components/Toast.svelte';
+  import { toast } from '../lib/toastStore.js';
   
   // Form state
   let txType = 'expense';

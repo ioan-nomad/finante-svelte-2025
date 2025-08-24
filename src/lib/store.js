@@ -1,9 +1,6 @@
 // lib/store.js
 import { writable, derived } from 'svelte/store';
 
-// Export toast pentru utilizare globală
-export { toast } from '../components/Toast.svelte';
-
 // ===== Categorii exacte din HTML =====
 export const CATEGORIES = {
   income: ["Salariu", "Freelance", "Investiții", "Rambursări", "Zile Naștere", "Transfer de la Nico", "Transfer intern", "Altele"],
