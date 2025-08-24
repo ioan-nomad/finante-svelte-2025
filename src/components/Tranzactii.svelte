@@ -12,6 +12,7 @@
     today,
     currentMonth
   } from '../lib/store.js';
+  import { toast } from '../components/Toast.svelte';
   
   // Form state
   let txType = 'expense';
@@ -59,22 +60,22 @@
     const amount = parseFloat(txAmount || 0);
     
     if (!amount || amount <= 0) {
-      alert('Sumă > 0');
+      toast.error('Suma trebuie să fie mai mare de 0');
       return;
     }
     
     if (txType === 'expense' && !txFrom) {
-      alert('Alege contul sursă');
+      toast.warning('Alege contul sursă');
       return;
     }
     
     if (txType === 'income' && !txTo) {
-      alert('Alege contul destinație');
+      toast.warning('Alege contul destinație');
       return;
     }
     
     if (txType === 'transfer' && (!txFrom || !txTo)) {
-      alert('Alege ambele conturi');
+      toast.warning('Alege ambele conturi pentru transfer');
       return;
     }
     
@@ -93,7 +94,7 @@
     // Reset form
     txAmount = '';
     txDesc = '';
-    alert('✅ Tranzacție adăugată');
+    toast.success(`Tranzacție adăugată: ${fmt(amount)} RON 💰`);
   }
   
   function resetForm() {
@@ -105,6 +106,7 @@
   function handleDeleteTx(id) {
     if (confirm('Ștergi tranzacția?')) {
       deleteTransaction(id);
+      toast.info('Tranzacție ștearsă');
     }
   }
   

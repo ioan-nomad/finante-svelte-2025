@@ -1,6 +1,7 @@
 <!-- components/Conturi.svelte -->
 <script>
   import { accounts, addAccount, deleteAccount, computeAccountBalance, fmt } from '../lib/store.js';
+  import { toast } from '../components/Toast.svelte';
   
   // Form state - exact ca în HTML
   let accName = '';
@@ -16,7 +17,7 @@
   
   function saveAccount() {
     if (!accName.trim()) {
-      alert('Nume cont obligatoriu');
+      toast.error('Nume cont obligatoriu');
       return;
     }
     
@@ -32,7 +33,7 @@
     
     addAccount(acc);
     resetForm();
-    alert('✅ Cont salvat');
+    toast.success('Cont salvat cu succes! 🎉');
   }
   
   function resetForm() {
@@ -57,7 +58,11 @@
   
   function handleDelete(id) {
     if (confirm('Ștergi contul?')) {
-      deleteAccount(id);
+      if (deleteAccount(id)) {
+        toast.success('Cont șters');
+      } else {
+        toast.error('Nu poți șterge un cont cu tranzacții!');
+      }
     }
   }
 </script>
