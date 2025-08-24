@@ -1,0 +1,56 @@
+/* app.css - Înlocuiește TOT conținutul din src/app.css cu acesta */
+:root {
+  --bg: #0f1220;
+  --panel: #171a2b;
+  --panel2: #0b0e1a;
+  --ink: #e6e9ff;
+  --muted: #9aa3b2;
+  --acc: #80b8ff;
+  --ok: #10b981;
+  --warn: #fbbf24;
+  --err: #ef4444;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  min-height: 100vh;
+}
+
+#app {
+  min-height: 100vh;
+}
+
+button {
+  border-radius: 8px;
+  border: 1px solid transparent;
+  padding: 0.6em 1.2em;
+  font-size: 1em;
+  font-weight: 500;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+input, select {
+  padding: 10px;
+  background: var(--panel2);
+  border: 1px solid #28304b;
+  border-radius: 8px;
+  color: var(--ink);
+  font-family: inherit;
+  font-size: 0.95rem;
+}
+
+input:focus, select:focus {
+  outline: none;
+  border-color: var(--acc);
+  box-shadow: 0 0 0 3px rgba(128, 184, 255, 0.1);
+}
