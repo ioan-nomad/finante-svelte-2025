@@ -56,6 +56,18 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
 <div class="container">
   <header>
     <h1>💰 Finanțe Complete</h1>
+    <button 
+    class="dark-mode-toggle"
+    on:click={toggleDarkMode}
+    aria-label="Toggle dark mode"
+    type="button"
+  >
+    {#if darkMode}
+      ☀️
+    {:else}
+      🌙
+    {/if}
+  </button>
     <div class="balance-display">
       <div class="balance-total">{fmt($totalBalance.mainBalance)} RON</div>
       <div class="balance-detail">
