@@ -49,24 +49,27 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
   </header>
 
   <div class="tabs no-print">
-    <div class="tab {activeTab === 'dashboard' ? 'active' : ''}" on:click={() => switchTab('dashboard')}>
-      📊 Dashboard
-    </div>
-    <div class="tab {activeTab === 'conturi' ? 'active' : ''}" on:click={() => switchTab('conturi')}>
-      🗂️ Conturi
-    </div>
-    <div class="tab {activeTab === 'tranzactii' ? 'active' : ''}" on:click={() => switchTab('tranzactii')}>
-      📋 Tranzacții
-    </div>
-    <div class="tab {activeTab === 'rapoarte' ? 'active' : ''}" on:click={() => switchTab('rapoarte')}>
-      📈 Rapoarte Avansate
-    </div>
-    <div class="tab {activeTab === 'import' ? 'active' : ''}" on:click={() => switchTab('import')}>
-      📄 Import PDF
-    </div>
-    <div class="tab {activeTab === 'export' ? 'active' : ''}" on:click={() => switchTab('export')}>
-      💾 Export
-    </div>
+  {#each [
+    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
+    { id: 'conturi', icon: '🗂️', label: 'Conturi' },
+    { id: 'tranzactii', icon: '📋', label: 'Tranzacții' },
+    { id: 'rapoarte', icon: '📈', label: 'Rapoarte Avansate' },
+    { id: 'import', icon: '📄', label: 'Import PDF' },
+    { id: 'export', icon: '💾', label: 'Export' }
+  ] as tab}
+    <button 
+      class="tab {activeTab === tab.id ? 'active' : ''}"
+      on:click={() => switchTab(tab.id)}
+      type="button"
+    >
+      <span class="tab-icon">{tab.icon}</span>
+      <span class="tab-label">{tab.label}</span>
+      {#if activeTab === tab.id}
+        <span class="tab-indicator" transition:slide={{ duration: 300, easing: quintOut }}></span>
+      {/if}
+    </button>
+  {/each}
+</div>
   </div>
 
   <!-- Conținutul pentru fiecare tab -->
