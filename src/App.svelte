@@ -73,34 +73,32 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
   </div>
 
   <!-- Conținutul pentru fiecare tab -->
-  {#if activeTab === 'dashboard'}
-    <section>
-      <Dashboard />
-    </section>
-  {:else if activeTab === 'conturi'}
-    <section>
-      <Conturi />
-    </section>
-  {:else if activeTab === 'tranzactii'}
-    <section>
-      <Tranzactii />
-    </section>
-  {:else if activeTab === 'rapoarte'}
-    <section>
-      <div class="card">
-        <h2>🚧 Rapoarte - În construcție</h2>
-        <p class="meta">Rapoartele avansate vor fi adăugate ulterior.</p>
-      </div>
-    </section>
-  {:else if activeTab === 'import'}
-    <section>
-      <ImportPDF />
-    </section>
-  {:else if activeTab === 'export'}
-    <section>
-      <Export />
-    </section>
-  {/if}
+  <div class="content-wrapper">
+  {#key activeTab}
+    <div 
+      class="tab-content"
+      in:fly={{ x: 50 * direction, duration: 300, delay: 100, easing: quintOut }}
+      out:fade={{ duration: 200 }}
+    >
+      {#if activeTab === 'dashboard'}
+        <Dashboard />
+      {:else if activeTab === 'conturi'}
+        <Conturi />
+      {:else if activeTab === 'tranzactii'}
+        <Tranzactii />
+      {:else if activeTab === 'rapoarte'}
+        <div class="placeholder">
+          <h2>📈 Rapoarte Avansate</h2>
+          <p>În dezvoltare...</p>
+        </div>
+      {:else if activeTab === 'import'}
+        <ImportPDF />
+      {:else if activeTab === 'export'}
+        <Export />
+      {/if}
+    </div>
+  {/key}
+</div>
 </div>
 
 <!-- Toast notifications -->
