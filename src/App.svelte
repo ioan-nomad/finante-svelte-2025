@@ -7,6 +7,8 @@
   import Export from './components/Export.svelte';
   import Toast from './components/Toast.svelte';
   import { totalBalance, fmt } from './lib/store.js';
+  import { fade, fly, slide } from 'svelte/transition';
+  import { quintOut } from 'svelte/easing';
   
   // Tab management
   let activeTab = 'dashboard';
