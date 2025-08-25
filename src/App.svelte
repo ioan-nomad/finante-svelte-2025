@@ -12,10 +12,18 @@
   
   // Tab management
   let activeTab = 'dashboard';
-  
+  let previousTab = 'dashboard';
+
+// Ordinea tab-urilor pentru direcția animației
+const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'rapoarte', 'import', 'export'];
+$: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 : -1;
+
   function switchTab(tab) {
+  if (tab !== activeTab) {
+    previousTab = activeTab;
     activeTab = tab;
   }
+}
 </script>
 
 <div class="container">
