@@ -10,6 +10,33 @@
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
+  import { onMount } from 'svelte';
+
+// Dark mode logic
+let darkMode = false;
+
+onMount(() => {
+  // Verifică preferința salvată sau preferința sistemului
+  darkMode = localStorage.getItem('darkMode') === 'true' || 
+             (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  
+  // Aplică dark mode
+  if (darkMode) {
+    document.documentElement.classList.add('dark');
+  }
+});
+
+function toggleDarkMode() {
+  darkMode = !darkMode;
+  localStorage.setItem('darkMode', darkMode);
+  
+  if (darkMode) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+}
+
   // Tab management
   let activeTab = 'dashboard';
   let previousTab = 'dashboard';
