@@ -99,7 +99,6 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
     </div>
   {/key}
 </div>
-</div>
 
 <!-- Toast notifications -->
 <Toast />
