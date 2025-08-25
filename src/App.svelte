@@ -386,4 +386,125 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
     display: inline;
   }
 }
+/* ===== DARK MODE STYLES ===== */
+.dark-mode-toggle {
+  position: absolute;
+  top: 20px;
+  right: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  cursor: pointer;
+  font-size: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transition: all 0.3s ease;
+  z-index: 100;
+}
+
+.dark-mode-toggle:hover {
+  transform: scale(1.1) rotate(180deg);
+  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+}
+
+/* Dark mode variables */
+:global(html.dark) {
+  --bg-primary: #1a1a1a;
+  --bg-secondary: #2d2d2d;
+  --text-primary: #e0e0e0;
+  --text-secondary: #a0a0a0;
+  --border-color: #404040;
+  --shadow: rgba(0, 0, 0, 0.5);
+}
+
+:global(html.dark body) {
+  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
+  color: var(--text-primary);
+}
+
+:global(html.dark .container) {
+  background: var(--bg-secondary);
+  box-shadow: 0 10px 40px var(--shadow);
+}
+
+:global(html.dark header) {
+  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color);
+}
+
+:global(html.dark .tabs) {
+  background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+}
+
+:global(html.dark .tab:not(.active)) {
+  background: var(--bg-secondary);
+  color: var(--text-secondary);
+  border: 1px solid var(--border-color);
+}
+
+:global(html.dark .tab:hover:not(.active)) {
+  background: linear-gradient(135deg, #3d3d3d 0%, #4d4d4d 100%);
+  color: var(--text-primary);
+}
+
+:global(html.dark .balance-display) {
+  background: rgba(102, 126, 234, 0.1);
+  border: 1px solid rgba(102, 126, 234, 0.3);
+}
+
+:global(html.dark input),
+:global(html.dark select),
+:global(html.dark textarea) {
+  background: var(--bg-secondary);
+  color: var(--text-primary);
+  border: 1px solid var(--border-color);
+}
+
+:global(html.dark button:not(.dark-mode-toggle):not(.tab)) {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+}
+
+:global(html.dark .card),
+:global(html.dark .form-group) {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border-color);
+}
+
+:global(html.dark table) {
+  background: var(--bg-secondary);
+}
+
+:global(html.dark th) {
+  background: #1a1a1a;
+  color: var(--text-primary);
+}
+
+:global(html.dark td) {
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+
+:global(html.dark .placeholder) {
+  color: var(--text-secondary);
+}
+
+/* Animație pentru tranziție */
+:global(body),
+:global(.container),
+:global(header),
+:global(.tabs),
+:global(.tab),
+:global(input),
+:global(select),
+:global(textarea),
+:global(table) {
+  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
+}
 </style>
