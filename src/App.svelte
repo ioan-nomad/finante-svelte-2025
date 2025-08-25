@@ -232,4 +232,120 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
       display: none !important;
     }
   }
+/* ===== ANIMAȚII TABS ===== */
+.tabs {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+  border-radius: 12px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  overflow-x: auto;
+}
+
+.tab {
+  position: relative;
+  padding: 12px 20px;
+  background: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  color: #666;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+  white-space: nowrap;
+}
+
+.tab:hover:not(.active) {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
+}
+
+.tab.active {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+  transform: scale(1.05);
+}
+
+.tab-icon {
+  font-size: 18px;
+  transition: transform 0.3s ease;
+}
+
+.tab:hover .tab-icon {
+  transform: rotate(10deg) scale(1.1);
+}
+
+.tab.active .tab-icon {
+  animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.1); }
+}
+
+.tab-indicator {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: white;
+  border-radius: 3px 3px 0 0;
+}
+
+.content-wrapper {
+  position: relative;
+  min-height: 500px;
+  overflow: hidden;
+}
+
+.tab-content {
+  position: relative;
+}
+
+/* Placeholder pentru tab-uri în dezvoltare */
+.placeholder {
+  padding: 40px;
+  text-align: center;
+  color: #666;
+}
+
+.placeholder h2 {
+  margin-bottom: 10px;
+}
+
+/* Responsive pentru mobile */
+@media (max-width: 768px) {
+  .tabs {
+    gap: 4px;
+    padding: 8px;
+  }
+  
+  .tab {
+    padding: 10px 12px;
+    font-size: 12px;
+  }
+  
+  .tab-icon {
+    font-size: 16px;
+  }
+  
+  .tab-label {
+    display: none;
+  }
+  
+  .tab.active .tab-label {
+    display: inline;
+  }
+}
 </style>
