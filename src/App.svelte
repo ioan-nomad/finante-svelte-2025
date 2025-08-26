@@ -5,7 +5,7 @@
   import Dashboard from './components/Dashboard.svelte';
   import ImportPDF from './components/ImportPDF.svelte';
   import Export from './components/Export.svelte';
-  import RapoarteSimple from './components/RapoarteSimple.svelte';
+  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
   import Toast from './components/Toast.svelte';
   import { totalBalance, fmt } from './lib/store.js';
   import { fade, fly, slide } from 'svelte/transition';
@@ -93,7 +93,7 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
     { id: 'dashboard', icon: '📊', label: 'Dashboard' },
     { id: 'conturi', icon: '🗂️', label: 'Conturi' },
     { id: 'tranzactii', icon: '📋', label: 'Tranzacții' },
-    { id: 'rapoarte', icon: '📈', label: 'Rapoarte Avansate' },
+    { id: 'rapoarte', icon: '📈', label: 'Rapoarte' },
     { id: 'import', icon: '📄', label: 'Import PDF' },
     { id: 'export', icon: '💾', label: 'Export' }
   ] as tab}
@@ -126,6 +126,8 @@ $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 :
         <Conturi />
       {:else if activeTab === 'tranzactii'}
         <Tranzactii />
+      {:else if activeTab === 'rapoarte'}
+        <RapoarteAvansate />
       {:else if activeTab === 'rapoarte'}
         <div class="placeholder">
           <h2>📈 Rapoarte Avansate</h2>
