@@ -5,6 +5,7 @@
   import Dashboard from './components/Dashboard.svelte';
   import ImportPDF from './components/ImportPDF.svelte';
   import Export from './components/Export.svelte';
+  import RapoarteSimple from './components/RapoarteSimple.svelte';
   import Toast from './components/Toast.svelte';
   import { totalBalance, fmt } from './lib/store.js';
   import { fade, fly, slide } from 'svelte/transition';
