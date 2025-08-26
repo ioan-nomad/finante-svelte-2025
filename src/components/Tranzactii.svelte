@@ -1,430 +1,697 @@
-<!-- components/Tranzactii.svelte -->
 <script>
-  import { 
-    accounts, 
-    transactions, 
-    addTransaction, 
-    deleteTransaction,
-    CATEGORIES,
-    CATEGORY_COLORS,
-    fmt, 
-    formatDate,
-    today,
-    currentMonth
-  } from '../lib/store.js';
-  import { toast } from '../lib/toastStore.js';
+  import { onMount } from 'svelte'
+  import { slide } from 'svelte/transition'
+  import EditModal from './EditModal.svelte'  // ADĂUGAT: Import EditModal
   
-  // Form state
-  let txType = 'expense';
-  let txFrom = '';
-  let txTo = '';
-  let txCategory = CATEGORIES[txType][0];
-  let txPerson = 'Ioan';
-  let txAmount = '';
-  let txDate = today();
-  let txDesc = '';
+  let transactions = []
+  let accounts = []
+  let filteredTx = []
+  let searchTerm = ''
+  let filterType = 'all'
+  let filterAccount = ''
+  let filterPerson = ''
+  let sortBy = 'date'
+  let sortOrder = 'desc'
   
-  // Filter state
-  let fltType = 'all';
-  let fltAccount = 'all';
-  let fltCategory = 'all';
-  let fltMonth = currentMonth();
+  // ADĂUGAT: State pentru editare
+  let editingTransaction = null
   
-  // Update category when type changes
-  $: if (txType) {
-    txCategory = CATEGORIES[txType][0];
+  // Categories
+  const expenseCategories = ['Alimente', 'Transport', 'Utilități', 'Sănătate', 'Entertainment', 'Shopping', 'Restaurant', 'Educație', 'Sport', 'Abonamente', 'ATM Cash', 'Altele']
+  const incomeCategories = ['Salariu', 'Freelance', 'Investiții', 'Cadouri', 'Vânzări', 'Cashback', 'Altele']
+  
+  let showForm = false
+  let txType = 'expense'
+  let txAmount = ''
+  let txDesc = ''
+  let txCategory = ''
+  let txFromAccount = ''
+  let txToAccount = ''
+  let txDate = new Date().toISOString().split('T')[0]
+  let txPerson = ''
+  
+  $: categories = txType === 'income' ? incomeCategories : expenseCategories
+  
+  onMount(() => {
+    loadData()
+  })
+  
+  function loadData() {
+    const stored = localStorage.getItem('financeData')
+    if (stored) {
+      const data = JSON.parse(stored)
+      transactions = data.transactions || []
+      accounts = data.accounts || []
+      filterAndSort()
+    }
   }
   
-  // Filter transactions
-  $: filteredTransactions = filterTransactions($transactions, fltType, fltAccount, fltCategory, fltMonth);
-  
-  function filterTransactions(txs, type, account, category, month) {
-    let arr = [...txs];
-    
-    if (type !== 'all') arr = arr.filter(x => x.type === type);
-    if (account !== 'all') arr = arr.filter(x => x.fromAccount === account || x.toAccount === account);
-    if (category !== 'all') arr = arr.filter(x => x.category === category);
-    if (month) arr = arr.filter(x => x.date && x.date.startsWith(month));
-    
-    return arr;
+  function saveData() {
+    const stored = localStorage.getItem('financeData')
+    const data = stored ? JSON.parse(stored) : {}
+    data.transactions = transactions
+    localStorage.setItem('financeData', JSON.stringify(data))
   }
   
-  // All categories for filter
-  const allCategories = [...new Set([
-    ...CATEGORIES.expense, 
-    ...CATEGORIES.income, 
-    ...CATEGORIES.transfer
-  ])];
+  function filterAndSort() {
+    let result = [...transactions]
+    
+    // Search
+    if (searchTerm) {
+      result = result.filter(t => 
+        t.description?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        t.category?.toLowerCase().includes(searchTerm.toLowerCase())
+      )
+    }
+    
+    // Filter by type
+    if (filterType !== 'all') {
+      result = result.filter(t => t.type === filterType)
+    }
+    
+    // Filter by account
+    if (filterAccount) {
+      result = result.filter(t => 
+        t.fromAccount === filterAccount || t.toAccount === filterAccount
+      )
+    }
+    
+    // Filter by person
+    if (filterPerson) {
+      result = result.filter(t => t.person === filterPerson)
+    }
+    
+    // Sort
+    result.sort((a, b) => {
+      let aVal = a[sortBy]
+      let bVal = b[sortBy]
+      
+      if (sortBy === 'date') {
+        aVal = new Date(aVal)
+        bVal = new Date(bVal)
+      } else if (sortBy === 'amount') {
+        aVal = parseFloat(aVal)
+        bVal = parseFloat(bVal)
+      }
+      
+      if (sortOrder === 'asc') {
+        return aVal > bVal ? 1 : -1
+      } else {
+        return aVal < bVal ? 1 : -1
+      }
+    })
+    
+    filteredTx = result
+  }
   
-  function handleAddTx() {
-    const amount = parseFloat(txAmount || 0);
-    
-    if (!amount || amount <= 0) {
-      toast.error('Suma trebuie să fie mai mare de 0');
-      return;
+  $: searchTerm, filterType, filterAccount, filterPerson, sortBy, sortOrder, filterAndSort()
+  
+  function addTransaction() {
+    if (!txAmount || parseFloat(txAmount) <= 0) {
+      alert('Te rog introdu o sumă validă')
+      return
     }
     
-    if (txType === 'expense' && !txFrom) {
-      toast.warning('Alege contul sursă');
-      return;
-    }
-    
-    if (txType === 'income' && !txTo) {
-      toast.warning('Alege contul destinație');
-      return;
-    }
-    
-    if (txType === 'transfer' && (!txFrom || !txTo)) {
-      toast.warning('Alege ambele conturi pentru transfer');
-      return;
-    }
-    
-    addTransaction({
+    const newTx = {
+      id: Date.now().toString(),
       type: txType,
-      fromAccount: txType !== 'income' ? txFrom : null,
-      toAccount: txType !== 'expense' ? txTo : null,
+      amount: parseFloat(txAmount),
+      description: txDesc,
       category: txCategory,
-      person: txPerson,
-      amount: amount,
+      fromAccount: txType !== 'income' ? txFromAccount : null,
+      toAccount: txType !== 'expense' ? txToAccount : null,
       date: txDate,
-      description: txDesc.trim(),
-      imported: false
-    });
+      person: txPerson,
+      createdAt: new Date().toISOString()
+    }
+    
+    transactions = [newTx, ...transactions]
+    saveData()
+    filterAndSort()
     
     // Reset form
-    txAmount = '';
-    txDesc = '';
-    toast.success(`Tranzacție adăugată: ${fmt(amount)} RON 💰`);
+    txAmount = ''
+    txDesc = ''
+    txCategory = ''
+    showForm = false
+    
+    alert('✅ Tranzacție adăugată cu succes!')
   }
   
-  function resetForm() {
-    txAmount = '';
-    txDesc = '';
-    txDate = today();
+  // ADĂUGAT: Funcție pentru deschidere modal editare
+  function editTransaction(tx) {
+    editingTransaction = tx
   }
   
-  function handleDeleteTx(id) {
-    if (confirm('Ștergi tranzacția?')) {
-      deleteTransaction(id);
-      toast.info('Tranzacție ștearsă');
+  // ADĂUGAT: Handler pentru salvare editare
+  function handleEditSave(event) {
+    const updatedTx = event.detail
+    transactions = transactions.map(t => 
+      t.id === updatedTx.id ? updatedTx : t
+    )
+    saveData()
+    filterAndSort()
+    editingTransaction = null
+    alert('✅ Tranzacție actualizată!')
+  }
+  
+  // ADĂUGAT: Handler pentru ștergere din modal
+  function handleEditDelete(event) {
+    const txId = event.detail
+    deleteTransaction(txId)
+    editingTransaction = null
+  }
+  
+  function deleteTransaction(id) {
+    if (confirm('Sigur vrei să ștergi această tranzacție?')) {
+      transactions = transactions.filter(t => t.id !== id)
+      saveData()
+      filterAndSort()
+      alert('✅ Tranzacție ștearsă!')
     }
   }
   
   function getAccountName(id) {
-    return $accounts.find(a => a.id === id)?.name || '';
+    const acc = accounts.find(a => a.id === id)
+    return acc ? acc.name : ''
+  }
+  
+  function formatAmount(amount) {
+    return new Intl.NumberFormat('ro-RO', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    }).format(amount)
+  }
+  
+  function formatDate(dateStr) {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString('ro-RO')
+  }
+  
+  const categoryColors = {
+    'Alimente': '#10b981',
+    'Transport': '#3b82f6',
+    'Utilități': '#f59e0b',
+    'Sănătate': '#ec4899',
+    'Entertainment': '#8b5cf6',
+    'Shopping': '#06b6d4',
+    'Restaurant': '#f97316',
+    'Educație': '#6366f1',
+    'Sport': '#84cc16',
+    'Abonamente': '#a855f7',
+    'ATM Cash': '#64748b',
+    'Salariu': '#10b981',
+    'Freelance': '#3b82f6',
+    'Investiții': '#f59e0b',
+    'Altele': '#6b7280'
   }
 </script>
 
-<div class="grid">
-  <!-- Form pentru adăugare tranzacție -->
+<div class="container">
+  <!-- Add Transaction Form -->
   <div class="card">
-    <h2>➕ Tranzacție manuală</h2>
-    
-    <label>Tip</label>
-    <select bind:value={txType}>
-      <option value="expense">Cheltuială</option>
-      <option value="income">Venit</option>
-      <option value="transfer">Transfer</option>
-    </select>
-    
-    <div class="row">
-      <div>
-        <label>Din cont (from)</label>
-        <select bind:value={txFrom}>
-          <option value="">—</option>
-          {#each $accounts as acc}
-            <option value={acc.id}>{acc.name} ({acc.currency})</option>
-          {/each}
-        </select>
-      </div>
-      <div>
-        <label>În cont (to)</label>
-        <select bind:value={txTo}>
-          <option value="">—</option>
-          {#each $accounts as acc}
-            <option value={acc.id}>{acc.name} ({acc.currency})</option>
-          {/each}
-        </select>
-      </div>
+    <div class="card-header">
+      <h2>➕ Adaugă Tranzacție</h2>
+      <button on:click={() => showForm = !showForm}>
+        {showForm ? 'Închide' : 'Deschide'}
+      </button>
     </div>
     
-    <div class="row">
-      <div>
-        <label>Categorie</label>
-        <select bind:value={txCategory}>
-          {#each CATEGORIES[txType] as cat}
-            <option value={cat}>{cat}</option>
-          {/each}
-        </select>
+    {#if showForm}
+      <div transition:slide>
+        <div class="form-grid">
+          <div class="form-group">
+            <label>Tip</label>
+            <div class="type-selector">
+              <button class:active={txType === 'income'} on:click={() => txType = 'income'}>
+                ↓ Venit
+              </button>
+              <button class:active={txType === 'expense'} on:click={() => txType = 'expense'}>
+                ↑ Cheltuială
+              </button>
+              <button class:active={txType === 'transfer'} on:click={() => txType = 'transfer'}>
+                ↔ Transfer
+              </button>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Sumă</label>
+              <input type="number" bind:value={txAmount} placeholder="0.00" step="0.01">
+            </div>
+            
+            <div class="form-group">
+              <label>Descriere</label>
+              <input type="text" bind:value={txDesc} placeholder="Descriere opțională">
+            </div>
+          </div>
+          
+          {#if txType !== 'transfer'}
+            <div class="form-group">
+              <label>Categorie</label>
+              <select bind:value={txCategory}>
+                <option value="">-- Selectează --</option>
+                {#each categories as cat}
+                  <option value={cat}>{cat}</option>
+                {/each}
+              </select>
+            </div>
+          {/if}
+          
+          <div class="form-row">
+            {#if txType === 'expense' || txType === 'transfer'}
+              <div class="form-group">
+                <label>Din cont</label>
+                <select bind:value={txFromAccount}>
+                  <option value="">-- Selectează --</option>
+                  {#each accounts as acc}
+                    <option value={acc.id}>{acc.name}</option>
+                  {/each}
+                </select>
+              </div>
+            {/if}
+            
+            {#if txType === 'income' || txType === 'transfer'}
+              <div class="form-group">
+                <label>În cont</label>
+                <select bind:value={txToAccount}>
+                  <option value="">-- Selectează --</option>
+                  {#each accounts as acc}
+                    <option value={acc.id}>{acc.name}</option>
+                  {/each}
+                </select>
+              </div>
+            {/if}
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Data</label>
+              <input type="date" bind:value={txDate}>
+            </div>
+            
+            <div class="form-group">
+              <label>Persoană</label>
+              <select bind:value={txPerson}>
+                <option value="">-- Selectează --</option>
+                <option>Ioan</option>
+                <option>Nico</option>
+                <option>Comun</option>
+                <option>Firmă Nico</option>
+              </select>
+            </div>
+          </div>
+          
+          <button class="btn-primary" on:click={addTransaction}>
+            Adaugă Tranzacție
+          </button>
+        </div>
       </div>
-      <div>
-        <label>Persoană</label>
-        <select bind:value={txPerson}>
-          <option>Ioan</option>
-          <option>Nico</option>
-          <option>Comun</option>
-          <option>Firmă Nico</option>
-        </select>
-      </div>
-    </div>
-    
-    <div class="row">
-      <div>
-        <label>Sumă</label>
-        <input bind:value={txAmount} type="number" step="0.01" />
-      </div>
-      <div>
-        <label>Data</label>
-        <input bind:value={txDate} type="date" />
-      </div>
-    </div>
-    
-    <label>Descriere</label>
-    <input bind:value={txDesc} placeholder="ex: piață, benzină, salariu, transfer" />
-    
-    <div class="stack" style="margin-top:10px">
-      <button on:click={handleAddTx} class="green">➕ Adaugă</button>
-      <button on:click={resetForm} class="ghost">↺ Resetează</button>
-    </div>
+    {/if}
   </div>
-
-  <!-- Lista de tranzacții cu filtre -->
+  
+  <!-- Filters -->
   <div class="card">
-    <h2>📋 Tranzacții</h2>
-    
-    <!-- Filtre -->
-    <div class="filters-panel">
-      <div class="filters-row">
-        <div>
+    <h3>🔍 Filtre și Sortare</h3>
+    <div class="filters">
+      <div class="filter-row">
+        <div class="form-group">
+          <label>Caută</label>
+          <input type="text" bind:value={searchTerm} placeholder="Caută în descriere...">
+        </div>
+        
+        <div class="form-group">
           <label>Tip</label>
-          <select bind:value={fltType}>
+          <select bind:value={filterType}>
             <option value="all">Toate</option>
             <option value="income">Venituri</option>
             <option value="expense">Cheltuieli</option>
             <option value="transfer">Transferuri</option>
           </select>
         </div>
-        <div>
+        
+        <div class="form-group">
           <label>Cont</label>
-          <select bind:value={fltAccount}>
-            <option value="all">Toate</option>
-            {#each $accounts as acc}
+          <select bind:value={filterAccount}>
+            <option value="">Toate</option>
+            {#each accounts as acc}
               <option value={acc.id}>{acc.name}</option>
             {/each}
           </select>
         </div>
-        <div>
-          <label>Categorie</label>
-          <select bind:value={fltCategory}>
-            <option value="all">Toate</option>
-            {#each allCategories as cat}
-              <option value={cat}>{cat}</option>
-            {/each}
+        
+        <div class="form-group">
+          <label>Persoană</label>
+          <select bind:value={filterPerson}>
+            <option value="">Toate</option>
+            <option>Ioan</option>
+            <option>Nico</option>
+            <option>Comun</option>
+            <option>Firmă Nico</option>
           </select>
         </div>
-        <div>
-          <label>Luna</label>
-          <input bind:value={fltMonth} type="month" />
+      </div>
+      
+      <div class="filter-row">
+        <div class="form-group">
+          <label>Sortare</label>
+          <select bind:value={sortBy}>
+            <option value="date">După dată</option>
+            <option value="amount">După sumă</option>
+            <option value="description">După descriere</option>
+          </select>
+        </div>
+        
+        <div class="form-group">
+          <label>Ordine</label>
+          <select bind:value={sortOrder}>
+            <option value="desc">Descendent</option>
+            <option value="asc">Ascendent</option>
+          </select>
         </div>
       </div>
     </div>
+  </div>
+  
+  <!-- Transactions List -->
+  <div class="card">
+    <h2>📋 Tranzacții ({filteredTx.length})</h2>
     
-    <!-- Lista tranzacții -->
-    <div class="list">
-      {#each filteredTransactions as t}
-        {@const from = getAccountName(t.fromAccount)}
-        {@const to = getAccountName(t.toAccount)}
-        {@const cls = t.type === 'income' ? 'inc' : t.type === 'expense' ? 'exp' : 'xfer'}
-        {@const sign = t.type === 'income' ? '+' : t.type === 'expense' ? '-' : '±'}
-        {@const color = CATEGORY_COLORS[t.category] || '#999'}
-        
-        <div class="item">
-          <div>
-            <div>
-              <b>{t.description || '(fără descriere)'}</b>
-              <span class="tag" style="background:{color}20;color:{color}">{t.category || ''}</span>
-              <span class="tag">{t.person || ''}</span>
-              {#if t.imported}
-                <span class="tag">PDF</span>
-              {/if}
-            </div>
-            <div class="meta">
-              {formatDate(t.date)} · 
-              {#if from}din <b>{from}</b>{/if}
-              {#if to} → <b>{to}</b>{/if}
+    {#if filteredTx.length === 0}
+      <p class="empty">Nu există tranzacții</p>
+    {:else}
+      <div class="tx-list">
+        {#each filteredTx as tx (tx.id)}
+          <div class="tx-item" transition:slide>
+            <div class="tx-main">
+              <div class="tx-info">
+                <div class="tx-header">
+                  <span class="tx-desc">{tx.description || '(fără descriere)'}</span>
+                  {#if tx.category}
+                    <span class="tx-category" style="background-color: {categoryColors[tx.category]}20; color: {categoryColors[tx.category]}">
+                      {tx.category}
+                    </span>
+                  {/if}
+                  {#if tx.person}
+                    <span class="tx-person">{tx.person}</span>
+                  {/if}
+                </div>
+                
+                <div class="tx-meta">
+                  <span>{formatDate(tx.date)}</span>
+                  {#if tx.type === 'transfer'}
+                    <span>💳 {getAccountName(tx.fromAccount)} → {getAccountName(tx.toAccount)}</span>
+                  {:else if tx.type === 'income'}
+                    <span>💳 → {getAccountName(tx.toAccount)}</span>
+                  {:else}
+                    <span>💳 {getAccountName(tx.fromAccount)} →</span>
+                  {/if}
+                </div>
+              </div>
+              
+              <div class="tx-right">
+                <div class="tx-amount {tx.type}">
+                  {#if tx.type === 'income'}
+                    +{formatAmount(tx.amount)} RON
+                  {:else if tx.type === 'expense'}
+                    -{formatAmount(tx.amount)} RON
+                  {:else}
+                    ↔ {formatAmount(tx.amount)} RON
+                  {/if}
+                </div>
+                
+                <div class="tx-actions">
+                  <!-- ADĂUGAT: Buton de editare -->
+                  <button class="btn-icon" on:click={() => editTransaction(tx)} title="Editează">
+                    ✏️
+                  </button>
+                  <button class="btn-icon delete" on:click={() => deleteTransaction(tx.id)} title="Șterge">
+                    🗑️
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
-          <div class="right">
-            <div class="amount {cls}">{sign}{fmt(t.amount)}</div>
-            <button class="red" on:click={() => handleDeleteTx(t.id)}>×</button>
-          </div>
-        </div>
-      {/each}
-      
-      {#if filteredTransactions.length === 0}
-        <div class="meta">Nu există tranzacții</div>
-      {/if}
-    </div>
+        {/each}
+      </div>
+    {/if}
   </div>
 </div>
 
+<!-- ADĂUGAT: Modal pentru editare -->
+{#if editingTransaction}
+  <EditModal
+    transaction={editingTransaction}
+    {accounts}
+    on:save={handleEditSave}
+    on:delete={handleEditDelete}
+    on:close={() => editingTransaction = null}
+  />
+{/if}
+
 <style>
-  .grid {
-    display: grid;
-    grid-template-columns: 1.2fr 1.8fr;
-    gap: 18px;
-  }
-  
-  @media (max-width: 980px) {
-    .grid {
-      grid-template-columns: 1fr;
-    }
+  .container {
+    padding: 20px;
+    max-width: 1200px;
+    margin: 0 auto;
   }
   
   .card {
-    background: var(--panel);
-    border-radius: 14px;
-    padding: 16px;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    padding: 20px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
   }
   
-  .card h2 {
-    margin: 0 0 12px;
-    color: var(--acc);
-    font-size: 1.1rem;
+  .card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
   }
   
-  label {
-    display: block;
-    margin: 10px 0 6px;
-    color: var(--muted);
-    font-size: .9rem;
+  .card h2, .card h3 {
+    margin: 0 0 20px 0;
+  }
+  
+  .form-grid {
+    display: grid;
+    gap: 16px;
+  }
+  
+  .form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+  }
+  
+  .form-group {
+    display: flex;
+    flex-direction: column;
+  }
+  
+  .form-group label {
+    margin-bottom: 6px;
+    font-size: 0.9rem;
+    color: var(--text-muted);
   }
   
   input, select {
-    width: 100%;
-    padding: 10px;
-    border: 1px solid #28304b;
-    border-radius: 10px;
-    background: var(--panel2);
-    color: var(--ink);
+    padding: 8px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    font-size: 1rem;
+    background: var(--input-bg);
+    color: var(--text-primary);
   }
   
   input:focus, select:focus {
     outline: none;
-    border-color: var(--acc);
-    box-shadow: 0 0 0 3px rgba(128,184,255,.18);
+    border-color: var(--primary);
   }
   
-  button {
-    background: var(--acc);
-    color: #08131a;
-    border: 0;
-    border-radius: 10px;
-    padding: 10px 14px;
-    font-weight: 800;
+  .type-selector {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 8px;
+  }
+  
+  .type-selector button {
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    background: var(--bg-secondary);
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s;
   }
   
-  button:hover {
+  .type-selector button:hover {
+    border-color: var(--primary);
+  }
+  
+  .type-selector button.active {
+    background: var(--primary);
+    color: white;
+    border-color: var(--primary);
+  }
+  
+  .btn-primary {
+    padding: 10px 20px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 4px;
+    font-size: 1rem;
+    cursor: pointer;
+    width: 100%;
+  }
+  
+  .btn-primary:hover {
     opacity: 0.9;
-    transform: translateY(-1px);
   }
   
-  button.ghost {
-    background: transparent;
-    outline: 1px solid #2a3354;
-    color: var(--ink);
-  }
-  
-  button.red {
-    background: var(--err);
-  }
-  
-  button.green {
-    background: var(--ok);
-  }
-  
-  .row {
+  .filters {
     display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 10px;
+    gap: 16px;
   }
   
-  @media (max-width: 700px) {
-    .row {
-      grid-template-columns: 1fr;
-    }
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+    gap: 12px;
   }
   
-  .stack {
+  .tx-list {
+    display: grid;
+    gap: 12px;
+  }
+  
+  .tx-item {
+    padding: 16px;
+    background: var(--bg-secondary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+  }
+  
+  .tx-main {
     display: flex;
-    gap: 10px;
+    justify-content: space-between;
+    align-items: center;
+    gap: 16px;
+  }
+  
+  .tx-info {
+    flex: 1;
+    min-width: 0;
+  }
+  
+  .tx-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 8px;
     flex-wrap: wrap;
   }
   
-  .list {
-    max-height: 520px;
-    overflow: auto;
+  .tx-desc {
+    font-weight: 500;
   }
   
-  .item {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    background: var(--panel2);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 8px;
-  }
-  
-  .meta {
-    color: var(--muted);
-    font-size: .86rem;
-  }
-  
-  .amount {
-    font-weight: 900;
-  }
-  
-  .inc {
-    color: var(--ok);
-  }
-  
-  .exp {
-    color: var(--err);
-  }
-  
-  .xfer {
-    color: var(--warn);
-  }
-  
-  .tag {
-    display: inline-block;
+  .tx-category {
     padding: 2px 8px;
-    border-radius: 999px;
-    background: #243056;
-    color: #cfe1ff;
-    font-size: .75rem;
-    margin-left: 6px;
+    border-radius: 4px;
+    font-size: 0.85rem;
   }
   
-  .right {
+  .tx-person {
+    padding: 2px 8px;
+    background: var(--bg-tertiary);
+    border-radius: 4px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  
+  .tx-meta {
+    display: flex;
+    gap: 12px;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+  }
+  
+  .tx-right {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: 16px;
   }
   
-  .filters-panel {
-    background: var(--panel2);
-    border-radius: 12px;
-    padding: 12px;
-    margin-bottom: 16px;
+  .tx-amount {
+    font-size: 1.25rem;
+    font-weight: 600;
+    white-space: nowrap;
   }
   
-  .filters-row {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
-    gap: 10px;
+  .tx-amount.income {
+    color: #10b981;
+  }
+  
+  .tx-amount.expense {
+    color: #ef4444;
+  }
+  
+  .tx-amount.transfer {
+    color: #3b82f6;
+  }
+  
+  .tx-actions {
+    display: flex;
+    gap: 4px;
+  }
+  
+  /* ADĂUGAT: Stiluri pentru butoane de acțiuni */
+  .btn-icon {
+    width: 32px;
+    height: 32px;
+    border: none;
+    background: var(--bg-tertiary, #f3f4f6);
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s;
+  }
+  
+  .btn-icon:hover {
+    background: var(--primary-light, #dbeafe);
+    transform: translateY(-2px);
+  }
+  
+  .btn-icon.delete:hover {
+    background: #fee2e2;
+  }
+  
+  .empty {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-muted);
+  }
+  
+  @media (max-width: 768px) {
+    .form-row {
+      grid-template-columns: 1fr;
+    }
+    
+    .tx-main {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+    
+    .tx-right {
+      width: 100%;
+      justify-content: space-between;
+      margin-top: 12px;
+    }
   }
 </style>
