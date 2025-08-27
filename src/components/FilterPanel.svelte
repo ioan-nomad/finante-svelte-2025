@@ -89,6 +89,16 @@
       <button on:click={setLastMonth}>Luna trecută</button>
       <button on:click={setThisYear}>Anul ăsta</button>
       <button on:click={setLastYear}>Anul trecut</button>
+      <button class="reset-btn" on:click={resetAllFilters}>🔄 Resetează tot</button>
+      function resetAllFilters() {
+       startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
+       endDate = new Date().toISOString().split('T')[0]
+       selectedCategories = []
+       selectedAccounts = []
+       selectedType = 'all'
+       selectedPerson = 'all'
+       granularity = 'month'
+     }
     </div>
     
     <div class="granularity">
@@ -357,4 +367,18 @@
       grid-template-columns: 1fr 1fr;
     }
   }
+  .reset-btn {
+  margin-top: 12px;
+  width: 100%;
+  background: #ef4444;
+  color: white;
+  padding: 8px;
+  border: none;
+  border-radius: 4px;
+  cursor: pointer;
+}
+
+.reset-btn:hover {
+  background: #dc2626;
+}
 </style>
