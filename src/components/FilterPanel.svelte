@@ -1,385 +1,372 @@
+<!-- src/components/FilterPanel.svelte -->
 <script>
-  import { createEventDispatcher } from 'svelte'
-  
-  export let categories = []
-  export let accounts = []
-  
-  const dispatch = createEventDispatcher()
-  
-  // State filtre
-  let startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-  let endDate = new Date().toISOString().split('T')[0]
-  let selectedCategories = []
-  let selectedAccounts = []
-  let selectedType = 'all'
-  let selectedPerson = 'all'
-  let granularity = 'month'
-  
-  // Emit changes
-  function handleFilterChange() {
-    dispatch('filterChange', {
-      startDate,
-      endDate,
-      selectedCategories,
-      selectedAccounts,
-      selectedType,
-      selectedPerson,
-      granularity
-    })
+  import { 
+    accounts, 
+    transactions,
+    CATEGORIES,
+    currentMonth
+  } from '../lib/store.js';
+  import { createEventDispatcher } from 'svelte';
+
+  const dispatch = createEventDispatcher();
+
+  // Filter properties
+  export let filters = {
+    type: 'all',
+    account: 'all',
+    category: 'all',
+    month: currentMonth(),
+    dateStart: '',
+    dateEnd: '',
+    person: 'all',
+    minAmount: '',
+    maxAmount: '',
+    description: ''
+  };
+
+  // All unique categories from transactions
+  $: allCategories = [...new Set([
+    ...CATEGORIES.expense, 
+    ...CATEGORIES.income, 
+    ...CATEGORIES.transfer
+  ])];
+
+  // All unique persons from transactions
+  $: allPersons = [...new Set(
+    $transactions
+      .map(t => t.person)
+      .filter(p => p && p.trim())
+  )];
+
+  // Reactive updates - dispatch when filters change
+  $: dispatch('filtersChanged', filters);
+
+  function resetFilters() {
+    filters = {
+      type: 'all',
+      account: 'all',
+      category: 'all',
+      month: currentMonth(),
+      dateStart: '',
+      dateEnd: '',
+      person: 'all',
+      minAmount: '',
+      maxAmount: '',
+      description: ''
+    };
   }
-  
-  // Watch for changes
-  $: startDate, endDate, selectedCategories, selectedAccounts, selectedType, selectedPerson, granularity, handleFilterChange()
-  
-  function toggleCategory(cat) {
-    if (selectedCategories.includes(cat)) {
-      selectedCategories = selectedCategories.filter(c => c !== cat)
-    } else {
-      selectedCategories = [...selectedCategories, cat]
+
+  function applyCommonFilters(period) {
+    const now = new Date();
+    const currentYear = now.getFullYear();
+    const currentMonth = now.getMonth();
+
+    switch (period) {
+      case 'thisMonth':
+        filters.month = `${currentYear}-${String(currentMonth + 1).padStart(2, '0')}`;
+        filters.dateStart = '';
+        filters.dateEnd = '';
+        break;
+      case 'lastMonth':
+        const lastMonth = currentMonth === 0 ? 11 : currentMonth - 1;
+        const lastMonthYear = currentMonth === 0 ? currentYear - 1 : currentYear;
+        filters.month = `${lastMonthYear}-${String(lastMonth + 1).padStart(2, '0')}`;
+        filters.dateStart = '';
+        filters.dateEnd = '';
+        break;
+      case 'thisYear':
+        filters.month = '';
+        filters.dateStart = `${currentYear}-01-01`;
+        filters.dateEnd = `${currentYear}-12-31`;
+        break;
+      case 'last3Months':
+        const threeMonthsAgo = new Date();
+        threeMonthsAgo.setMonth(threeMonthsAgo.getMonth() - 3);
+        filters.month = '';
+        filters.dateStart = threeMonthsAgo.toISOString().slice(0, 10);
+        filters.dateEnd = now.toISOString().slice(0, 10);
+        break;
     }
-  }
-  
-  function selectAllCategories() {
-    selectedCategories = categories.map(c => c.name)
-  }
-  
-  function clearCategories() {
-    selectedCategories = []
-  }
-  
-  // Quick date presets
-  function setThisMonth() {
-    const now = new Date()
-    startDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString().split('T')[0]
-    endDate = new Date(now.getFullYear(), now.getMonth() + 1, 0).toISOString().split('T')[0]
-  }
-  
-  function setLastMonth() {
-    const now = new Date()
-    startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1).toISOString().split('T')[0]
-    endDate = new Date(now.getFullYear(), now.getMonth(), 0).toISOString().split('T')[0]
-  }
-  
-  function setThisYear() {
-    const year = new Date().getFullYear()
-    startDate = `${year}-01-01`
-    endDate = `${year}-12-31`
-  }
-  
-  function setLastYear() {
-    const year = new Date().getFullYear() - 1
-    startDate = `${year}-01-01`
-    endDate = `${year}-12-31`
   }
 </script>
 
 <div class="filter-panel">
-  <!-- Date Section -->
-  <div class="filter-section">
-    <h4>📅 Perioadă</h4>
-    
-    <div class="date-inputs">
-      <input type="date" bind:value={startDate} />
-      <span>→</span>
-      <input type="date" bind:value={endDate} />
-    </div>
-    
-    <div class="date-presets">
-      <button on:click={setThisMonth}>Luna asta</button>
-      <button on:click={setLastMonth}>Luna trecută</button>
-      <button on:click={setThisYear}>Anul ăsta</button>
-      <button on:click={setLastYear}>Anul trecut</button>
-      <button class="reset-btn" on:click={resetAllFilters}>🔄 Resetează tot</button>
-     }
-      function resetAllFilters() {
-       startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
-       endDate = new Date().toISOString().split('T')[0]
-       selectedCategories = []
-       selectedAccounts = []
-       selectedType = 'all'
-       selectedPerson = 'all'
-       granularity = 'month'
-     }
-    </div>
-    
-    <div class="granularity">
-      <label>Granularitate:</label>
-      <select bind:value={granularity}>
-        <option value="day">Zilnic</option>
-        <option value="week">Săptămânal</option>
-        <option value="month">Lunar</option>
-        <option value="quarter">Trimestrial</option>
-        <option value="year">Anual</option>
-      </select>
+  <div class="panel-header">
+    <h3>🔍 Filtre Avansate</h3>
+    <div class="panel-actions">
+      <button class="btn ghost" on:click={resetFilters}>
+        ↺ Reset
+      </button>
     </div>
   </div>
-  
-  <!-- Type & Person -->
-  <div class="filter-section">
-    <h4>🔍 Tip & Persoană</h4>
-    
-    <div class="filter-row">
-      <div class="filter-group">
-        <label>Tip tranzacție:</label>
-        <select bind:value={selectedType}>
-          <option value="all">Toate</option>
-          <option value="income">Venituri</option>
-          <option value="expense">Cheltuieli</option>
-          <option value="transfer">Transferuri</option>
-        </select>
+
+  <div class="filter-groups">
+    <!-- Basic Filters -->
+    <div class="filter-group">
+      <h4>Filtre de bază</h4>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>Tip tranzacție</label>
+          <select bind:value={filters.type}>
+            <option value="all">Toate</option>
+            <option value="income">Venituri</option>
+            <option value="expense">Cheltuieli</option>
+            <option value="transfer">Transferuri</option>
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label>Cont</label>
+          <select bind:value={filters.account}>
+            <option value="all">Toate</option>
+            {#each $accounts as acc}
+              <option value={acc.id}>{acc.name}</option>
+            {/each}
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label>Categorie</label>
+          <select bind:value={filters.category}>
+            <option value="all">Toate</option>
+            {#each allCategories as cat}
+              <option value={cat}>{cat}</option>
+            {/each}
+          </select>
+        </div>
+        
+        <div class="filter-item">
+          <label>Persoană</label>
+          <select bind:value={filters.person}>
+            <option value="all">Toate</option>
+            {#each allPersons as person}
+              <option value={person}>{person}</option>
+            {/each}
+          </select>
+        </div>
+      </div>
+    </div>
+
+    <!-- Date Filters -->
+    <div class="filter-group">
+      <h4>Filtre temporale</h4>
+      <div class="quick-periods">
+        <button class="btn small" on:click={() => applyCommonFilters('thisMonth')}>
+          Luna aceasta
+        </button>
+        <button class="btn small" on:click={() => applyCommonFilters('lastMonth')}>
+          Luna trecută
+        </button>
+        <button class="btn small" on:click={() => applyCommonFilters('last3Months')}>
+          Ultimele 3 luni
+        </button>
+        <button class="btn small" on:click={() => applyCommonFilters('thisYear')}>
+          Anul acesta
+        </button>
       </div>
       
-      <div class="filter-group">
-        <label>Persoană:</label>
-        <select bind:value={selectedPerson}>
-          <option value="all">Toate</option>
-          <option value="Ioan">Ioan</option>
-          <option value="Nico">Nico</option>
-          <option value="Comun">Comun</option>
-          <option value="Firmă Nico">Firmă Nico</option>
-        </select>
-      </div>
-    </div>
-  </div>
-  
-  <!-- Categories -->
-  <div class="filter-section">
-    <h4>🏷️ Categorii ({selectedCategories.length}/{categories.length})</h4>
-    
-    <div class="category-actions">
-      <button on:click={selectAllCategories}>Toate</button>
-      <button on:click={clearCategories}>Niciuna</button>
-    </div>
-    
-    <div class="category-grid">
-      {#each categories as cat}
-        <label class="category-item">
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>Luna</label>
           <input 
-            type="checkbox" 
-            checked={selectedCategories.includes(cat.name)}
-            on:change={() => toggleCategory(cat.name)}
+            bind:value={filters.month} 
+            type="month"
+            on:input={() => { filters.dateStart = ''; filters.dateEnd = ''; }}
           />
-          <span 
-            class="category-label"
-            style="background: {cat.color}20; color: {cat.color}"
-          >
-            {cat.name}
-          </span>
-        </label>
-      {/each}
-    </div>
-  </div>
-  
-  <!-- Accounts -->
-  {#if accounts && accounts.length > 0}
-    <div class="filter-section">
-      <h4>💳 Conturi</h4>
-      
-      <div class="accounts-list">
-        {#each accounts as acc}
-          <label class="account-item">
-            <input 
-              type="checkbox"
-              checked={selectedAccounts.includes(acc.id)}
-              on:change={(e) => {
-                if (e.target.checked) {
-                  selectedAccounts = [...selectedAccounts, acc.id]
-                } else {
-                  selectedAccounts = selectedAccounts.filter(id => id !== acc.id)
-                }
-              }}
-            />
-            <span>{acc.name}</span>
-          </label>
-        {/each}
+        </div>
+        
+        <div class="filter-item">
+          <label>Data început</label>
+          <input 
+            bind:value={filters.dateStart} 
+            type="date"
+            on:input={() => filters.month = ''}
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label>Data sfârșit</label>
+          <input 
+            bind:value={filters.dateEnd} 
+            type="date"
+            on:input={() => filters.month = ''}
+          />
+        </div>
       </div>
     </div>
-  {/if}
+
+    <!-- Amount & Description Filters -->
+    <div class="filter-group">
+      <h4>Filtre sume și descriere</h4>
+      <div class="filter-row">
+        <div class="filter-item">
+          <label>Suma minimă</label>
+          <input 
+            bind:value={filters.minAmount} 
+            type="number" 
+            step="0.01" 
+            placeholder="0.00"
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label>Suma maximă</label>
+          <input 
+            bind:value={filters.maxAmount} 
+            type="number" 
+            step="0.01" 
+            placeholder="999999.99"
+          />
+        </div>
+        
+        <div class="filter-item">
+          <label>Descriere conține</label>
+          <input 
+            bind:value={filters.description} 
+            type="text" 
+            placeholder="ex: supermarket, benzină..."
+          />
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <style>
   .filter-panel {
-    background: var(--bg-primary, white);
-    border-radius: 12px;
-    padding: 20px;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    background: var(--panel);
+    border-radius: 14px;
+    padding: 16px;
+    margin-bottom: 16px;
   }
-  
-  .filter-section {
-    margin-bottom: 24px;
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
   }
-  
-  .filter-section:last-child {
-    margin-bottom: 0;
-  }
-  
-  h4 {
-    margin: 0 0 12px 0;
-    color: var(--text-primary, #333);
+
+  .panel-header h3 {
+    margin: 0;
+    color: var(--acc);
     font-size: 1rem;
   }
-  
-  .date-inputs {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-    margin-bottom: 12px;
-  }
-  
-  .date-inputs input {
-    flex: 1;
-    padding: 8px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 6px;
-    background: var(--input-bg, white);
-  }
-  
-  .date-presets {
+
+  .panel-actions {
     display: flex;
     gap: 8px;
-    margin-bottom: 12px;
-    flex-wrap: wrap;
   }
-  
-  .date-presets button,
-  .category-actions button {
-    padding: 6px 12px;
-    background: var(--bg-secondary, #f8f9fa);
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    cursor: pointer;
-    font-size: 0.85rem;
-    transition: all 0.2s;
-  }
-  
-  .date-presets button:hover,
-  .category-actions button:hover {
-    background: var(--primary, #3b82f6);
-    color: white;
-    border-color: var(--primary, #3b82f6);
-  }
-  
-  .granularity {
-    display: flex;
-    gap: 12px;
-    align-items: center;
-  }
-  
-  .granularity label {
-    font-size: 0.9rem;
-    color: var(--text-secondary, #666);
-  }
-  
-  select {
-    padding: 6px 12px;
-    border: 1px solid var(--border-color, #ddd);
-    border-radius: 4px;
-    background: var(--input-bg, white);
-    cursor: pointer;
-  }
-  
-  .filter-row {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 16px;
-  }
-  
-  .filter-group {
+
+  .filter-groups {
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 20px;
   }
-  
-  .filter-group label {
+
+  .filter-group {
+    background: var(--panel2);
+    border-radius: 12px;
+    padding: 14px;
+  }
+
+  .filter-group h4 {
+    margin: 0 0 12px 0;
+    color: var(--muted);
     font-size: 0.9rem;
-    color: var(--text-secondary, #666);
+    font-weight: 600;
   }
-  
-  .category-actions {
+
+  .filter-row {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 12px;
+    align-items: end;
+  }
+
+  .filter-item {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .filter-item label {
+    color: var(--muted);
+    font-size: 0.85rem;
+    font-weight: 500;
+  }
+
+  .quick-periods {
     display: flex;
     gap: 8px;
+    flex-wrap: wrap;
     margin-bottom: 12px;
   }
-  
-  .category-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-    gap: 8px;
-    max-height: 200px;
-    overflow-y: auto;
-    padding: 4px;
+
+  input, select {
+    width: 100%;
+    padding: 8px 10px;
+    border: 1px solid #28304b;
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--ink);
+    font-size: 0.9rem;
+    transition: all 0.2s;
   }
-  
-  .category-item,
-  .account-item {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+
+  input:focus, select:focus {
+    outline: none;
+    border-color: var(--acc);
+    box-shadow: 0 0 0 2px rgba(128, 184, 255, 0.15);
+  }
+
+  .btn {
+    background: var(--acc);
+    color: #08131a;
+    border: 0;
+    border-radius: 8px;
+    padding: 8px 12px;
+    font-weight: 600;
     cursor: pointer;
-  }
-  
-  .category-item input,
-  .account-item input {
-    cursor: pointer;
-  }
-  
-  .category-label {
-    padding: 4px 8px;
-    border-radius: 4px;
-    font-size: 0.85rem;
+    transition: all 0.2s;
+    font-size: 0.9rem;
     white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
   }
-  
-  .accounts-list {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 8px;
+
+  .btn:hover {
+    opacity: 0.9;
+    transform: translateY(-1px);
   }
-  
-  /* Dark mode */
-  :global(body.dark) .filter-panel {
-    background: #1a1a1a;
+
+  .btn.ghost {
+    background: transparent;
+    color: var(--muted);
+    border: 1px solid #2a3354;
   }
-  
-  :global(body.dark) .date-presets button,
-  :global(body.dark) .category-actions button {
-    background: #2a2a2a;
-    border-color: #444;
-    color: #e0e0e0;
+
+  .btn.ghost:hover {
+    color: var(--ink);
+    border-color: var(--acc);
   }
-  
-  :global(body.dark) input,
-  :global(body.dark) select {
-    background: #2a2a2a;
-    border-color: #444;
-    color: #e0e0e0;
+
+  .btn.small {
+    padding: 6px 10px;
+    font-size: 0.8rem;
   }
-  
-  /* Responsive */
+
   @media (max-width: 768px) {
+    .panel-header {
+      flex-direction: column;
+      align-items: stretch;
+      gap: 8px;
+    }
+
     .filter-row {
       grid-template-columns: 1fr;
     }
-    
-    .date-presets {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
+
+    .quick-periods {
+      justify-content: center;
     }
   }
-  .reset-btn {
-  margin-top: 12px;
-  width: 100%;
-  background: #ef4444;
-  color: white;
-  padding: 8px;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-}
-
-.reset-btn:hover {
-  background: #dc2626;
-}
 </style>
