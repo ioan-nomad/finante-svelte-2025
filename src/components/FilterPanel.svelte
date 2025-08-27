@@ -90,6 +90,7 @@
       <button on:click={setThisYear}>Anul ăsta</button>
       <button on:click={setLastYear}>Anul trecut</button>
       <button class="reset-btn" on:click={resetAllFilters}>🔄 Resetează tot</button>
+     }
       function resetAllFilters() {
        startDate = new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString().split('T')[0]
        endDate = new Date().toISOString().split('T')[0]
