@@ -415,11 +415,31 @@
       
       <div class="chart-container">
         {#if selectedChart === 'pie' && chartData.pie}
-          <ChartManager data={chartData.pie} chartType="doughnut" height={400} />
+          <ChartManager 
+            data={{
+              labels: chartData.pie.labels,
+              datasets: [{
+                data: chartData.pie.values,
+                backgroundColor: chartData.pie.colors,
+                borderWidth: 1,
+                borderColor: '#fff'
+              }]
+            }} 
+            chartType="doughnut" 
+            height={400} 
+          />
         {:else if selectedChart === 'bar' && chartData.bar}
-          <ChartManager data={chartData.bar} chartType="bar" height={400} />
+          <ChartManager 
+            data={chartData.bar}
+            chartType="bar" 
+            height={400} 
+          />
         {:else if selectedChart === 'line' && chartData.line}
-          <ChartManager data={chartData.line} chartType="line" height={400} />
+          <ChartManager 
+            data={chartData.line}
+            chartType="line" 
+            height={400} 
+          />
         {:else}
           <div class="no-data">
             <p>Nu există date pentru perioada selectată</p>

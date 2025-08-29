@@ -65,7 +65,7 @@
       type: chartType === 'doughnut' ? 'doughnut' : 'pie',
       data: {
         labels: data.labels || [],
-        datasets: [{
+        datasets: data.datasets || [{
           data: data.values || [],
           backgroundColor: data.colors || defaultColors,
           borderWidth: 2,

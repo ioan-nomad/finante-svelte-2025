@@ -158,21 +158,55 @@ legend.subscribe(value => {
 // Pentru a accesa valoarea unui store în funcții
 import { get } from 'svelte/store';
 
-// ===== Business logic functions exact ca în HTML =====
+// Performance optimization - memoized computations
+const balanceCache = new Map();
+const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
+
+function getCacheKey(accountId, transactionsHash) {
+  return `${accountId}-${transactionsHash}`;
+}
+
+function getTransactionsHash(transactions) {
+  // Simple hash based on length and last modification
+  if (!transactions.length) return '0';
+  const lastTx = transactions[0];
+  return `${transactions.length}-${lastTx?.id || '0'}-${lastTx?.amount || '0'}`;
+}
+
+// ===== Business logic functions with performance optimizations =====
 export function computeAccountBalance(acc, transactionsList = null) {
   const txs = transactionsList || get(transactions);
+  
+  // Use cache for better performance
+  const txHash = getTransactionsHash(txs);
+  const cacheKey = getCacheKey(acc.id, txHash);
+  const cached = balanceCache.get(cacheKey);
+  
+  if (cached && (Date.now() - cached.timestamp < CACHE_EXPIRY)) {
+    return cached.balance;
+  }
+  
   let bal = +acc.opening || 0;
   
+  // Optimized loop - only check relevant transactions
   for (const t of txs) {
     if (t.fromAccount === acc.id) bal -= +t.amount;
-    if (t.toAccount === acc.id) bal += +t.amount;
+    else if (t.toAccount === acc.id) bal += +t.amount;
   }
+  
+  // Cache the result
+  balanceCache.set(cacheKey, {
+    balance: bal,
+    timestamp: Date.now()
+  });
   
   return bal;
 }
 
 export function addTransaction(tx) {
   tx.id = nid();
+  // Clear balance cache when adding transaction
+  balanceCache.clear();
   transactions.update(txs => {
     txs.unshift(tx);
     return txs;
@@ -180,6 +214,8 @@ export function addTransaction(tx) {
 }
 
 export function deleteTransaction(id) {
+  // Clear balance cache when deleting transaction
+  balanceCache.clear();
   transactions.update(txs => txs.filter(t => t.id !== id));
 }
 
@@ -271,6 +307,24 @@ export const monthStats = derived(
     };
   }
 );
+
+// ===== Cache management =====
+export function clearBalanceCache() {
+  balanceCache.clear();
+}
+
+// Cleanup old cache entries
+export function cleanupCache() {
+  const now = Date.now();
+  for (const [key, value] of balanceCache.entries()) {
+    if (now - value.timestamp > CACHE_EXPIRY) {
+      balanceCache.delete(key);
+    }
+  }
+}
+
+// Run cleanup every 10 minutes
+setInterval(cleanupCache, 10 * 60 * 1000);
 
 // ===== Export helper pentru PDF parsing (va fi folosit în ImportPDF.svelte) =====
 export function suggestCategory(desc, type) {
