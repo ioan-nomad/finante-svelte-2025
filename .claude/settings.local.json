@@ -10,7 +10,9 @@
       "Bash(grep:*)",
       "Bash(npm run check:*)",
       "Bash(npm run:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git pull:*)"
     ],
     "deny": [],
     "ask": []
