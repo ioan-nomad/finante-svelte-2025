@@ -1,13 +1,230 @@
 <!doctype html>
-<html lang="en">
+<html lang="ro-RO">
   <head>
     <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + Svelte</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+    
+    <!-- PWA Configuration -->
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#80b8ff" />
+    <meta name="background-color" content="#0f1220" />
+    
+    <!-- App Meta Information -->
+    <title>Finanțe & Smart Pantry Tracker</title>
+    <meta name="description" content="Aplicație completă pentru management financiar și tracking inventar alimentar" />
+    <meta name="keywords" content="finanțe, buget, tranzacții, inventar, alimente, grocery, pantry" />
+    <meta name="author" content="FinanțeApp" />
+    
+    <!-- Mobile App Configuration -->
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="FinanțeApp" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="application-name" content="FinanțeApp" />
+    
+    <!-- Microsoft Tiles -->
+    <meta name="msapplication-TileColor" content="#80b8ff" />
+    <meta name="msapplication-config" content="/browserconfig.xml" />
+    
+    <!-- Icons and Favicons -->
+    <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32x32.png" />
+    <link rel="icon" type="image/png" sizes="16x16" href="/favicon-16x16.png" />
+    <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
+    <link rel="mask-icon" href="/safari-pinned-tab.svg" color="#80b8ff" />
+    <link rel="shortcut icon" href="/favicon.ico" />
+    
+    <!-- Apple Splash Screens -->
+    <link rel="apple-touch-startup-image" href="/apple-splash-2048-2732.jpg" sizes="2048x2732" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-1668-2224.jpg" sizes="1668x2224" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-1536-2048.jpg" sizes="1536x2048" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-1125-2436.jpg" sizes="1125x2436" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-1242-2208.jpg" sizes="1242x2208" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-750-1334.jpg" sizes="750x1334" />
+    <link rel="apple-touch-startup-image" href="/apple-splash-640-1136.jpg" sizes="640x1136" />
+    
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Finanțe & Smart Pantry Tracker" />
+    <meta property="og:description" content="Aplicație completă pentru management financiar și tracking inventar alimentar" />
+    <meta property="og:image" content="/og-image.png" />
+    <meta property="og:url" content="/" />
+    <meta property="og:site_name" content="FinanțeApp" />
+    
+    <!-- Twitter Card -->
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Finanțe & Smart Pantry Tracker" />
+    <meta name="twitter:description" content="Aplicație completă pentru management financiar și tracking inventar alimentar" />
+    <meta name="twitter:image" content="/twitter-card.png" />
+    
+    <!-- Preload Critical Resources -->
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+    <link rel="dns-prefetch" href="https://fonts.gstatic.com" />
+    
+    <!-- Security Headers -->
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta http-equiv="X-Frame-Options" content="DENY" />
+    <meta http-equiv="X-XSS-Protection" content="1; mode=block" />
+    <meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin" />
+    
+    <!-- Content Security Policy -->
+    <meta http-equiv="Content-Security-Policy" content="
+      default-src 'self';
+      script-src 'self' 'unsafe-inline' 'unsafe-eval';
+      style-src 'self' 'unsafe-inline';
+      img-src 'self' data: blob:;
+      font-src 'self' data:;
+      connect-src 'self';
+      media-src 'self';
+      object-src 'none';
+      base-uri 'self';
+      form-action 'self';
+    " />
   </head>
   <body>
+    <!-- App Loading Screen -->
+    <div id="loading-screen" style="
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(135deg, #0f1220 0%, #171a2b 100%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      color: #80b8ff;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      z-index: 9999;
+    ">
+      <div style="
+        width: 60px;
+        height: 60px;
+        border: 3px solid rgba(128, 184, 255, 0.3);
+        border-top: 3px solid #80b8ff;
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+      "></div>
+      <h1 style="margin: 0; font-size: 24px; font-weight: 600;">💰 FinanțeApp</h1>
+      <p style="margin: 8px 0 0 0; opacity: 0.8;">Se încarcă...</p>
+      <style>
+        @keyframes spin {
+          0% { transform: rotate(0deg); }
+          100% { transform: rotate(360deg); }
+        }
+      </style>
+    </div>
+
+    <!-- Main App Container -->
     <div id="app"></div>
+    
+    <!-- No Script Fallback -->
+    <noscript>
+      <div style="
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        height: 100vh;
+        text-align: center;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        background: #f8f9fa;
+        color: #343a40;
+        padding: 20px;
+      ">
+        <h1>⚠️ JavaScript Dezactivat</h1>
+        <p>Pentru a utiliza FinanțeApp, te rugăm să activezi JavaScript în browser.</p>
+        <p>Această aplicație necesită JavaScript pentru a funcționa corespunzător.</p>
+      </div>
+    </noscript>
+
+    <!-- App Scripts -->
     <script type="module" src="/src/main.js"></script>
+    
+    <!-- Service Worker Registration -->
+    <script>
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js', { scope: '/' })
+            .then((registration) => {
+              console.log('SW registered: ', registration);
+              
+              // Check for updates
+              registration.addEventListener('updatefound', () => {
+                const newWorker = registration.installing;
+                newWorker.addEventListener('statechange', () => {
+                  if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+                    // New version available
+                    if (confirm('O versiune nouă este disponibilă. Vrei să o instalezi?')) {
+                      newWorker.postMessage({ type: 'SKIP_WAITING' });
+                      window.location.reload();
+                    }
+                  }
+                });
+              });
+            })
+            .catch((registrationError) => {
+              console.log('SW registration failed: ', registrationError);
+            });
+        });
+
+        // Listen for service worker messages
+        navigator.serviceWorker.addEventListener('message', (event) => {
+          const { type, count } = event.data;
+          
+          if (type === 'TRANSACTIONS_SYNCED') {
+            console.log(`${count} tranzacții sincronizate`);
+            // You could show a notification here
+          }
+        });
+      }
+
+      // Install prompt handling
+      let deferredPrompt;
+      window.addEventListener('beforeinstallprompt', (e) => {
+        e.preventDefault();
+        deferredPrompt = e;
+        
+        // Show install button if you have one
+        const installButton = document.getElementById('install-button');
+        if (installButton) {
+          installButton.style.display = 'block';
+          installButton.addEventListener('click', () => {
+            installButton.style.display = 'none';
+            deferredPrompt.prompt();
+            deferredPrompt.userChoice.then((choiceResult) => {
+              if (choiceResult.outcome === 'accepted') {
+                console.log('User accepted PWA install');
+              }
+              deferredPrompt = null;
+            });
+          });
+        }
+      });
+
+      // Hide loading screen when app loads
+      window.addEventListener('DOMContentLoaded', () => {
+        const loadingScreen = document.getElementById('loading-screen');
+        if (loadingScreen) {
+          setTimeout(() => {
+            loadingScreen.style.opacity = '0';
+            loadingScreen.style.transition = 'opacity 0.5s ease';
+            setTimeout(() => {
+              loadingScreen.remove();
+            }, 500);
+          }, 1000); // Show loading for at least 1 second
+        }
+      });
+
+      // Performance monitoring
+      window.addEventListener('load', () => {
+        if (typeof performance !== 'undefined' && performance.navigation) {
+          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
+          console.log(`App loaded in ${loadTime}ms`);
+        }
+      });
+    </script>
   </body>
 </html>

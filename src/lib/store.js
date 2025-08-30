@@ -1,5 +1,156 @@
 // lib/store.js
-import { writable, derived } from 'svelte/store';
+import { writable, derived, get } from 'svelte/store';
+
+// ===== Advanced Data Cache System =====
+class DataCache {
+  constructor(ttl = 5 * 60 * 1000) { // 5 minute TTL
+    this.cache = new Map();
+    this.ttl = ttl;
+  }
+  
+  set(key, value) {
+    this.cache.set(key, {
+      value,
+      timestamp: Date.now()
+    });
+  }
+  
+  get(key) {
+    const item = this.cache.get(key);
+    if (!item) return null;
+    
+    if (Date.now() - item.timestamp > this.ttl) {
+      this.cache.delete(key);
+      return null;
+    }
+    
+    return item.value;
+  }
+  
+  clear() {
+    this.cache.clear();
+  }
+  
+  invalidate(pattern) {
+    for (const key of this.cache.keys()) {
+      if (key.includes(pattern)) {
+        this.cache.delete(key);
+      }
+    }
+  }
+  
+  // Get cache stats for debugging
+  getStats() {
+    const now = Date.now();
+    let expired = 0;
+    let active = 0;
+    
+    for (const [key, item] of this.cache.entries()) {
+      if (now - item.timestamp > this.ttl) {
+        expired++;
+      } else {
+        active++;
+      }
+    }
+    
+    return { active, expired, total: this.cache.size };
+  }
+}
+
+export const dataCache = new DataCache();
+
+// ===== Optimized Account Balance Calculation =====
+export function computeAccountBalanceOptimized(accountId) {
+  const cacheKey = `balance-${accountId}-${get(transactions).length}`;
+  const cached = dataCache.get(cacheKey);
+  if (cached !== null) return cached;
+  
+  const txs = get(transactions);
+  const account = get(accounts).find(a => a.id === accountId);
+  if (!account) return 0;
+  
+  let balance = account.opening || 0;
+  
+  // Optimized transaction processing
+  for (const t of txs) {
+    if (t.type === 'income' && t.toAccount === accountId) {
+      balance += parseFloat(t.amount) || 0;
+    } else if (t.type === 'expense' && t.fromAccount === accountId) {
+      balance -= parseFloat(t.amount) || 0;
+    } else if (t.type === 'transfer') {
+      if (t.fromAccount === accountId) balance -= parseFloat(t.amount) || 0;
+      if (t.toAccount === accountId) balance += parseFloat(t.amount) || 0;
+    }
+  }
+  
+  dataCache.set(cacheKey, balance);
+  return balance;
+}
+
+// ===== Optimized Transaction Filtering =====
+export function getFilteredTransactions(filters) {
+  const cacheKey = `filtered-${JSON.stringify(filters)}-${get(transactions).length}`;
+  const cached = dataCache.get(cacheKey);
+  if (cached !== null) return cached;
+  
+  const txs = get(transactions);
+  let filtered = txs;
+  
+  // Apply filters efficiently
+  if (filters.type && filters.type !== 'all') {
+    filtered = filtered.filter(t => t.type === filters.type);
+  }
+  
+  if (filters.account && filters.account !== 'all') {
+    filtered = filtered.filter(t => 
+      t.fromAccount === filters.account || t.toAccount === filters.account
+    );
+  }
+  
+  if (filters.person && filters.person !== 'all') {
+    filtered = filtered.filter(t => t.person === filters.person);
+  }
+  
+  if (filters.category && filters.category !== 'all') {
+    filtered = filtered.filter(t => t.category === filters.category);
+  }
+  
+  if (filters.dateRange) {
+    const { start, end } = filters.dateRange;
+    filtered = filtered.filter(t => {
+      const date = new Date(t.date);
+      return date >= start && date <= end;
+    });
+  }
+  
+  if (filters.amountRange) {
+    const { min, max } = filters.amountRange;
+    filtered = filtered.filter(t => {
+      const amount = parseFloat(t.amount) || 0;
+      return amount >= min && amount <= max;
+    });
+  }
+  
+  dataCache.set(cacheKey, filtered);
+  return filtered;
+}
+
+// ===== Cache Management Functions =====
+export function clearDataCache() {
+  dataCache.clear();
+}
+
+export function invalidateBalanceCache() {
+  dataCache.invalidate('balance-');
+}
+
+export function invalidateFilterCache() {
+  dataCache.invalidate('filtered-');
+}
+
+export function getCacheStats() {
+  return dataCache.getStats();
+}
 
 // ===== Categorii exacte din HTML =====
 export const CATEGORIES = {
@@ -155,9 +306,6 @@ legend.subscribe(value => {
   DB.save(currentAccounts, currentTransactions, value);
 });
 
-// Pentru a accesa valoarea unui store în funcții
-import { get } from 'svelte/store';
-
 // Performance optimization - memoized computations
 const balanceCache = new Map();
 const CACHE_EXPIRY = 5 * 60 * 1000; // 5 minutes
@@ -205,8 +353,9 @@ export function computeAccountBalance(acc, transactionsList = null) {
 
 export function addTransaction(tx) {
   tx.id = nid();
-  // Clear balance cache when adding transaction
+  // Clear both cache systems when adding transaction
   balanceCache.clear();
+  dataCache.clear(); // Clear new cache system too
   transactions.update(txs => {
     txs.unshift(tx);
     return txs;
@@ -214,8 +363,9 @@ export function addTransaction(tx) {
 }
 
 export function deleteTransaction(id) {
-  // Clear balance cache when deleting transaction
+  // Clear both cache systems when deleting transaction
   balanceCache.clear();
+  dataCache.clear(); // Clear new cache system too
   transactions.update(txs => txs.filter(t => t.id !== id));
 }
 

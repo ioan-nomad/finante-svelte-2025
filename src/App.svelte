@@ -2,27 +2,24 @@
 <script>
   import Conturi from './components/Conturi.svelte';
   import Tranzactii from './components/Tranzactii.svelte';
-  import Dashboard from './components/Dashboard.svelte';
   import Export from './components/Export.svelte';
-  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
   import Budgeturi from './components/Budgeturi.svelte';
   import Obiective from './components/Obiective.svelte';
   import Reconciliere from './components/Reconciliere.svelte';
   import GlobalNotifications from './components/GlobalNotifications.svelte';
   import Toast from './components/Toast.svelte';
-  import PDFImporter from './components/PDFImporter.svelte';
-  import ReceiptParser from './components/ReceiptParser.svelte';
-  import GroceryDashboard from './components/GroceryDashboard.svelte';
+  import LazyComponent from './components/LazyComponent.svelte';
   import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
   import { onMount } from 'svelte';
+  import { preloadComponents } from './lib/lazyLoader.js';
 
 // Dark mode logic
 let darkMode = false;
 
-onMount(() => {
+onMount(async () => {
   // Verifică preferința salvată sau preferința sistemului
   darkMode = localStorage.getItem('darkMode') === 'true' || 
              (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
@@ -31,6 +28,11 @@ onMount(() => {
   if (darkMode) {
     document.documentElement.classList.add('dark');
   }
+  
+  // Preload heavy components in background after initial render
+  setTimeout(() => {
+    preloadComponents(['Dashboard', 'RapoarteAvansate', 'GroceryDashboard', 'PDFImporter', 'ReceiptParser']);
+  }, 1000);
 });
 
 function toggleDarkMode() {
@@ -42,11 +44,6 @@ function toggleDarkMode() {
   } else {
     document.documentElement.classList.remove('dark');
   }
-}
-
-function showNotification(message, type = 'success') {
-  // Temporary alert until Toast integration
-  alert(message);
 }
 
   // Tab management
@@ -202,7 +199,7 @@ function showNotification(message, type = 'success') {
       out:fade={{ duration: 200 }}
     >
       {#if activeTab === 'dashboard'}
-        <Dashboard />
+        <LazyComponent componentName="Dashboard" />
       {:else if activeTab === 'conturi'}
         <Conturi />
       {:else if activeTab === 'tranzactii'}
@@ -214,7 +211,7 @@ function showNotification(message, type = 'success') {
       {:else if activeTab === 'reconciliere'}
         <Reconciliere />
       {:else if activeTab === 'rapoarte'}
-        <RapoarteAvansate />
+        <LazyComponent componentName="RapoarteAvansate" />
       {:else if activeTab === 'grocery'}
         <div class="grocery-tab">
           <div class="grocery-header">
@@ -226,7 +223,7 @@ function showNotification(message, type = 'success') {
               📄 Importă Bon Fiscal
             </button>
           </div>
-          <GroceryDashboard />
+          <LazyComponent componentName="GroceryDashboard" />
         </div>
       {:else if activeTab === 'import'}
         <div class="import-section">
@@ -258,15 +255,17 @@ function showNotification(message, type = 'success') {
 <Toast />
 
 {#if showPDFImporter}
-  <PDFImporter 
+  <LazyComponent 
+    componentName="PDFImporter"
     on:import={handlePDFImport}
     on:close={() => showPDFImporter = false}
   />
 {/if}
 
 {#if showReceiptParser}
-  <ReceiptParser 
-    isOpen={showReceiptParser}
+  <LazyComponent 
+    componentName="ReceiptParser" 
+    props={{ isOpen: showReceiptParser }}
     on:productsAdded={() => {
       showNotification('🛒 Produse adăugate cu succes în inventar!', 'success');
       showReceiptParser = false;
