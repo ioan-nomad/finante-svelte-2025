@@ -44,9 +44,27 @@ function toggleDarkMode() {
   }
 }
 
+function showNotification(message, type = 'success') {
+  // Temporary alert until Toast integration
+  alert(message);
+}
+
   // Tab management
   let activeTab = 'dashboard';
   let previousTab = 'dashboard';
+
+const tabs = [
+  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+  { id: 'conturi', label: 'Conturi', icon: '💳' },
+  { id: 'tranzactii', label: 'Tranzacții', icon: '💸' },
+  { id: 'budgeturi', label: 'Bugete', icon: '🎯' },
+  { id: 'obiective', label: 'Obiective', icon: '🏆' },
+  { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
+  { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
+  { id: 'grocery', label: 'Stoc Alimente', icon: '🛒' },
+  { id: 'import', label: 'Import', icon: '📥' },
+  { id: 'export', label: 'Export', icon: '📤' }
+];
   
   // PDF Importer
   let showPDFImporter = false;
@@ -159,18 +177,7 @@ function showNotification(message, type = 'success') {
   </header>
 
   <div class="tabs no-print">
-  {#each [
-    { id: 'dashboard', icon: '📊', label: 'Dashboard' },
-    { id: 'conturi', icon: '🗂️', label: 'Conturi' },
-    { id: 'tranzactii', icon: '📋', label: 'Tranzacții' },
-    { id: 'budgeturi', icon: '💰', label: 'Budgeturi' },
-    { id: 'obiective', icon: '🎯', label: 'Obiective' },
-    { id: 'reconciliere', icon: '🔍', label: 'Reconciliere' },
-    { id: 'rapoarte', icon: '📈', label: 'Rapoarte' },
-    { id: 'grocery', icon: '🛒', label: 'Stoc Alimente' },
-    { id: 'import', icon: '📄', label: 'Import PDF' },
-    { id: 'export', icon: '💾', label: 'Export' }
-  ] as tab}
+  {#each tabs as tab}
     <button 
       class="tab {activeTab === tab.id ? 'active' : ''}"
       on:click={() => switchTab(tab.id)}
