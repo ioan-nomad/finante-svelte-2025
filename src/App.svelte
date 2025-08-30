@@ -82,7 +82,39 @@ function handlePDFImport(event) {
   });
   
   showPDFImporter = false;
-  alert(`✅ ${importedTransactions.length} tranzacții importate cu succes!`);
+  showNotification(`✅ ${importedTransactions.length} tranzacții importate cu succes!`, 'success');
+}
+
+// Enhanced notification system
+function showNotification(message, type = 'success') {
+  // Creează element de notificare
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  notification.style.cssText = `
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    padding: 15px 20px;
+    background: ${type === 'success' ? '#4CAF50' : '#f44336'};
+    color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    z-index: 9999;
+    animation: slideIn 0.3s ease;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Arial;
+    font-weight: 500;
+    max-width: 350px;
+    word-wrap: break-word;
+  `;
+  
+  document.body.appendChild(notification);
+  
+  // Remove după 3 secunde
+  setTimeout(() => {
+    notification.style.animation = 'slideOut 0.3s ease';
+    setTimeout(() => notification.remove(), 300);
+  }, 3000);
 }
 </script>
 
@@ -230,7 +262,7 @@ function handlePDFImport(event) {
   <ReceiptParser 
     isOpen={showReceiptParser}
     on:productsAdded={() => {
-      alert('Produse adăugate cu succes în inventar!');
+      showNotification('🛒 Produse adăugate cu succes în inventar!', 'success');
       showReceiptParser = false;
     }}
     on:close={() => showReceiptParser = false}
@@ -731,6 +763,29 @@ function handlePDFImport(event) {
   
   .btn-receipt-parser {
     width: 100%;
+  }
+}
+
+/* Notification animations */
+@keyframes slideIn {
+  from {
+    transform: translateX(400px);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOut {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(400px);
+    opacity: 0;
   }
 }
 </style>
