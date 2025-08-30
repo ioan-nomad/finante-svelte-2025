@@ -3,7 +3,6 @@
   import Conturi from './components/Conturi.svelte';
   import Tranzactii from './components/Tranzactii.svelte';
   import Dashboard from './components/Dashboard.svelte';
-  import ImportPDF from './components/ImportPDF.svelte';
   import Export from './components/Export.svelte';
   import RapoarteAvansate from './components/RapoarteAvansate.svelte';
   import Budgeturi from './components/Budgeturi.svelte';
