@@ -1,57 +1,18 @@
 {
-  "name": "Finanțe & Smart Pantry Tracker",
-  "short_name": "FinanțeApp",
+  "name": "Finanțe & Smart Pantry",
+  "short_name": "Finanțe",
   "description": "Aplicație completă pentru management financiar și tracking inventar",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#0f1220",
-  "theme_color": "#80b8ff",
+  "theme_color": "#667eea",
   "orientation": "portrait-primary",
-  "lang": "ro-RO",
-  "scope": "/",
-  "id": "finante-app-pwa",
   "icons": [
-    {
-      "src": "/icon-72.png",
-      "sizes": "72x72",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-96.png",
-      "sizes": "96x96",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-128.png",
-      "sizes": "128x128",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-144.png",
-      "sizes": "144x144",
-      "type": "image/png",
-      "purpose": "any"
-    },
-    {
-      "src": "/icon-152.png",
-      "sizes": "152x152",
-      "type": "image/png",
-      "purpose": "any"
-    },
     {
       "src": "/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
       "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-384.png",
-      "sizes": "384x384",
-      "type": "image/png",
-      "purpose": "any"
     },
     {
       "src": "/icon-512.png",
@@ -60,92 +21,19 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity", "utilities", "food"],
+  "categories": ["finance", "productivity"],
   "shortcuts": [
     {
       "name": "Adaugă Tranzacție",
       "short_name": "Tranzacție",
-      "description": "Adaugă o tranzacție rapidă",
       "url": "/?tab=tranzactii",
-      "icons": [
-        {
-          "src": "/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
     },
     {
       "name": "Dashboard",
       "short_name": "Dashboard",
-      "description": "Vezi situația financiară",
       "url": "/?tab=dashboard",
-      "icons": [
-        {
-          "src": "/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Stoc Alimente",
-      "short_name": "Grocery",
-      "description": "Gestionează inventarul alimentar",
-      "url": "/?tab=grocery",
-      "icons": [
-        {
-          "src": "/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    },
-    {
-      "name": "Rapoarte",
-      "short_name": "Rapoarte",
-      "description": "Vezi rapoartele financiare",
-      "url": "/?tab=rapoarte",
-      "icons": [
-        {
-          "src": "/icon-96.png",
-          "sizes": "96x96",
-          "type": "image/png"
-        }
-      ]
-    }
-  ],
-  "prefer_related_applications": false,
-  "related_applications": [],
-  "edge_side_panel": {
-    "preferred_width": 400
-  },
-  "launch_handler": {
-    "client_mode": "focus-existing"
-  },
-  "share_target": {
-    "action": "/?share=true",
-    "method": "GET",
-    "params": {
-      "title": "title",
-      "text": "text",
-      "url": "url"
-    }
-  },
-  "protocol_handlers": [
-    {
-      "protocol": "finante",
-      "url": "/?protocol=%s"
-    }
-  ],
-  "file_handlers": [
-    {
-      "action": "/?import=true",
-      "accept": {
-        "application/pdf": [".pdf"],
-        "text/csv": [".csv"],
-        "application/json": [".json"]
-      }
+      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
     }
   ]
 }
