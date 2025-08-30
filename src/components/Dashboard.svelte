@@ -83,6 +83,14 @@
   }
   
   function drawCharts() {
+    // Get dark mode colors
+    const isDark = document.documentElement.classList.contains('dark')
+    const textColor = isDark ? '#e6e9ff' : '#374151'
+    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
+    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const borderColor = isDark ? '#1a1a1a' : '#fff'
+    
     // Destroy existing charts
     Object.values(charts).forEach(chart => chart?.destroy());
     charts = {};
@@ -95,15 +103,31 @@
           labels: Object.keys(currentMonthExpenses),
           datasets: [{
             data: Object.values(currentMonthExpenses),
-            backgroundColor: Object.keys(currentMonthExpenses).map(c => CATEGORY_COLORS[c] || '#999')
+            backgroundColor: Object.keys(currentMonthExpenses).map(c => CATEGORY_COLORS[c] || '#999'),
+            borderWidth: 2,
+            borderColor: borderColor
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' },
+            legend: { 
+              position: 'bottom',
+              labels: {
+                color: textColor,
+                font: {
+                  size: 11,
+                  family: 'Inter, ui-sans-serif'
+                }
+              }
+            },
             tooltip: {
+              titleColor: textColor,
+              bodyColor: textColor,
+              backgroundColor: tooltipBg,
+              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              borderWidth: 1,
               callbacks: {
                 label: (context) => {
                   const label = context.label || '';
@@ -154,15 +178,45 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' },
+            legend: { 
+              position: 'bottom',
+              labels: {
+                color: textColor,
+                font: {
+                  size: 11,
+                  family: 'Inter, ui-sans-serif'
+                }
+              }
+            },
             tooltip: {
+              titleColor: textColor,
+              bodyColor: textColor,
+              backgroundColor: tooltipBg,
+              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              borderWidth: 1,
               callbacks: {
                 label: (context) => `${context.dataset.label}: ${fmt(context.raw)} RON`
               }
             }
           },
           scales: {
-            y: { beginAtZero: true }
+            x: {
+              ticks: {
+                color: mutedColor
+              },
+              grid: {
+                color: gridColor
+              }
+            },
+            y: { 
+              beginAtZero: true,
+              ticks: {
+                color: mutedColor
+              },
+              grid: {
+                color: gridColor
+              }
+            }
           }
         }
       });
@@ -186,13 +240,34 @@
           plugins: {
             legend: { display: false },
             tooltip: {
+              titleColor: textColor,
+              bodyColor: textColor,
+              backgroundColor: tooltipBg,
+              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              borderWidth: 1,
               callbacks: {
                 label: (context) => `${fmt(context.raw)} RON`
               }
             }
           },
           scales: {
-            y: { beginAtZero: true }
+            x: {
+              ticks: {
+                color: mutedColor
+              },
+              grid: {
+                color: gridColor
+              }
+            },
+            y: { 
+              beginAtZero: true,
+              ticks: {
+                color: mutedColor
+              },
+              grid: {
+                color: gridColor
+              }
+            }
           }
         }
       });
@@ -212,15 +287,31 @@
           labels: accountDistribution.map(a => a.name),
           datasets: [{
             data: accountDistribution.map(a => a.balance),
-            backgroundColor: colors
+            backgroundColor: colors,
+            borderWidth: 2,
+            borderColor: borderColor
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { position: 'bottom' },
+            legend: { 
+              position: 'bottom',
+              labels: {
+                color: textColor,
+                font: {
+                  size: 11,
+                  family: 'Inter, ui-sans-serif'
+                }
+              }
+            },
             tooltip: {
+              titleColor: textColor,
+              bodyColor: textColor,
+              backgroundColor: tooltipBg,
+              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+              borderWidth: 1,
               callbacks: {
                 label: (context) => `${context.label}: ${fmt(context.raw)} RON`
               }
@@ -238,10 +329,31 @@
   
   onMount(() => {
     // Charts will be drawn when canvases are ready
+    
+    // Listen for dark mode changes
+    const observer = new MutationObserver(() => {
+      if (Object.keys(charts).length > 0) {
+        drawCharts() // Redraw charts with new colors
+      }
+    })
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+    
+    // Store observer for cleanup
+    window._dashboardChartObserver = observer
   });
   
   onDestroy(() => {
     Object.values(charts).forEach(chart => chart?.destroy());
+    
+    // Clean up observer
+    if (window._dashboardChartObserver) {
+      window._dashboardChartObserver.disconnect()
+      delete window._dashboardChartObserver
+    }
   });
 </script>
 

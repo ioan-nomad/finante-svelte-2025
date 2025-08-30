@@ -22,11 +22,32 @@
     if (data) {
       createChart()
     }
+    
+    // Listen for dark mode changes
+    const observer = new MutationObserver(() => {
+      if (chartInstance) {
+        createChart() // Recreate chart with new colors
+      }
+    })
+    
+    observer.observe(document.documentElement, {
+      attributes: true,
+      attributeFilter: ['class']
+    })
+    
+    // Store observer for cleanup
+    window._chartObserver = observer
   })
   
   onDestroy(() => {
     if (chartInstance) {
       chartInstance.destroy()
+    }
+    
+    // Clean up observer
+    if (window._chartObserver) {
+      window._chartObserver.disconnect()
+      delete window._chartObserver
     }
   })
   
@@ -61,6 +82,10 @@
   }
   
   function getPieConfig() {
+    const isDark = document.documentElement.classList.contains('dark')
+    const textColor = isDark ? '#e6e9ff' : '#374151'
+    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    
     return {
       type: chartType === 'doughnut' ? 'doughnut' : 'pie',
       data: {
@@ -69,7 +94,7 @@
           data: data.values || [],
           backgroundColor: data.colors || defaultColors,
           borderWidth: 2,
-          borderColor: '#fff'
+          borderColor: isDark ? '#1a1a1a' : '#fff'
         }]
       },
       options: {
@@ -80,6 +105,11 @@
             position: 'right',
             labels: {
               padding: 15,
+              color: textColor,
+              font: {
+                size: 12,
+                family: 'Inter, ui-sans-serif'
+              },
               generateLabels: function(chart) {
                 const dataset = chart.data.datasets[0]
                 const total = dataset.data.reduce((a, b) => a + b, 0)
@@ -91,6 +121,7 @@
                   return {
                     text: `${label}: ${formatAmount(value)} (${percentage}%)`,
                     fillStyle: dataset.backgroundColor[i],
+                    fontColor: textColor,
                     hidden: false,
                     index: i
                   }
@@ -99,6 +130,11 @@
             }
           },
           tooltip: {
+            titleColor: textColor,
+            bodyColor: textColor,
+            backgroundColor: tooltipBg,
+            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
             callbacks: {
               label: function(context) {
                 const total = context.dataset.data.reduce((a, b) => a + b, 0)
@@ -113,6 +149,12 @@
   }
   
   function getBarConfig() {
+    const isDark = document.documentElement.classList.contains('dark')
+    const textColor = isDark ? '#e6e9ff' : '#374151'
+    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
+    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    
     return {
       type: 'bar',
       data: {
@@ -129,20 +171,44 @@
         responsive: true,
         maintainAspectRatio: false,
         scales: {
+          x: {
+            ticks: {
+              color: mutedColor
+            },
+            grid: {
+              color: gridColor
+            }
+          },
           y: {
             beginAtZero: true,
             ticks: {
+              color: mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
+            },
+            grid: {
+              color: gridColor
             }
           }
         },
         plugins: {
           legend: {
-            display: data.datasets && data.datasets.length > 1
+            display: data.datasets && data.datasets.length > 1,
+            labels: {
+              color: textColor,
+              font: {
+                size: 12,
+                family: 'Inter, ui-sans-serif'
+              }
+            }
           },
           tooltip: {
+            titleColor: textColor,
+            bodyColor: textColor,
+            backgroundColor: tooltipBg,
+            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
             callbacks: {
               label: function(context) {
                 return `${context.dataset.label || ''}: ${formatAmount(context.parsed.y)}`
@@ -155,6 +221,12 @@
   }
   
   function getLineConfig() {
+    const isDark = document.documentElement.classList.contains('dark')
+    const textColor = isDark ? '#e6e9ff' : '#374151'
+    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
+    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    
     return {
       type: 'line',
       data: {
@@ -175,17 +247,43 @@
           intersect: false
         },
         scales: {
+          x: {
+            ticks: {
+              color: mutedColor
+            },
+            grid: {
+              color: gridColor
+            }
+          },
           y: {
             beginAtZero: true,
             ticks: {
+              color: mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
+            },
+            grid: {
+              color: gridColor
             }
           }
         },
         plugins: {
+          legend: {
+            labels: {
+              color: textColor,
+              font: {
+                size: 12,
+                family: 'Inter, ui-sans-serif'
+              }
+            }
+          },
           tooltip: {
+            titleColor: textColor,
+            bodyColor: textColor,
+            backgroundColor: tooltipBg,
+            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1,
             callbacks: {
               label: function(context) {
                 return `${context.dataset.label}: ${formatAmount(context.parsed.y)}`
@@ -198,6 +296,12 @@
   }
   
   function getRadarConfig() {
+    const isDark = document.documentElement.classList.contains('dark')
+    const textColor = isDark ? '#e6e9ff' : '#374151'
+    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
+    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
+    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    
     return {
       type: 'radar',
       data: {
@@ -216,10 +320,39 @@
           r: {
             beginAtZero: true,
             ticks: {
+              color: mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
+            },
+            grid: {
+              color: gridColor
+            },
+            pointLabels: {
+              color: textColor,
+              font: {
+                size: 11,
+                family: 'Inter, ui-sans-serif'
+              }
             }
+          }
+        },
+        plugins: {
+          legend: {
+            labels: {
+              color: textColor,
+              font: {
+                size: 12,
+                family: 'Inter, ui-sans-serif'
+              }
+            }
+          },
+          tooltip: {
+            titleColor: textColor,
+            bodyColor: textColor,
+            backgroundColor: tooltipBg,
+            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            borderWidth: 1
           }
         }
       }
