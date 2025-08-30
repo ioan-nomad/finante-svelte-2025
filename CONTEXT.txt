@@ -1,0 +1,126 @@
+# CONTEXT.txt - Aplicație Finanțe Personale + Smart Pantry Tracker
+# Ultima actualizare: 30 August 2025
+
+## 🎯 IDENTIFICARE PROIECT
+GitHub: https://github.com/ioan-nomad/finante-svelte-2025
+Local: C:\Users\ciupe\Desktop\FinanteNoiAugust2025\finante-app
+Tool: claude chat în terminal VS Code
+Port: 5173 (sau 5175 dacă e ocupat)
+
+## 📦 STACK TEHNIC
+Framework: Svelte 4.2.0 + Vite 4.5.14
+Dependențe: chart.js, pdfjs-dist, xlsx, html2canvas, jspdf
+Storage: localStorage (keys: fs_accounts, fs_transactions, fs_data)
+CSS: Custom CSS cu dark mode support
+
+## ✅ FUNCȚIONALITĂȚI COMPLETE IMPLEMENTATE
+
+### 1. MODUL FINANCIAR
+- Multi-account management (bank, cash, economii)
+- Tranzacții complete cu EditModal funcțional
+- Categorii cu culori (30+ categorii)
+- Dashboard cu 4 grafice Chart.js
+- PDFImporter pentru extrase bancare (BT, BCR, ING, etc)
+- Export CSV/Excel/PDF + Backup/Restore JSON
+- Budgete pe categorii cu progress bars
+- Obiective financiare cu tracking
+- Reconciliere conturi
+- GlobalNotifications sistem
+- Dark mode persistent în localStorage
+- Animații tabs (fade, fly, slide)
+- Toast notifications în loc de alert()
+
+### 2. SMART PANTRY TRACKER
+- ReceiptParser.svelte - Parser PDF bonuri cu LEARNING MODE
+- GroceryDashboard.svelte - Dashboard inventar complet  
+- groceryStore.js - Store management stoc
+- Pattern recognition: Kaufland, Lidl, Carrefour, Mega, Auchan, Penny, Profi
+- Învățare automată pattern-uri noi
+- Istoric prețuri și trend analysis (📈📉)
+- Low stock alerts
+- Tab Grocery integrat în navigare
+
+### 3. OPTIMIZĂRI PERFORMANȚĂ (30 August 2025)
+- Lazy Loading pentru componente grele
+- Virtual Scrolling pentru liste mari
+- Cache strategy cu TTL 5 minute
+- Debounce/Throttle utilities
+- Error Boundaries pentru error handling
+- PWA support complet
+- Offline functionality
+- Performance monitoring
+
+## 📁 STRUCTURA FIȘIERE PRINCIPALE
+src/
+├── App.svelte (tabs + navigare + dark mode)
+├── components/
+│   ├── Conturi.svelte
+│   ├── Tranzactii.svelte
+│   ├── Dashboard.svelte
+│   ├── Budgeturi.svelte
+│   ├── Obiective.svelte
+│   ├── Reconciliere.svelte
+│   ├── RapoarteAvansate.svelte
+│   ├── PDFImporter.svelte
+│   ├── ReceiptParser.svelte
+│   ├── GroceryDashboard.svelte
+│   ├── EditModal.svelte
+│   ├── GlobalNotifications.svelte
+│   └── Toast.svelte
+├── stores/
+│   ├── groceryStore.js
+│   └── store.js (DB, accounts, transactions)
+└── lib/
+    └── store.js (logica principală)
+
+## ⚠️ PROBLEME CUNOSCUTE
+1. Funcția showNotification era duplicată (rezolvat)
+2. Port schimbă între 5173/5175
+3. TypeScript warnings în ChartManager (non-critice)
+4. ImportPDF vs PDFImporter (dublură componente)
+
+## 🚀 URMĂTORII PAȘI PRIORITARI
+1. Recipe suggester bazat pe stoc disponibil
+2. Shopping list generator inteligent
+3. Meal planner cu cost calculator
+4. Export/Import grocery data
+5. Supabase backend pentru sync
+6. PWA pentru mobile
+7. Barcode scanner pentru produse
+
+## 💡 REGULI COMUNICARE CU CLAUDE
+1. ÎNTOTDEAUNA verifică în project_knowledge PRIMA DATĂ
+2. Pentru claude chat: dă COD COMPLET, nu instrucțiuni
+3. NU copia conversații lungi - folosește acest CONTEXT.txt
+4. Specifică EXACT ce fișier și ce funcție modifici
+5. Git workflow: add . → commit -m "mesaj" → push
+
+## 🔄 PENTRU ACTUALIZARE CONTEXT
+La sfârșitul fiecărei sesiuni, adaugă aici:
+- Data + ce s-a implementat (1 linie)
+- Probleme noi apărute (dacă sunt)
+- Ce urmează imediat
+
+## 📝 INSTRUCȚIUNI PORNIRE NOUĂ CONVERSAȚIE
+"Vezi CONTEXT.txt în project.
+Vreau să [SPECIFICĂ EXACT CE VREI]
+Dă-mi cod complet pentru [FIȘIER]"
+
+## 🛠 COMENZI ESENȚIALE
+npm install          # prima dată
+npm run dev         # pornire dev
+npm run build       # build production
+git status          # verifică modificări
+git add . && git commit -m "update" && git push
+
+## 📊 ISTORIC ACTUALIZĂRI RECENTE
+- 25 Aug: Animații tabs + dark mode implementat
+- 26 Aug: EditModal pentru tranzacții
+- 27 Aug: Budgeturi + Obiective + Reconciliere
+- 28 Aug: GlobalNotifications + optimizări
+- 29 Aug: Smart Pantry (ReceiptParser + GroceryDashboard)
+- 30 Aug: Integrare tab Grocery + fix showNotification
+- 30 Aug PM: Optimizări performanță majore implementate
+
+---
+# SFÂRȘIT CONTEXT - Folosește aceste informații în ORICE conversație nouă
