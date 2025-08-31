@@ -2,6 +2,8 @@
   import { groceryInventory, totalInventoryValue, lowStockItems } from '../stores/groceryStore.js';
   import { onMount, onDestroy } from 'svelte';
   import { debounce } from '../lib/utils.js';
+  // Import camera scanner
+  import CameraScanner from './CameraScanner.svelte';
   
   let inventory = {};
   let priceHistory = {};
@@ -19,6 +21,9 @@
   const debouncedSearch = debounce((term) => {
     searchTerm = term;
   }, 300);
+
+  // Adaugă variabilă pentru camera scanner
+  let showCameraScanner = false;
 
   onMount(() => {
     groceryInventory.loadFromStorage();
@@ -103,6 +108,31 @@
 </script>
 
 <div class="grocery-dashboard">
+  <!-- Floating Camera Scan Button -->
+  <button 
+    class="scan-receipt-btn"
+    on:click={() => showCameraScanner = true}
+    style="
+      position: fixed;
+      bottom: 2rem;
+      right: 2rem;
+      background: var(--primary);
+      color: white;
+      border: none;
+      padding: 1rem;
+      border-radius: 50%;
+      font-size: 1.5rem;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.2);
+      cursor: pointer;
+      z-index: 100;
+      transition: transform 0.2s;
+    "
+    on:mouseenter={(e) => e.target.style.transform = 'scale(1.1)'}
+    on:mouseleave={(e) => e.target.style.transform = 'scale(1)'}
+  >
+    📸
+  </button>
+
   <!-- Stats Cards -->
   <div class="stats-cards">
     <div class="stat-card">
@@ -280,6 +310,12 @@
     </div>
   {/if}
 </div>
+
+<!-- Camera Scanner Component -->
+<CameraScanner 
+  isOpen={showCameraScanner} 
+  on:close={() => showCameraScanner = false}
+/>
 
 <style>
   .grocery-dashboard {
