@@ -14,6 +14,11 @@ dist-ssr
 .env
 .DS_Store
 
+# Archive files
+*.zip
+*.rar
+*.7z
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
