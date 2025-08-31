@@ -10,6 +10,7 @@
   import Toast from './components/Toast.svelte';
   import LazyComponent from './components/LazyComponent.svelte';
   import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
+  import { groceryInventory } from './stores/groceryStore.js';
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
@@ -44,6 +45,82 @@ function toggleDarkMode() {
   } else {
     document.documentElement.classList.remove('dark');
   }
+}
+
+function exportData() {
+  const data = {
+    version: '1.0',
+    exportDate: new Date().toISOString(),
+    accounts: $accounts,
+    transactions: $transactions,
+    groceryInventory: $groceryInventory,
+    categories: localStorage.getItem('fs_categories') ? JSON.parse(localStorage.getItem('fs_categories')) : [],
+    budgets: localStorage.getItem('budgets') ? JSON.parse(localStorage.getItem('budgets')) : [],
+    objectives: localStorage.getItem('objectives') ? JSON.parse(localStorage.getItem('objectives')) : []
+  };
+  
+  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  const date = new Date().toISOString().split('T')[0];
+  a.download = `finante-backup-${date}.json`;
+  a.click();
+  URL.revokeObjectURL(url);
+  
+  alert('📥 Salvează fișierul în OneDrive pentru sincronizare!\n\nCale recomandată:\nOneDrive/FinanteApp/backups/');
+}
+
+function importData() {
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = '.json';
+  
+  input.onchange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+    
+    try {
+      const text = await file.text();
+      const data = JSON.parse(text);
+      
+      // Validare simplă
+      if (!data.version || !data.accounts || !data.transactions) {
+        throw new Error('Fișier invalid!');
+      }
+      
+      if (confirm(`Import date din ${file.name}?\n\nACEASTA VA ÎNLOCUI TOATE DATELE CURENTE!`)) {
+        // Import accounts
+        accounts.set(data.accounts || []);
+        
+        // Import transactions  
+        transactions.set(data.transactions || []);
+        
+        // Import grocery inventory
+        if (data.groceryInventory) {
+          groceryInventory.set(data.groceryInventory);
+        }
+        
+        // Import alte date
+        if (data.categories) {
+          localStorage.setItem('fs_categories', JSON.stringify(data.categories));
+        }
+        if (data.budgets) {
+          localStorage.setItem('budgets', JSON.stringify(data.budgets));
+        }
+        if (data.objectives) {
+          localStorage.setItem('objectives', JSON.stringify(data.objectives));
+        }
+        
+        alert('✅ Date importate cu succes!\n\nReîmprospătez pagina...');
+        window.location.reload();
+      }
+    } catch (error) {
+      alert('❌ Eroare la import: ' + error.message);
+    }
+  };
+  
+  input.click();
 }
 
   // Tab management
@@ -169,6 +246,49 @@ function showNotification(message, type = 'success') {
           🌙
         {/if}
       </button>
+      
+      <div class="sync-buttons" style="display: flex; gap: 10px; margin-left: auto;">
+        <button 
+          on:click={exportData}
+          class="sync-btn"
+          title="Export pentru sincronizare"
+          style="
+            background: var(--primary);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+          "
+        >
+          💾 Export
+        </button>
+        
+        <button 
+          on:click={importData}
+          class="sync-btn"
+          title="Import date salvate"
+          style="
+            background: var(--success);
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 14px;
+          "
+        >
+          📂 Import
+        </button>
+      </div>
+      
       <span class="badge no-print">🔒 100% local</span>
     </div>
   </header>
