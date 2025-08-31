@@ -4,14 +4,19 @@
 ## 🎯 IDENTIFICARE PROIECT
 GitHub: https://github.com/ioan-nomad/finante-svelte-2025
 Local: C:\Users\ciupe\Desktop\FinanteNoiAugust2025\finante-app
+URL LIVE: https://n-omad.netlify.app/
+Deploy: Netlify cu auto-deploy din GitHub (nu mai folosim ZIP-uri!)
 Tool: claude chat în terminal VS Code
-Port: 5173 (sau 5175 dacă e ocupat)
+Port dev: 5173 (sau 5175 dacă e ocupat)
 
-## 📦 STACK TEHNIC
+## 📦 STACK TEHNIC ACTUALIZAT
 Framework: Svelte 4.2.0 + Vite 4.5.14
 Dependențe: chart.js, pdfjs-dist, xlsx, html2canvas, jspdf
 Storage: localStorage (keys: fs_accounts, fs_transactions, fs_data)
 CSS: Custom CSS cu dark mode support
+PWA: manifest.json + service worker pentru offline support
+Performance: Lazy loading, virtual scrolling, advanced caching
+Deploy: Netlify CI/CD din GitHub main branch
 
 ## ✅ FUNCȚIONALITĂȚI COMPLETE IMPLEMENTATE
 
@@ -50,6 +55,15 @@ CSS: Custom CSS cu dark mode support
 - Offline functionality
 - Performance monitoring
 
+### 4. DEPLOYMENT & CI/CD (31 August 2025)
+- Deploy automat pe Netlify din GitHub
+- URL discret: n-omad.netlify.app  
+- HTTPS activat automat cu certificat SSL
+- PWA instalabilă pe telefon și desktop
+- Service Worker pentru funcționare offline
+- Auto-update la fiecare git push pe main
+- Build optimizat pentru production
+
 ## 📁 STRUCTURA FIȘIERE PRINCIPALE
 src/
 ├── App.svelte (tabs + navigare + dark mode)
@@ -70,8 +84,16 @@ src/
 ├── stores/
 │   ├── groceryStore.js
 │   └── store.js (DB, accounts, transactions)
-└── lib/
-    └── store.js (logica principală)
+├── lib/
+│   ├── store.js
+│   ├── lazyLoader.js
+│   ├── utils.js
+├── public/
+│   ├── manifest.json
+│   ├── sw.js
+│   ├── icon-192.png
+│   ├── icon-512.png
+│   └── _redirects
 
 ## ⚠️ PROBLEME CUNOSCUTE
 1. Funcția showNotification era duplicată (rezolvat)
@@ -81,12 +103,14 @@ src/
 
 ## 🚀 URMĂTORII PAȘI PRIORITARI
 1. Recipe suggester bazat pe stoc disponibil
-2. Shopping list generator inteligent
+2. Shopping list generator inteligent  
 3. Meal planner cu cost calculator
 4. Export/Import grocery data
-5. Supabase backend pentru sync
-6. PWA pentru mobile
-7. Barcode scanner pentru produse
+5. Supabase backend pentru sync între dispozitive
+6. Barcode scanner pentru produse
+7. Notificări push pentru stoc scăzut
+8. Teme multiple (nu doar dark/light)
+9. Multi-language support (RO/EN)
 
 ## 💡 REGULI COMUNICARE CU CLAUDE
 1. ÎNTOTDEAUNA verifică în project_knowledge PRIMA DATĂ
@@ -108,10 +132,19 @@ Dă-mi cod complet pentru [FIȘIER]"
 
 ## 🛠 COMENZI ESENȚIALE
 npm install          # prima dată
-npm run dev         # pornire dev
-npm run build       # build production
-git status          # verifică modificări
-git add . && git commit -m "update" && git push
+npm run dev         # pornire development local
+npm run build       # build production (auto pe Netlify)
+npm run preview     # preview build local
+
+# Git workflow standard:
+git add .
+git commit -m "feat/fix/docs: descriere"  
+git push           # Auto-deploy pe Netlify!
+
+# URL-uri importante:
+App LIVE: https://n-omad.netlify.app/
+GitHub: https://github.com/ioan-nomad/finante-svelte-2025
+Netlify Dashboard: https://app.netlify.com/sites/n-omad/
 
 ## 📊 ISTORIC ACTUALIZĂRI RECENTE
 - 25 Aug: Animații tabs + dark mode implementat
@@ -121,6 +154,37 @@ git add . && git commit -m "update" && git push
 - 29 Aug: Smart Pantry (ReceiptParser + GroceryDashboard)
 - 30 Aug: Integrare tab Grocery + fix showNotification
 - 30 Aug PM: Optimizări performanță majore implementate
+- 31 Aug AM: Deploy pe Netlify, PWA funcțional, URL n-omad.netlify.app
+- 31 Aug: Curățenie cod, removed ZIP files, actualizat .gitignore
+
+## 🔐 SECURITATE & PRIVACY
+- Toate datele în localStorage (pe dispozitivul utilizatorului)
+- Zero date pe server - complet privat
+- URL discret (n-omad) nu sugerează aplicație financiară
+- HTTPS automat pentru conexiune securizată
+- Fiecare utilizator vede doar datele proprii
+
+## 📱 INSTALARE PWA
+Android: Chrome → 3 dots → Install app
+iOS: Safari → Share → Add to Home Screen
+Desktop: Chrome → Install icon în address bar
+
+## ✨ FEATURES COMPLETE
+- Multi-account cu multi-currency
+- 30+ categorii tranzacții cu culori
+- Dashboard cu 4 tipuri grafice
+- Dark mode persistent
+- Smart Pantry cu learning AI
+- Receipt parser pentru 7+ magazine
+- Budgete și obiective financiare
+- Export PDF/Excel/CSV
+- Backup/Restore JSON
+- Reconciliere conturi
+- Notificări inteligente
+- Virtual scrolling pentru performanță
+- Lazy loading componente
+- Error boundaries
+- Offline support complet
 
 ---
 # SFÂRȘIT CONTEXT - Folosește aceste informații în ORICE conversație nouă
