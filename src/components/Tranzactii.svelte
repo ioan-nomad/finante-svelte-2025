@@ -2,10 +2,12 @@
   import { onMount } from 'svelte'
   import { slide } from 'svelte/transition'
   import EditModal from './EditModal.svelte'  // ADĂUGAT: Import EditModal
+  import { debounce } from '../lib/utils.js'
   
   let transactions = []
   let accounts = []
   let filteredTx = []
+  let visibleTransactions = []
   let searchTerm = ''
   let filterType = 'all'
   let filterAccount = ''
@@ -15,6 +17,15 @@
   
   // ADĂUGAT: State pentru editare
   let editingTransaction = null
+  
+  // Virtual scrolling
+  let scrollContainer
+  const ITEMS_PER_PAGE = 50
+  
+  // Debounce pentru search
+  const debouncedSearch = debounce((term) => {
+    searchTerm = term;
+  }, 300)
   
   // Categories
   const expenseCategories = ['Alimente', 'Transport', 'Utilități', 'Sănătate', 'Entertainment', 'Shopping', 'Restaurant', 'Educație', 'Sport', 'Abonamente', 'ATM Cash', 'Altele']
@@ -105,6 +116,17 @@
   }
   
   $: searchTerm, filterType, filterAccount, filterPerson, sortBy, sortOrder, filterAndSort()
+
+  // Virtual scrolling pentru performanță
+  $: {
+    visibleTransactions = filteredTx.slice(0, ITEMS_PER_PAGE);
+  }
+
+  function loadMore() {
+    if (visibleTransactions.length < filteredTx.length) {
+      visibleTransactions = filteredTx.slice(0, visibleTransactions.length + ITEMS_PER_PAGE);
+    }
+  }
   
   function addTransaction() {
     if (!txAmount || parseFloat(txAmount) <= 0) {
@@ -318,7 +340,7 @@
       <div class="filter-row">
         <div class="form-group">
           <label>Caută</label>
-          <input type="text" bind:value={searchTerm} placeholder="Caută în descriere...">
+          <input type="text" on:input={(e) => debouncedSearch(e.target.value)} placeholder="Caută în descriere...">
         </div>
         
         <div class="form-group">
@@ -381,8 +403,8 @@
     {#if filteredTx.length === 0}
       <p class="empty">Nu există tranzacții</p>
     {:else}
-      <div class="tx-list">
-        {#each filteredTx as tx (tx.id)}
+      <div class="tx-list" bind:this={scrollContainer}>
+        {#each visibleTransactions as tx (tx.id)}
           <div class="tx-item" transition:slide>
             <div class="tx-main">
               <div class="tx-info">
@@ -434,6 +456,14 @@
             </div>
           </div>
         {/each}
+        
+        {#if visibleTransactions.length < filteredTx.length}
+          <div class="load-more">
+            <button on:click={loadMore} class="load-more-btn">
+              Încarcă mai multe ({visibleTransactions.length} din {filteredTx.length})
+            </button>
+          </div>
+        {/if}
       </div>
     {/if}
   </div>

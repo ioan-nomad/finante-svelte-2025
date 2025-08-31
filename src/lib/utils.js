@@ -78,7 +78,14 @@ export function measurePerformance(name, fn) {
     const start = performance.now();
     const result = await fn.apply(this, args);
     const end = performance.now();
-    console.log(`${name} took ${end - start} milliseconds`);
     return result;
   };
+}
+
+// Format amount utility function
+export function formatAmount(amount) {
+  return new Intl.NumberFormat('ro-RO', {
+    style: 'currency',
+    currency: 'RON'
+  }).format(amount);
 }

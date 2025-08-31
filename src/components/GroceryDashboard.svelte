@@ -1,6 +1,7 @@
 <script>
   import { groceryInventory, totalInventoryValue, lowStockItems } from '../stores/groceryStore.js';
-  import { onMount } from 'svelte';
+  import { onMount, onDestroy } from 'svelte';
+  import { debounce } from '../lib/utils.js';
   
   let inventory = {};
   let priceHistory = {};
@@ -12,8 +13,27 @@
   let showPriceHistory = false;
   let selectedItemAnalytics = null;
   
+  let resizeListener;
+  
+  // Debounce pentru search
+  const debouncedSearch = debounce((term) => {
+    searchTerm = term;
+  }, 300);
+
   onMount(() => {
     groceryInventory.loadFromStorage();
+    
+    // Add resize listener with cleanup
+    resizeListener = () => {
+      // resize logic if needed
+    };
+    window.addEventListener('resize', resizeListener);
+  });
+
+  onDestroy(() => {
+    if (resizeListener) {
+      window.removeEventListener('resize', resizeListener);
+    }
   });
   
   $: inventory = $groceryInventory.inventory;
@@ -125,7 +145,7 @@
       <input 
         type="search" 
         placeholder="Caută produs sau categorie..."
-        bind:value={searchTerm}
+        on:input={(e) => debouncedSearch(e.target.value)}
         class="search-input"
       />
     </div>

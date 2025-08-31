@@ -1,7 +1,6 @@
 <script>
   import { createEventDispatcher, onMount } from 'svelte';
   import { fade, slide } from 'svelte/transition';
-  import { writable } from 'svelte/store';
   
   export let isOpen = false;
   

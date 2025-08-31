@@ -37,7 +37,6 @@ export async function lazyLoadWithCache(componentName) {
 export async function preloadComponent(componentName) {
   try {
     await lazyLoadWithCache(componentName);
-    console.log(`Component ${componentName} preloaded successfully`);
   } catch (error) {
     console.warn(`Failed to preload component ${componentName}:`, error);
   }
