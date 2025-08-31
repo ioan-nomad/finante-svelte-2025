@@ -10,6 +10,7 @@
   import Toast from './components/Toast.svelte';
   import LazyComponent from './components/LazyComponent.svelte';
   import RecurringPayments from './components/RecurringPayments.svelte';
+  import ShoppingList from './components/ShoppingList.svelte';
   import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
   import { groceryInventory } from './stores/groceryStore.js';
   import { fade, fly, slide } from 'svelte/transition';
@@ -136,6 +137,7 @@ const tabs = [
   { id: 'obiective', label: 'Obiective', icon: '🏆' },
   { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
   { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
+  { id: 'shopping', label: 'Lista de Cumpărături', icon: '📝' },
   { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
   { id: 'grocery', label: 'Stoc Alimente', icon: '🛒' },
   { id: 'import', label: 'Import', icon: '📥' },
@@ -149,7 +151,7 @@ const tabs = [
   let showReceiptParser = false;
 
 // Ordinea tab-urilor pentru direcția animației
-const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'budgeturi', 'obiective', 'reconciliere', 'rapoarte', 'grocery', 'import', 'export'];
+const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'budgeturi', 'obiective', 'reconciliere', 'recurring', 'shopping', 'rapoarte', 'grocery', 'import', 'export'];
 $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 : -1;
 
   function switchTab(tab) {
@@ -334,6 +336,8 @@ function showNotification(message, type = 'success') {
         <Reconciliere />
       {:else if activeTab === 'recurring'}
         <RecurringPayments />
+      {:else if activeTab === 'shopping'}
+        <ShoppingList />
       {:else if activeTab === 'rapoarte'}
         <LazyComponent componentName="RapoarteAvansate" />
       {:else if activeTab === 'grocery'}
