@@ -9,6 +9,7 @@
   import GlobalNotifications from './components/GlobalNotifications.svelte';
   import Toast from './components/Toast.svelte';
   import LazyComponent from './components/LazyComponent.svelte';
+  import RecurringPayments from './components/RecurringPayments.svelte';
   import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
   import { groceryInventory } from './stores/groceryStore.js';
   import { fade, fly, slide } from 'svelte/transition';
@@ -134,6 +135,7 @@ const tabs = [
   { id: 'budgeturi', label: 'Bugete', icon: '🎯' },
   { id: 'obiective', label: 'Obiective', icon: '🏆' },
   { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
+  { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
   { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
   { id: 'grocery', label: 'Stoc Alimente', icon: '🛒' },
   { id: 'import', label: 'Import', icon: '📥' },
@@ -330,6 +332,8 @@ function showNotification(message, type = 'success') {
         <Obiective />
       {:else if activeTab === 'reconciliere'}
         <Reconciliere />
+      {:else if activeTab === 'recurring'}
+        <RecurringPayments />
       {:else if activeTab === 'rapoarte'}
         <LazyComponent componentName="RapoarteAvansate" />
       {:else if activeTab === 'grocery'}
