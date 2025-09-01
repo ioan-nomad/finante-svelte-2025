@@ -11,6 +11,7 @@ const CODEX_PRINCIPLES = {
   INSTANT_POT_STRATIFICATION: true
 };
 
+
 // ===== Nutrition Profile Store =====
 function createNutritionProfile() {
   const { subscribe, set, update } = writable({
@@ -704,6 +705,25 @@ function createCodexRecipes() {
 }
 
 export const codexRecipes = createCodexRecipes();
+
+// ===== Recipe Index for Fast Searches =====
+export const recipeIndex = derived(codexRecipes, $recipes => {
+  const index = new Map();
+  $recipes.forEach(recipe => {
+    // Index by ingredients
+    recipe.ingredients.forEach(ing => {
+      const key = ing.name.toLowerCase();
+      if (!index.has(key)) index.set(key, []);
+      index.get(key).push(recipe.id);
+    });
+    // Index by goals
+    recipe.nutritionalGoals.forEach(goal => {
+      if (!index.has(goal)) index.set(goal, []);
+      index.get(goal).push(recipe.id);
+    });
+  });
+  return index;
+});
 
 // Auto-save recipes changes
 codexRecipes.subscribe(recipes => {

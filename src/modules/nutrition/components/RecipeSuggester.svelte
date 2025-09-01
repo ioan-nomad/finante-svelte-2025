@@ -26,9 +26,19 @@
   // Local state
   let selectedFilter = 'all';
   let searchQuery = '';
+  let searchTimer;
   let showDetails = {};
   let suggestions = writable([]);
   let expandedRecipes = {};
+
+  // Debounced search handler
+  function handleSearch(event) {
+    clearTimeout(searchTimer);
+    searchQuery = event.target.value;
+    searchTimer = setTimeout(() => {
+      generateSuggestions();
+    }, 300); // 300ms debounce
+  }
 
   // Filters
   const filters = [
@@ -266,7 +276,8 @@
       <input
         type="text"
         placeholder="🔍 Caută rețete sau ingrediente..."
-        bind:value={searchQuery}
+        on:input={handleSearch}
+        value={searchQuery}
         class="search-input"
       />
     </div>
