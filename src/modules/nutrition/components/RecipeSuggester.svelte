@@ -1,103 +1,71 @@
-<!-- modules/nutrition/components/RecipeSuggester.svelte -->
+<!-- src/modules/nutrition/components/RecipeSuggester.svelte -->
 <script>
   import { onMount } from 'svelte';
-  import { writable, derived } from 'svelte/store';
-  import { nid, fmt } from '../../../shared/stores/sharedStore.js';
-  import { codexRecipes, nutritionProfile, addMealToProfile } from '../stores/nutritionStore.js';
+  import { writable, derived, get } from 'svelte/store';
+  import { 
+    nutritionProfile, 
+    codexRecipes,
+    todaysRecommendations,
+    addMealToProfile
+  } from '../stores/nutritionStore.js';
   
-  // Optional pantry integration - graceful fallback if module disabled
+  // Try to import pantry store if available
   let pantryInventory = null;
   let pantryAvailable = false;
   
   onMount(async () => {
     try {
-      // Dynamic import - only if pantry module is available
       const pantryModule = await import('../../pantry/stores/pantryStore.js');
       pantryInventory = pantryModule.groceryInventory;
       pantryAvailable = true;
     } catch (error) {
-      console.log('📝 Pantry module not available - using standalone mode');
-      pantryAvailable = false;
+      console.log('Pantry module not available - running in standalone mode');
     }
   });
 
-  // Recipe suggestion engine
-  const suggestions = writable([]);
-  const filters = writable({
-    cookingTime: 'all',      // quick, medium, slow, all
-    difficulty: 'all',       // easy, medium, advanced, all
-    nutritionalGoal: 'all',  // mtor-high, anti-inflammatory, plant-diversity, all
-    availableOnly: false,    // only recipes with available ingredients
-    instantPot: false,       // instant pot recipes only
-    mealType: 'all'          // breakfast, lunch, dinner, snack, all
-  });
+  // Local state
+  let selectedFilter = 'all';
+  let searchQuery = '';
+  let showDetails = {};
+  let suggestions = writable([]);
+  let expandedRecipes = {};
 
-  // Current suggestions based on filters and inventory
-  const filteredSuggestions = derived(
-    [suggestions, filters, pantryInventory || writable({})],
-    ([$suggestions, $filters, $inventory]) => {
-      let filtered = $suggestions;
+  // Filters
+  const filters = [
+    { value: 'all', label: 'Toate', icon: '📖' },
+    { value: 'mtor-high', label: 'mTOR High', icon: '💪' },
+    { value: 'anti-inflammatory', label: 'Anti-inflamator', icon: '🌿' },
+    { value: 'plant-diverse', label: '30+ Plante', icon: '🌈' },
+    { value: 'instant-pot', label: 'Instant Pot', icon: '🍲' },
+    { value: 'quick', label: 'Rapid (< 30 min)', icon: '⚡' }
+  ];
 
-      // Filter by cooking time
-      if ($filters.cookingTime !== 'all') {
-        filtered = filtered.filter(recipe => recipe.cookingTime === $filters.cookingTime);
-      }
+  // Utility functions
+  function nid() {
+    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  }
 
-      // Filter by difficulty
-      if ($filters.difficulty !== 'all') {
-        filtered = filtered.filter(recipe => recipe.difficulty === $filters.difficulty);
-      }
+  function showNotification(message, type = 'info') {
+    const event = new CustomEvent('show-notification', {
+      detail: { message, type },
+      bubbles: true
+    });
+    window.dispatchEvent(event);
+  }
 
-      // Filter by nutritional goal
-      if ($filters.nutritionalGoal !== 'all') {
-        filtered = filtered.filter(recipe => 
-          recipe.nutritionalGoals.includes($filters.nutritionalGoal)
-        );
-      }
-
-      // Filter by meal type
-      if ($filters.mealType !== 'all') {
-        filtered = filtered.filter(recipe => recipe.mealType === $filters.mealType);
-      }
-
-      // Filter by Instant Pot
-      if ($filters.instantPot) {
-        filtered = filtered.filter(recipe => recipe.instantPot);
-      }
-
-      // Filter by available ingredients (if pantry available)
-      if ($filters.availableOnly && pantryAvailable && $inventory.inventory) {
-        filtered = filtered.filter(recipe => {
-          return recipe.ingredients.every(ingredient => {
-            const key = ingredient.name.toLowerCase();
-            const available = $inventory.inventory[key];
-            return available && available.quantity >= (ingredient.amount || 1);
-          });
-        });
-      }
-
-      // Sort by ingredient availability score if pantry available
-      if (pantryAvailable && $inventory.inventory) {
-        filtered = filtered.sort((a, b) => {
-          const scoreA = calculateAvailabilityScore(a.ingredients, $inventory.inventory);
-          const scoreB = calculateAvailabilityScore(b.ingredients, $inventory.inventory);
-          return scoreB - scoreA;
-        });
-      }
-
-      return filtered;
-    }
-  );
-
-  function calculateAvailabilityScore(ingredients, inventory) {
-    if (!inventory) return 0;
+  // Check pantry availability for ingredients
+  function checkPantryAvailability(recipe) {
+    if (!pantryAvailable || !$pantryInventory) return 0;
     
+    const inventory = $pantryInventory.inventory || [];
     let availableCount = 0;
-    let totalCount = ingredients.length;
-
-    ingredients.forEach(ingredient => {
-      const key = ingredient.name.toLowerCase();
-      const available = inventory[key];
+    let totalCount = recipe.ingredients.length;
+    
+    recipe.ingredients.forEach(ingredient => {
+      const available = inventory.find(item => 
+        item.name.toLowerCase().includes(ingredient.name.toLowerCase())
+      );
+      
       if (available && available.quantity >= (ingredient.amount || 1)) {
         availableCount++;
       }
@@ -128,92 +96,54 @@
       );
     }
 
-    // Add dynamic suggestions based on missing nutrients
-    const missingSuggestions = generateMissingSuggestions(profile);
-    recipeSuggestions.push(...missingSuggestions);
+    // Apply selected filter
+    if (selectedFilter !== 'all') {
+      recipeSuggestions = recipeSuggestions.filter(r => {
+        switch(selectedFilter) {
+          case 'mtor-high':
+            return r.nutritionalGoals.includes('mtor-high') || r.protein >= 25;
+          case 'anti-inflammatory':
+            return r.nutritionalGoals.includes('anti-inflammatory');
+          case 'plant-diverse':
+            return r.plantCount >= 8;
+          case 'instant-pot':
+            return r.instantPot === true;
+          case 'quick':
+            return r.cookingTime === 'quick';
+          default:
+            return true;
+        }
+      });
+    }
+
+    // Apply search query
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      recipeSuggestions = recipeSuggestions.filter(r =>
+        r.name.toLowerCase().includes(query) ||
+        r.description.toLowerCase().includes(query) ||
+        r.ingredients.some(i => i.name.toLowerCase().includes(query))
+      );
+    }
+
+    // Sort by relevance
+    recipeSuggestions.sort((a, b) => {
+      // Prioritize by pantry availability if module is available
+      if (pantryAvailable) {
+        const availA = checkPantryAvailability(a);
+        const availB = checkPantryAvailability(b);
+        if (availA !== availB) return availB - availA;
+      }
+      
+      // Then by mTOR cycle match
+      if (isMtorHigh) {
+        return (b.protein || 0) - (a.protein || 0);
+      } else {
+        return (b.plantCount || 0) - (a.plantCount || 0);
+      }
+    });
 
     suggestions.set(recipeSuggestions);
-  }
-
-  function generateMissingSuggestions(profile) {
-    const missing = [];
-    
-    // Check plant diversity goal (30+ plants/week)
-    if (profile.weeklyPlantCount < 30) {
-      missing.push({
-        id: 'plant-boost-salad',
-        name: '🌿 Plant Diversity Boost Salad',
-        description: 'Maximizează diversitatea plantelor cu 12+ ingrediente în un singur fel',
-        cookingTime: 'quick',
-        difficulty: 'easy',
-        mealType: 'lunch',
-        plantCount: 12,
-        protein: 15,
-        instantPot: false,
-        nutritionalGoals: ['plant-diversity', 'anti-inflammatory'],
-        ingredients: [
-          { name: 'Mix salată verde', amount: 100, unit: 'g' },
-          { name: 'Spanac baby', amount: 50, unit: 'g' },
-          { name: 'Rucola', amount: 30, unit: 'g' },
-          { name: 'Roșii cherry', amount: 150, unit: 'g' },
-          { name: 'Castraveți', amount: 100, unit: 'g' },
-          { name: 'Morcovi', amount: 80, unit: 'g' },
-          { name: 'Avocado', amount: 1, unit: 'buc' },
-          { name: 'Nuca', amount: 30, unit: 'g' },
-          { name: 'Semințe floarea-soarelui', amount: 20, unit: 'g' },
-          { name: 'Fasole roșie', amount: 100, unit: 'g' },
-          { name: 'Broccoli', amount: 100, unit: 'g' },
-          { name: 'Ulei măsline', amount: 15, unit: 'ml' }
-        ],
-        instructions: [
-          'Spală și toacă toate legumele',
-          'Amestecă verdeața într-un bol mare',
-          'Adaugă legumele tăiate cubulețe',
-          'Presară nucile și semințele',
-          'Condimentează cu ulei măsline și oțet balsamic'
-        ],
-        nutritionalHighlight: 'Conține 12 plante diferite pentru diversitate maximă',
-        antiInflammatory: true
-      });
-    }
-
-    // Check for anti-inflammatory needs
-    if (profile.inflammationRisk > 0.7) {
-      missing.push({
-        id: 'turmeric-ginger-soup',
-        name: '🔥 Anti-Inflammatory Turmeric Soup',
-        description: 'Supă cu turmeric, ghimbir și 8+ plante anti-inflamatoare',
-        cookingTime: 'medium',
-        difficulty: 'easy',
-        mealType: 'dinner',
-        plantCount: 8,
-        protein: 12,
-        instantPot: true,
-        nutritionalGoals: ['anti-inflammatory'],
-        ingredients: [
-          { name: 'Turmeric proaspăt', amount: 30, unit: 'g' },
-          { name: 'Ghimbir proaspăt', amount: 20, unit: 'g' },
-          { name: 'Ceapă', amount: 150, unit: 'g' },
-          { name: 'Usturoi', amount: 4, unit: 'căței' },
-          { name: 'Morcovi', amount: 200, unit: 'g' },
-          { name: 'Țelină', amount: 150, unit: 'g' },
-          { name: 'Linte roșie', amount: 150, unit: 'g' },
-          { name: 'Lapte cocos', amount: 400, unit: 'ml' },
-          { name: 'Bulion legume', amount: 500, unit: 'ml' },
-          { name: 'Spanac', amount: 100, unit: 'g' }
-        ],
-        instantPotInstructions: [
-          'Sauté: ceapă, usturoi, ghimbir, turmeric - 3 min',
-          'Adaugă morcovii, țelina, lintea - amestecă',
-          'Pressure Cook: HIGH 8 min, Quick Release',
-          'Stir in: lapte cocos, spanac proaspăt',
-          'Sauté 2 min până spanacul se ofilește'
-        ],
-        nutritionalHighlight: 'Curcumina + piperina pentru absorbție maximă'
-      });
-    }
-
-    return missing;
   }
 
   // Cook recipe and add to nutrition profile
@@ -242,296 +172,204 @@
 
   // Generate shopping list from recipe
   function generateShoppingList(recipe) {
+    const missingIngredients = [];
+    
+    recipe.ingredients.forEach(ingredient => {
+      let needToBuy = true;
+      
+      if (pantryAvailable && $pantryInventory) {
+        const available = $pantryInventory.inventory?.find(item =>
+          item.name.toLowerCase().includes(ingredient.name.toLowerCase())
+        );
+        
+        if (available && available.quantity >= (ingredient.amount || 1)) {
+          needToBuy = false;
+        }
+      }
+      
+      if (needToBuy) {
+        missingIngredients.push({
+          name: ingredient.name,
+          amount: ingredient.amount,
+          unit: ingredient.unit
+        });
+      }
+    });
+
+    if (missingIngredients.length === 0) {
+      showNotification('✅ Ai toate ingredientele în stoc!', 'success');
+      return;
+    }
+
+    // Create shopping list
     const shoppingList = {
       id: nid(),
-      name: `Shopping pentru: ${recipe.name}`,
-      items: recipe.ingredients.map(ingredient => {
-        const available = pantryAvailable && $pantryInventory?.inventory?.[ingredient.name.toLowerCase()];
-        const needed = Math.max(0, (ingredient.amount || 1) - (available?.quantity || 0));
-        
-        return {
-          name: ingredient.name,
-          quantity: needed,
-          unit: ingredient.unit,
-          category: categorizeIngredient(ingredient.name),
-          checked: false,
-          needed: needed > 0,
-          available: available?.quantity || 0
-        };
-      }).filter(item => item.needed),
-      generatedFrom: recipe.id,
-      type: 'recipe',
-      createdAt: new Date().toISOString()
+      name: `Shopping: ${recipe.name}`,
+      date: new Date().toISOString().split('T')[0],
+      items: missingIngredients
     };
 
-    // Add to pantry shopping lists if available
-    if (pantryAvailable && pantryInventory) {
-      pantryInventory.addShoppingList(shoppingList);
-    }
-
-    // Download as JSON if pantry not available
-    if (!pantryAvailable) {
-      const blob = new Blob([JSON.stringify(shoppingList, null, 2)], {type: 'application/json'});
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `shopping-${recipe.name.toLowerCase().replace(/\s+/g, '-')}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-    }
-
-    showNotification(`📝 Listă de cumpărături generată pentru "${recipe.name}"!`, 'success');
-  }
-
-  function categorizeIngredient(name) {
-    const lower = name.toLowerCase();
-    if (/carn|pui|porc|vita|peste|ton/.test(lower)) return 'Carne și Pește';
-    if (/lapte|iaurt|cas|smant|unt/.test(lower)) return 'Lactate';
-    if (/tomat|castravet|morcov|ceap|usturoi|spanac|salat/.test(lower)) return 'Fructe și Legume';
-    if (/paine|orez|paste|fain|malai/.test(lower)) return 'Pâine și Cereale';
-    if (/sare|piper|boia|patrunjel|marar/.test(lower)) return 'Condimente';
-    return 'Altele';
-  }
-
-  function showNotification(message, type = 'success') {
-    const notification = document.createElement('div');
-    notification.className = `notification ${type}`;
-    notification.textContent = message;
-    notification.style.cssText = `
-      position: fixed;
-      top: 20px;
-      right: 20px;
-      padding: 15px 20px;
-      background: ${type === 'success' ? '#4CAF50' : '#f44336'};
-      color: white;
-      border-radius: 8px;
-      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-      z-index: 9999;
-      animation: slideIn 0.3s ease;
-      font-family: Inter, ui-sans-serif, system-ui, -apple-system, Arial;
-      font-weight: 500;
-      max-width: 350px;
-      word-wrap: break-word;
-    `;
+    // Save to localStorage
+    const existingLists = JSON.parse(localStorage.getItem('shoppingLists') || '[]');
+    existingLists.push(shoppingList);
+    localStorage.setItem('shoppingLists', JSON.stringify(existingLists));
     
-    document.body.appendChild(notification);
+    // Copy to clipboard
+    const listText = missingIngredients
+      .map(i => `- ${i.name}: ${i.amount}${i.unit || ''}`)
+      .join('\n');
     
-    setTimeout(() => {
-      notification.style.animation = 'slideOut 0.3s ease';
-      setTimeout(() => notification.remove(), 300);
-    }, 3000);
+    navigator.clipboard.writeText(listText).then(() => {
+      showNotification(`📋 Listă shopping copiată în clipboard! (${missingIngredients.length} ingrediente)`, 'success');
+    });
   }
 
-  // Initialize suggestions on mount
+  // Toggle recipe details
+  function toggleRecipeDetails(recipeId) {
+    expandedRecipes[recipeId] = !expandedRecipes[recipeId];
+    expandedRecipes = expandedRecipes; // Trigger reactivity
+  }
+
+  // Initialize on mount
   onMount(() => {
     generateSuggestions();
   });
 
-  // Reactive regeneration
-  $: if ($filters) {
+  // Reactive updates
+  $: if (selectedFilter || searchQuery) {
     generateSuggestions();
   }
+
+  $: cycleDay = Math.floor((new Date() - $nutritionProfile.startDate) / (1000 * 60 * 60 * 24)) % 14;
+  $: isMtorHighDay = (cycleDay >= 0 && cycleDay <= 2) || (cycleDay >= 7 && cycleDay <= 9);
 </script>
 
 <div class="recipe-suggester">
-  <div class="header">
-    <div class="title-section">
-      <h2>👨‍🍳 Recipe Suggester</h2>
-      <div class="codex-info">
-        <span class="badge codex">CODEX N-OMAD</span>
-        {#if pantryAvailable}
-          <span class="badge inventory">📦 Inventory Aware</span>
-        {:else}
-          <span class="badge standalone">🏃‍♂️ Standalone Mode</span>
-        {/if}
+  <!-- Header with cycle info -->
+  <div class="suggester-header">
+    <div class="cycle-status">
+      <div class="cycle-badge {isMtorHighDay ? 'high' : 'low'}">
+        {isMtorHighDay ? '💪 mTOR High' : '🌿 Plant Focus'}
+        <span class="cycle-day">Ziua {cycleDay + 1}/14</span>
       </div>
+      
+      <div class="daily-goals">
+        <span class="goal">🎯 {isMtorHighDay ? '25-40g proteine' : '8-12 plante'}</span>
+        <span class="goal">🌱 {$nutritionProfile.weeklyPlantCount}/30 plante săptămâna asta</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Search and filters -->
+  <div class="search-section">
+    <div class="search-bar">
+      <input
+        type="text"
+        placeholder="🔍 Caută rețete sau ingrediente..."
+        bind:value={searchQuery}
+        class="search-input"
+      />
     </div>
     
-    <div class="nutrition-cycle">
-      <div class="cycle-indicator">
-        <span class="label">mTOR Cycle:</span>
-        <span class="phase {$nutritionProfile.currentPhase}">
-          {$nutritionProfile.currentPhase === 'high' ? '🔥 High Protein' : '🌿 Plant Focus'}
-        </span>
-        <span class="day">Day {$nutritionProfile.cycleDay}/14</span>
-      </div>
+    <div class="filter-buttons">
+      {#each filters as filter}
+        <button
+          class="filter-btn {selectedFilter === filter.value ? 'active' : ''}"
+          on:click={() => selectedFilter = filter.value}
+        >
+          <span class="filter-icon">{filter.icon}</span>
+          <span class="filter-label">{filter.label}</span>
+        </button>
+      {/each}
     </div>
   </div>
 
-  <div class="filters">
-    <div class="filter-group">
-      <label>Timp gătit:</label>
-      <select bind:value={$filters.cookingTime}>
-        <option value="all">Toate</option>
-        <option value="quick">Rapid (< 30 min)</option>
-        <option value="medium">Mediu (30-60 min)</option>
-        <option value="slow">Îndelungat (> 60 min)</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>Dificultate:</label>
-      <select bind:value={$filters.difficulty}>
-        <option value="all">Toate</option>
-        <option value="easy">Ușor</option>
-        <option value="medium">Mediu</option>
-        <option value="advanced">Avansat</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>Obiectiv nutrițional:</label>
-      <select bind:value={$filters.nutritionalGoal}>
-        <option value="all">Toate</option>
-        <option value="mtor-high">mTOR High (Proteine)</option>
-        <option value="anti-inflammatory">Anti-inflamator</option>
-        <option value="plant-diversity">Diversitate plante</option>
-      </select>
-    </div>
-
-    <div class="filter-group">
-      <label>Tip masă:</label>
-      <select bind:value={$filters.mealType}>
-        <option value="all">Toate</option>
-        <option value="breakfast">Mic dejun</option>
-        <option value="lunch">Prânz</option>
-        <option value="dinner">Cină</option>
-        <option value="snack">Gustare</option>
-      </select>
-    </div>
-
-    <div class="filter-toggles">
-      <label class="toggle">
-        <input type="checkbox" bind:checked={$filters.instantPot} />
-        <span>🥘 Instant Pot</span>
-      </label>
-      
-      {#if pantryAvailable}
-        <label class="toggle">
-          <input type="checkbox" bind:checked={$filters.availableOnly} />
-          <span>📦 Doar cu ingrediente disponibile</span>
-        </label>
-      {/if}
-    </div>
-  </div>
-
-  <div class="suggestions-grid">
-    {#each $filteredSuggestions as recipe (recipe.id)}
-      <div class="recipe-card">
-        <div class="recipe-header">
-          <h3>{recipe.name}</h3>
-          <div class="recipe-badges">
-            <span class="badge time">{recipe.cookingTime}</span>
-            <span class="badge difficulty">{recipe.difficulty}</span>
-            {#if recipe.instantPot}
-              <span class="badge instant-pot">🥘 IP</span>
-            {/if}
-          </div>
-        </div>
-
-        <p class="description">{recipe.description}</p>
-
-        <div class="nutrition-info">
-          <div class="nutrition-item">
-            <span class="icon">🌿</span>
-            <span>{recipe.plantCount} plante</span>
-          </div>
-          <div class="nutrition-item">
-            <span class="icon">💪</span>
-            <span>{recipe.protein}g proteină</span>
-          </div>
-          {#if recipe.nutritionalGoals.includes('anti-inflammatory')}
-            <div class="nutrition-item anti-inflammatory">
-              <span class="icon">🔥</span>
-              <span>Anti-inflamator</span>
+  <!-- Recipe suggestions -->
+  <div class="recipe-grid">
+    {#each $suggestions as recipe}
+      <div class="recipe-card {expandedRecipes[recipe.id] ? 'expanded' : ''}">
+        <div class="recipe-header" on:click={() => toggleRecipeDetails(recipe.id)}>
+          <h3 class="recipe-name">{recipe.name}</h3>
+          {#if pantryAvailable}
+            {@const availability = checkPantryAvailability(recipe)}
+            <div class="availability-badge" class:high={availability >= 80} class:medium={availability >= 50}>
+              {availability.toFixed(0)}% disponibil
             </div>
           {/if}
         </div>
+        
+        <p class="recipe-description">{recipe.description}</p>
+        
+        <div class="recipe-stats">
+          <span class="stat">🌱 {recipe.plantCount} plante</span>
+          <span class="stat">💪 {recipe.protein}g proteine</span>
+          <span class="stat">⏱️ {recipe.cookingTime === 'quick' ? '<30 min' : recipe.cookingTime}</span>
+          {#if recipe.instantPot}
+            <span class="stat instant-pot">🍲 Instant Pot</span>
+          {/if}
+        </div>
 
-        {#if pantryAvailable && $pantryInventory?.inventory}
-          {@const availabilityScore = calculateAvailabilityScore(recipe.ingredients, $pantryInventory.inventory)}
-          <div class="availability-bar">
-            <div class="availability-fill" style="width: {availabilityScore}%"></div>
-            <span class="availability-text">
-              {Math.round(availabilityScore)}% ingrediente disponibile
-            </span>
-          </div>
-        {/if}
+        <div class="recipe-tags">
+          {#each recipe.nutritionalGoals as goal}
+            <span class="tag {goal}">{goal.replace('-', ' ')}</span>
+          {/each}
+        </div>
 
-        <div class="ingredients-preview">
-          <h4>Ingrediente ({recipe.ingredients.length}):</h4>
-          <div class="ingredients-list">
-            {#each recipe.ingredients.slice(0, 6) as ingredient}
-              <span class="ingredient-tag">
-                {ingredient.name}
-                {#if pantryAvailable && $pantryInventory?.inventory}
-                  {@const available = $pantryInventory.inventory[ingredient.name.toLowerCase()]}
-                  {#if available && available.quantity >= (ingredient.amount || 1)}
-                    <span class="available">✅</span>
-                  {:else}
-                    <span class="missing">❌</span>
-                  {/if}
-                {/if}
-              </span>
-            {/each}
-            {#if recipe.ingredients.length > 6}
-              <span class="more">+{recipe.ingredients.length - 6} mai multe</span>
+        {#if expandedRecipes[recipe.id]}
+          <div class="recipe-details">
+            <div class="ingredients-section">
+              <h4>Ingrediente:</h4>
+              <ul class="ingredients-list">
+                {#each recipe.ingredients as ingredient}
+                  {@const isAvailable = pantryAvailable && $pantryInventory?.inventory?.find(
+                    item => item.name.toLowerCase().includes(ingredient.name.toLowerCase()) &&
+                    item.quantity >= (ingredient.amount || 1)
+                  )}
+                  <li class:available={isAvailable} class:missing={!isAvailable}>
+                    {#if isAvailable}✅{:else}❌{/if}
+                    {ingredient.name}: {ingredient.amount}{ingredient.unit || ''}
+                  </li>
+                {/each}
+              </ul>
+            </div>
+
+            {#if recipe.instantPotInstructions}
+              <div class="instructions-section">
+                <h4>Instrucțiuni Instant Pot:</h4>
+                <ol class="instructions-list">
+                  {#each recipe.instantPotInstructions as step}
+                    <li>{step}</li>
+                  {/each}
+                </ol>
+              </div>
+            {/if}
+
+            {#if recipe.nutritionalHighlight}
+              <div class="nutrition-highlight">
+                💡 {recipe.nutritionalHighlight}
+              </div>
             {/if}
           </div>
-        </div>
+        {/if}
 
         <div class="recipe-actions">
-          <button class="btn-primary" on:click={() => cookRecipe(recipe)}>
-            👨‍🍳 Gătesc
+          <button class="btn-cook" on:click={() => cookRecipe(recipe)}>
+            🍳 Gătește acum
           </button>
-          <button class="btn-secondary" on:click={() => generateShoppingList(recipe)}>
-            📝 Listă cumpărături
+          <button class="btn-shopping" on:click={() => generateShoppingList(recipe)}>
+            🛒 Listă cumpărături
           </button>
         </div>
-
-        {#if recipe.instantPot && recipe.instantPotInstructions}
-          <div class="instant-pot-preview">
-            <h4>🥘 Instant Pot Steps:</h4>
-            <ol>
-              {#each recipe.instantPotInstructions.slice(0, 3) as step}
-                <li>{step}</li>
-              {/each}
-              {#if recipe.instantPotInstructions.length > 3}
-                <li>... +{recipe.instantPotInstructions.length - 3} mai mulți pași</li>
-              {/if}
-            </ol>
-          </div>
-        {/if}
-
-        {#if recipe.nutritionalHighlight}
-          <div class="nutritional-highlight">
-            <span class="icon">💡</span>
-            <span>{recipe.nutritionalHighlight}</span>
-          </div>
-        {/if}
       </div>
     {/each}
-
-    {#if $filteredSuggestions.length === 0}
-      <div class="no-suggestions">
-        <h3>🤷‍♂️ Nu am găsit rețete</h3>
-        <p>Încearcă să modifici filtrele sau să adaugi mai multe ingrediente în inventar.</p>
-        <button class="btn-secondary" on:click={() => {
-          filters.update(f => ({
-            ...f,
-            cookingTime: 'all',
-            difficulty: 'all',
-            nutritionalGoal: 'all',
-            availableOnly: false,
-            instantPot: false,
-            mealType: 'all'
-          }));
-        }}>
-          🔄 Resetează filtrele
-        </button>
-      </div>
-    {/if}
   </div>
+
+  {#if $suggestions.length === 0}
+    <div class="no-results">
+      <p>😔 Nu am găsit rețete care să corespundă criteriilor tale.</p>
+      <p>Încearcă să modifici filtrele sau termenii de căutare.</p>
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -541,332 +379,353 @@
     margin: 0 auto;
   }
 
-  .header {
+  .suggester-header {
+    margin-bottom: 30px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 12px;
+    color: white;
+  }
+
+  .cycle-status {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: var(--panel, #2d2d2d);
-    border-radius: 12px;
+    flex-wrap: wrap;
+    gap: 15px;
   }
 
-  .title-section h2 {
-    margin: 0 0 10px 0;
-    color: var(--acc, #80b8ff);
-    font-size: 1.8rem;
+  .cycle-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 20px;
+    border-radius: 25px;
+    font-weight: bold;
+    background: rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(10px);
   }
 
-  .codex-info {
+  .cycle-badge.high {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+  }
+
+  .cycle-badge.low {
+    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+  }
+
+  .cycle-day {
+    font-size: 0.9em;
+    opacity: 0.9;
+  }
+
+  .daily-goals {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+  }
+
+  .goal {
+    padding: 8px 16px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    font-size: 0.95em;
+  }
+
+  .search-section {
+    margin-bottom: 25px;
+  }
+
+  .search-bar {
+    margin-bottom: 15px;
+  }
+
+  .search-input {
+    width: 100%;
+    padding: 12px 20px;
+    font-size: 16px;
+    border: 2px solid var(--border, #ddd);
+    border-radius: 25px;
+    outline: none;
+    transition: all 0.3s ease;
+  }
+
+  .search-input:focus {
+    border-color: var(--primary, #667eea);
+    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  }
+
+  .filter-buttons {
     display: flex;
     gap: 10px;
+    flex-wrap: wrap;
   }
 
-  .badge {
-    padding: 4px 12px;
-    border-radius: 999px;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  .badge.codex {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-  }
-
-  .badge.inventory {
-    background: #4ade80;
-    color: #0f172a;
-  }
-
-  .badge.standalone {
-    background: #f59e0b;
-    color: #0f172a;
-  }
-
-  .nutrition-cycle {
-    text-align: right;
-  }
-
-  .cycle-indicator {
-    display: flex;
-    flex-direction: column;
-    gap: 5px;
-    align-items: flex-end;
-  }
-
-  .phase {
-    font-weight: 600;
-    padding: 8px 16px;
-    border-radius: 8px;
-  }
-
-  .phase.high {
-    background: #dc2626;
-    color: white;
-  }
-
-  .phase.low {
-    background: #16a34a;
-    color: white;
-  }
-
-  .filters {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 20px;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 12px;
-  }
-
-  .filter-group label {
-    display: block;
-    margin-bottom: 5px;
-    color: var(--muted, #9aa3b2);
-    font-weight: 500;
-  }
-
-  .filter-group select {
-    width: 100%;
-    padding: 8px 12px;
-    border: 1px solid var(--border, #404040);
-    border-radius: 6px;
-    background: var(--bg, #0f1220);
-    color: var(--ink, #e6e9ff);
-  }
-
-  .filter-toggles {
-    grid-column: 1 / -1;
-    display: flex;
-    gap: 20px;
-    margin-top: 10px;
-  }
-
-  .toggle {
-    display: flex;
+  .filter-btn {
+    display: inline-flex;
     align-items: center;
-    gap: 8px;
+    gap: 5px;
+    padding: 8px 16px;
+    background: var(--panel, white);
+    border: 2px solid var(--border, #e0e0e0);
+    border-radius: 20px;
     cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
   }
 
-  .suggestions-grid {
+  .filter-btn:hover {
+    border-color: var(--primary, #667eea);
+    transform: translateY(-2px);
+  }
+
+  .filter-btn.active {
+    background: var(--primary, #667eea);
+    color: white;
+    border-color: var(--primary, #667eea);
+  }
+
+  .filter-icon {
+    font-size: 16px;
+  }
+
+  .recipe-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+    grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 20px;
   }
 
   .recipe-card {
-    background: var(--panel, #2d2d2d);
+    background: var(--panel, white);
+    border: 1px solid var(--border, #e0e0e0);
     border-radius: 12px;
     padding: 20px;
-    border: 1px solid var(--border, #404040);
+    transition: all 0.3s ease;
+    cursor: pointer;
+  }
+
+  .recipe-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  }
+
+  .recipe-card.expanded {
+    grid-column: span 2;
   }
 
   .recipe-header {
     display: flex;
     justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 15px;
+    align-items: start;
+    margin-bottom: 10px;
   }
 
-  .recipe-header h3 {
+  .recipe-name {
     margin: 0;
-    color: var(--acc, #80b8ff);
-    font-size: 1.3rem;
+    font-size: 1.2em;
+    color: var(--text, #333);
   }
 
-  .recipe-badges {
-    display: flex;
-    gap: 5px;
-    flex-wrap: wrap;
+  .availability-badge {
+    padding: 4px 12px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+    background: #f0f0f0;
+    color: #666;
   }
 
-  .badge.time {
-    background: #8b5cf6;
-    color: white;
+  .availability-badge.high {
+    background: #d4edda;
+    color: #155724;
   }
 
-  .badge.difficulty {
-    background: #06b6d4;
-    color: white;
+  .availability-badge.medium {
+    background: #fff3cd;
+    color: #856404;
   }
 
-  .badge.instant-pot {
-    background: #f97316;
-    color: white;
+  .recipe-description {
+    color: var(--text-secondary, #666);
+    margin: 10px 0;
+    font-size: 0.95em;
   }
 
-  .description {
-    color: var(--muted, #9aa3b2);
-    margin-bottom: 15px;
-  }
-
-  .nutrition-info {
+  .recipe-stats {
     display: flex;
     gap: 15px;
-    margin-bottom: 15px;
     flex-wrap: wrap;
+    margin: 15px 0;
   }
 
-  .nutrition-item {
+  .stat {
+    font-size: 0.9em;
+    color: var(--text-secondary, #666);
+  }
+
+  .stat.instant-pot {
+    color: var(--primary, #667eea);
+    font-weight: bold;
+  }
+
+  .recipe-tags {
     display: flex;
-    align-items: center;
-    gap: 5px;
-    font-size: 0.9rem;
+    gap: 8px;
+    flex-wrap: wrap;
+    margin: 15px 0;
   }
 
-  .nutrition-item.anti-inflammatory {
-    color: #f97316;
+  .tag {
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 12px;
+    text-transform: capitalize;
+    background: var(--tag-bg, #f0f0f0);
+    color: var(--tag-color, #666);
   }
 
-  .availability-bar {
-    position: relative;
-    height: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 10px;
-    margin-bottom: 15px;
-    overflow: hidden;
+  .tag.anti-inflammatory {
+    background: #d4edda;
+    color: #155724;
   }
 
-  .availability-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #dc2626 0%, #f59e0b 50%, #16a34a 100%);
-    transition: width 0.3s ease;
+  .tag.mtor-high {
+    background: #f8d7da;
+    color: #721c24;
   }
 
-  .availability-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: white;
-    text-shadow: 0 1px 2px rgba(0,0,0,0.5);
+  .tag.plant-diversity {
+    background: #d1ecf1;
+    color: #0c5460;
   }
 
-  .ingredients-preview h4 {
+  .recipe-details {
+    margin: 20px 0;
+    padding: 20px;
+    background: var(--bg-secondary, #f8f9fa);
+    border-radius: 8px;
+  }
+
+  .ingredients-section,
+  .instructions-section {
+    margin-bottom: 20px;
+  }
+
+  .ingredients-section h4,
+  .instructions-section h4 {
     margin: 0 0 10px 0;
-    color: var(--ink, #e6e9ff);
-    font-size: 1rem;
+    color: var(--text, #333);
   }
 
   .ingredients-list {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
-  .ingredient-tag {
-    background: var(--panel2, #1a1a1a);
-    padding: 4px 8px;
-    border-radius: 6px;
-    font-size: 0.8rem;
-    display: flex;
-    align-items: center;
-    gap: 5px;
+  .ingredients-list li {
+    padding: 5px 0;
+    border-bottom: 1px solid var(--border, #e0e0e0);
   }
 
-  .available {
-    color: #16a34a;
+  .ingredients-list li.available {
+    color: #155724;
   }
 
-  .missing {
-    color: #dc2626;
+  .ingredients-list li.missing {
+    color: #721c24;
   }
 
-  .more {
-    color: var(--muted, #9aa3b2);
-    font-style: italic;
+  .instructions-list {
+    margin: 0;
+    padding-left: 20px;
+  }
+
+  .instructions-list li {
+    margin: 8px 0;
+    line-height: 1.5;
+  }
+
+  .nutrition-highlight {
+    padding: 12px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 8px;
+    font-size: 0.95em;
   }
 
   .recipe-actions {
     display: flex;
     gap: 10px;
-    margin: 20px 0;
-  }
-
-  .btn-primary {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 600;
-    flex: 1;
-  }
-
-  .btn-secondary {
-    background: var(--panel2, #1a1a1a);
-    color: var(--ink, #e6e9ff);
-    border: 1px solid var(--border, #404040);
-    padding: 10px 20px;
-    border-radius: 8px;
-    cursor: pointer;
-    flex: 1;
-  }
-
-  .instant-pot-preview {
-    margin: 15px 0;
-    padding: 15px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 8px;
-    border-left: 4px solid #f97316;
-  }
-
-  .instant-pot-preview h4 {
-    margin: 0 0 10px 0;
-    color: #f97316;
-    font-size: 1rem;
-  }
-
-  .instant-pot-preview ol {
-    margin: 0;
-    padding-left: 20px;
-    color: var(--muted, #9aa3b2);
-  }
-
-  .nutritional-highlight {
-    display: flex;
-    align-items: center;
-    gap: 8px;
-    padding: 10px;
-    background: rgba(16, 185, 129, 0.1);
-    border: 1px solid #10b981;
-    border-radius: 8px;
-    color: #10b981;
-    font-size: 0.9rem;
     margin-top: 15px;
   }
 
-  .no-suggestions {
-    grid-column: 1 / -1;
-    text-align: center;
-    padding: 60px 20px;
-    color: var(--muted, #9aa3b2);
+  .btn-cook,
+  .btn-shopping {
+    flex: 1;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 8px;
+    font-weight: bold;
+    cursor: pointer;
+    transition: all 0.3s ease;
   }
 
-  @media (max-width: 768px) {
-    .header {
-      flex-direction: column;
-      gap: 15px;
-      text-align: center;
-    }
+  .btn-cook {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+  }
 
-    .suggestions-grid {
-      grid-template-columns: 1fr;
-    }
+  .btn-cook:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
 
-    .filters {
-      grid-template-columns: 1fr;
-    }
+  .btn-shopping {
+    background: white;
+    color: var(--primary, #667eea);
+    border: 2px solid var(--primary, #667eea);
+  }
 
-    .filter-toggles {
-      flex-direction: column;
-      gap: 10px;
-    }
+  .btn-shopping:hover {
+    background: var(--primary, #667eea);
+    color: white;
+  }
+
+  .no-results {
+    text-align: center;
+    padding: 40px;
+    color: var(--text-secondary, #666);
+  }
+
+  /* Dark mode support */
+  :global(body.dark-mode) .recipe-suggester {
+    color: #e0e0e0;
+  }
+
+  :global(body.dark-mode) .recipe-card {
+    background: #2a2a2a;
+    border-color: #404040;
+  }
+
+  :global(body.dark-mode) .recipe-details {
+    background: #1a1a1a;
+  }
+
+  :global(body.dark-mode) .search-input {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #404040;
+  }
+
+  :global(body.dark-mode) .filter-btn {
+    background: #2a2a2a;
+    color: #e0e0e0;
+    border-color: #404040;
+  }
+
+  :global(body.dark-mode) .filter-btn.active {
+    background: var(--primary, #667eea);
+    color: white;
   }
 </style>
