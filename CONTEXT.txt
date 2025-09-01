@@ -78,6 +78,9 @@ src/
 │   ├── PDFImporter.svelte
 │   ├── ReceiptParser.svelte
 │   ├── GroceryDashboard.svelte
+│   ├── CameraScanner.svelte
+│   ├── RecurringPayments.svelte
+│   ├── ShoppingList.svelte
 │   ├── EditModal.svelte
 │   ├── GlobalNotifications.svelte
 │   └── Toast.svelte
@@ -155,7 +158,97 @@ Netlify Dashboard: https://app.netlify.com/sites/n-omad/
 - 30 Aug: Integrare tab Grocery + fix showNotification
 - 30 Aug PM: Optimizări performanță majore implementate
 - 31 Aug AM: Deploy pe Netlify, PWA funcțional, URL n-omad.netlify.app
-- 31 Aug: Curățenie cod, removed ZIP files, actualizat .gitignore
+- 31 Aug PM: Curățenie cod, removed ZIP files, actualizat .gitignore
+- 31 Aug SEARA: Implementat Camera Scanner, Recurring Payments, Shopping List
+
+## 🎯 STRATEGIE TEHNICĂ STABILITĂ (31 August 2025)
+
+### FAZA 1: FINALIZARE FEATURES (Septembrie 2025)
+**Stack curent:** Svelte + Vite + localStorage
+**De implementat:**
+1. ✅ Camera Scanner (DONE)
+2. ✅ Recurring Payments (DONE) 
+3. ✅ Sync Export/Import (DONE)
+4. ✅ Shopping List Generator (DONE)
+5. ⏳ Recipe Suggester
+6. ⏳ Meal Planner
+7. ⏳ Auto-backup reminders
+
+**Workflow actual:**
+- Development: `npm run dev` în browser
+- Production: `npm run build` → folder dist
+- Sync: Export/Import JSON manual via OneDrive
+- Mobile: PWA local din OneDrive (temporar)
+
+### FAZA 2: MIGRARE TAURI + SQLite (Octombrie 2025)
+**După ce toate features sunt complete și testate:**
+
+**Stack țintă:**
+- Tauri 1.x (stable) pentru desktop
+- SQLite3 pentru bază de date locală
+- better-sqlite3 pentru Node.js binding
+- Backup automat .db în OneDrive
+
+**Beneficii migrare:**
+- Performanță 1000x pentru date mari
+- ACID transactions (no corruption)
+- Queries selective (nu încărci tot în RAM)
+- Un singur fișier .db pentru backup
+- Prepared statements (SQL injection safe)
+
+**Plan migrare:**
+1. Instalare Tauri: `npm install --save-dev @tauri-apps/cli @tauri-apps/api`
+2. Setup SQLite: rusqlite în Rust + better-sqlite3
+3. Script auto-migrare: localStorage → SQLite
+4. Build .exe: `npm run tauri build`
+5. Installer Windows cu auto-update
+
+### FAZA 3: MOBILE (când Tauri 2.0 stable - 2026)
+- Același cod Svelte
+- Același SQLite schema  
+- Build pentru Android/iOS
+- Sync via OneDrive sau Syncthing
+
+## 🔒 DECIZIE ARHITECTURĂ
+**Motivație pentru SQLite vs JSON:**
+- JSON la 10MB+ = freeze aplicație
+- O paranteză greșită = date pierdute
+- Sync conflicts = corupere garantată
+- SQLite = bulletproof pentru decade
+
+**De ce Tauri vs Electron:**
+- 10MB exe vs 150MB
+- 50MB RAM vs 500MB
+- Startup instant vs 3 secunde
+- Rust security vs Chromium vulnerabilities
+
+## 📝 REGULI NOI PENTRU DEVELOPMENT
+
+### PÂNĂ LA MIGRARE:
+1. NU modifica structura localStorage majoră
+2. Păstrează backward compatibility
+3. Export/Import JSON trebuie să meargă mereu
+4. Test pe date mari (1000+ tranzacții)
+
+### PENTRU FEATURES NOI:
+1. Mobile-first UI (pentru PWA temporar)
+2. Offline-first (totul local)
+3. Export-friendly (PDF/Excel pentru sharing)
+4. Performance-conscious (lazy load, pagination)
+
+## 🚀 URMĂTORII PAȘI IMEDIATI
+1. Recipe Suggester - PRIORITATE 1
+2. Meal Planner - PRIORITATE 2  
+3. Auto-backup reminders - PRIORITATE 3
+4. Bug fixes & Polish
+5. APOI: Migrare Tauri + SQLite
+
+## 💡 NOTE IMPORTANTE
+- NU folosim Netlify/Vercel/cloud (privacy first)
+- NU folosim backend API (totul local)
+- NU colectăm telemetry (zero tracking)
+- Sync DOAR prin OneDrive (utilizator controlează)
+- Backup MANUAL nu automat (utilizator decide)
 
 ## 🔐 SECURITATE & PRIVACY
 - Toate datele în localStorage (pe dispozitivul utilizatorului)
@@ -187,4 +280,4 @@ Desktop: Chrome → Install icon în address bar
 - Offline support complet
 
 ---
-# SFÂRȘIT CONTEXT - Folosește aceste informații în ORICE conversație nouă
+# SFÂRȘIT ACTUALIZARE CONTEXT 31 August 2025, 23:30
