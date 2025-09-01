@@ -4,17 +4,17 @@
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
-  // Finance components
-  import Conturi from './modules/finance/components/Conturi.svelte';
-  import Tranzactii from './modules/finance/components/Tranzactii.svelte';
-  import Budgeturi from './modules/finance/components/Budgeturi.svelte';
-  import Obiective from './modules/finance/components/Obiective.svelte';
-  import Reconciliere from './modules/finance/components/Reconciliere.svelte';
-  import RecurringPayments from './modules/finance/components/RecurringPayments.svelte';
+  // Finance components (currently in components dir, will be moved to modules later)
+  import Conturi from './components/Conturi.svelte';
+  import Tranzactii from './components/Tranzactii.svelte';
+  import Budgeturi from './components/Budgeturi.svelte';
+  import Obiective from './components/Obiective.svelte';
+  import Reconciliere from './components/Reconciliere.svelte';
+  import RecurringPayments from './components/RecurringPayments.svelte';
   import Export from './components/Export.svelte';
   
-  // Pantry components
-  import ShoppingList from './modules/pantry/components/ShoppingList.svelte';
+  // Pantry components (currently in components dir, will be moved to modules later)
+  import ShoppingList from './components/ShoppingList.svelte';
   
   // Lazy loaded components
   import LazyComponent from './components/LazyComponent.svelte';
@@ -22,8 +22,8 @@
   // Toast notifications
   import Toast from './components/Toast.svelte';
   
-  // Finance store
-  import { accounts, transactions, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
+  // Finance store (currently in lib, will be moved to modules later)
+  import { accounts, transactions, totalBalance } from './lib/store.js';
   
   // Config
   import { APP_CONFIG } from './shared/config.js';
@@ -117,8 +117,7 @@
     }
   });
 
-  // Calculate total balance
-  $: totalBalance = calculateTotalBalance($accounts);
+  // Total balance is imported from store as a derived value
 </script>
 
 <div class="container">
@@ -126,10 +125,10 @@
     <h1>💰 N-OMAD Suite</h1>
     <div class="balance-display">
       <div class="balance-total">
-        Total: {totalBalance.toLocaleString('ro-RO', {
+        Total: {$totalBalance?.mainBalance?.toLocaleString('ro-RO', {
           style: 'currency',
           currency: 'RON'
-        })}
+        }) || '0 RON'}
       </div>
       <div class="balance-detail">
         {#each $accounts as account}
