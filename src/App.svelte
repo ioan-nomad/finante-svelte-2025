@@ -22,8 +22,8 @@
   // Toast notifications
   import Toast from './components/Toast.svelte';
   
-  // Finance store (currently in lib, will be moved to modules later)
-  import { accounts, transactions, totalBalance } from './lib/store.js';
+  // Finance store
+  import { accounts, transactions, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
   
   // Config
   import { APP_CONFIG } from './shared/config.js';
@@ -117,7 +117,8 @@
     }
   });
 
-  // Total balance is imported from store as a derived value
+  // Calculate total balance reactively
+  $: totalBalance = calculateTotalBalance($accounts);
 </script>
 
 <div class="container">
@@ -125,10 +126,10 @@
     <h1>💰 N-OMAD Suite</h1>
     <div class="balance-display">
       <div class="balance-total">
-        Total: {$totalBalance?.mainBalance?.toLocaleString('ro-RO', {
+        Total: {totalBalance.toLocaleString('ro-RO', {
           style: 'currency',
           currency: 'RON'
-        }) || '0 RON'}
+        })}
       </div>
       <div class="balance-detail">
         {#each $accounts as account}
