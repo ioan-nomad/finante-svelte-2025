@@ -1,947 +1,632 @@
 <!-- src/App.svelte -->
 <script>
-  import Conturi from './components/Conturi.svelte';
-  import Tranzactii from './components/Tranzactii.svelte';
-  import Export from './components/Export.svelte';
-  import Budgeturi from './components/Budgeturi.svelte';
-  import Obiective from './components/Obiective.svelte';
-  import Reconciliere from './components/Reconciliere.svelte';
-  import GlobalNotifications from './components/GlobalNotifications.svelte';
-  import Toast from './components/Toast.svelte';
-  import LazyComponent from './components/LazyComponent.svelte';
-  import RecurringPayments from './components/RecurringPayments.svelte';
-  import ShoppingList from './components/ShoppingList.svelte';
-  import RecipeSuggester from './modules/nutrition/components/RecipeSuggester.svelte';
-  import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
-  import { groceryInventory } from './stores/groceryStore.js';
+  import { onMount } from 'svelte';
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
   
-  import { onMount } from 'svelte';
-  import { preloadComponents } from './lib/lazyLoader.js';
-
-// Dark mode logic
-let darkMode = false;
-
-onMount(async () => {
-  // Verifică preferința salvată sau preferința sistemului
-  darkMode = localStorage.getItem('darkMode') === 'true' || 
-             (!localStorage.getItem('darkMode') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  // Finance components
+  import Conturi from './modules/finance/components/Conturi.svelte';
+  import Tranzactii from './modules/finance/components/Tranzactii.svelte';
+  import Budgeturi from './modules/finance/components/Budgeturi.svelte';
+  import Obiective from './modules/finance/components/Obiective.svelte';
+  import Reconciliere from './modules/finance/components/Reconciliere.svelte';
+  import RecurringPayments from './modules/finance/components/RecurringPayments.svelte';
+  import Export from './components/Export.svelte';
   
-  // Aplică dark mode
-  if (darkMode) {
-    document.documentElement.classList.add('dark');
-  }
+  // Pantry components
+  import ShoppingList from './modules/pantry/components/ShoppingList.svelte';
   
-  // Preload heavy components in background after initial render
-  setTimeout(() => {
-    preloadComponents(['Dashboard', 'RapoarteAvansate', 'GroceryDashboard', 'PDFImporter', 'ReceiptParser']);
-  }, 1000);
-});
-
-function toggleDarkMode() {
-  darkMode = !darkMode;
-  localStorage.setItem('darkMode', darkMode);
+  // Lazy loaded components
+  import LazyComponent from './components/LazyComponent.svelte';
   
-  if (darkMode) {
-    document.documentElement.classList.add('dark');
-  } else {
-    document.documentElement.classList.remove('dark');
-  }
-}
-
-function exportData() {
-  const data = {
-    version: '1.0',
-    exportDate: new Date().toISOString(),
-    accounts: $accounts,
-    transactions: $transactions,
-    groceryInventory: $groceryInventory,
-    categories: localStorage.getItem('fs_categories') ? JSON.parse(localStorage.getItem('fs_categories')) : [],
-    budgets: localStorage.getItem('budgets') ? JSON.parse(localStorage.getItem('budgets')) : [],
-    objectives: localStorage.getItem('objectives') ? JSON.parse(localStorage.getItem('objectives')) : []
-  };
+  // Toast notifications
+  import Toast from './components/Toast.svelte';
   
-  const blob = new Blob([JSON.stringify(data, null, 2)], {type: 'application/json'});
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  const date = new Date().toISOString().split('T')[0];
-  a.download = `finante-backup-${date}.json`;
-  a.click();
-  URL.revokeObjectURL(url);
+  // Finance store
+  import { accounts, transactions, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
   
-  alert('📥 Salvează fișierul în OneDrive pentru sincronizare!\n\nCale recomandată:\nOneDrive/FinanteApp/backups/');
-}
-
-function importData() {
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = '.json';
+  // Config
+  import { APP_CONFIG } from './shared/config.js';
   
-  input.onchange = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    
-    try {
-      const text = await file.text();
-      const data = JSON.parse(text);
-      
-      // Validare simplă
-      if (!data.version || !data.accounts || !data.transactions) {
-        throw new Error('Fișier invalid!');
-      }
-      
-      if (confirm(`Import date din ${file.name}?\n\nACEASTA VA ÎNLOCUI TOATE DATELE CURENTE!`)) {
-        // Import accounts
-        accounts.set(data.accounts || []);
-        
-        // Import transactions  
-        transactions.set(data.transactions || []);
-        
-        // Import grocery inventory
-        if (data.groceryInventory) {
-          groceryInventory.set(data.groceryInventory);
-        }
-        
-        // Import alte date
-        if (data.categories) {
-          localStorage.setItem('fs_categories', JSON.stringify(data.categories));
-        }
-        if (data.budgets) {
-          localStorage.setItem('budgets', JSON.stringify(data.budgets));
-        }
-        if (data.objectives) {
-          localStorage.setItem('objectives', JSON.stringify(data.objectives));
-        }
-        
-        alert('✅ Date importate cu succes!\n\nReîmprospătez pagina...');
-        window.location.reload();
-      }
-    } catch (error) {
-      alert('❌ Eroare la import: ' + error.message);
-    }
-  };
+  // Nutrition Module
+  import NutritionModule from './modules/nutrition/NutritionModule.svelte';
   
-  input.click();
-}
-
-  // Tab management
   let activeTab = 'dashboard';
   let previousTab = 'dashboard';
-
-const tabs = [
-  { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-  { id: 'conturi', label: 'Conturi', icon: '💳' },
-  { id: 'tranzactii', label: 'Tranzacții', icon: '💸' },
-  { id: 'budgeturi', label: 'Bugete', icon: '🎯' },
-  { id: 'obiective', label: 'Obiective', icon: '🏆' },
-  { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
-  { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
-  { id: 'shopping', label: 'Lista de Cumpărături', icon: '📝' },
-  { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
-  { id: 'grocery', label: 'Stoc Alimente', icon: '🛒' },
-  { id: 'recipes', label: 'Recipe Suggester', icon: '👨‍🍳' },
-  { id: 'import', label: 'Import', icon: '📥' },
-  { id: 'export', label: 'Export', icon: '📤' }
-];
-  
-  // PDF Importer
+  let direction = 1;
   let showPDFImporter = false;
-  
-  // Receipt Parser
   let showReceiptParser = false;
+  let isDarkMode = false;
 
-// Ordinea tab-urilor pentru direcția animației
-const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'budgeturi', 'obiective', 'reconciliere', 'recurring', 'shopping', 'rapoarte', 'grocery', 'recipes', 'import', 'export'];
-$: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 : -1;
+  // Define all tabs with module awareness
+  const allTabs = [
+    // Finance tabs
+    { id: 'dashboard', label: 'Dashboard', icon: '📊', module: 'finance' },
+    { id: 'conturi', label: 'Conturi', icon: '🏦', module: 'finance' },
+    { id: 'tranzactii', label: 'Tranzacții', icon: '💸', module: 'finance' },
+    { id: 'budgeturi', label: 'Bugete', icon: '📈', module: 'finance' },
+    { id: 'obiective', label: 'Obiective', icon: '🎯', module: 'finance' },
+    { id: 'reconciliere', label: 'Reconciliere', icon: '✅', module: 'finance' },
+    { id: 'recurring', label: 'Recurente', icon: '🔄', module: 'finance' },
+    
+    // Pantry tabs
+    { id: 'grocery', label: 'Pantry', icon: '🛒', module: 'pantry' },
+    { id: 'shopping', label: 'Shopping', icon: '📝', module: 'pantry' },
+    
+    // Nutrition tabs
+    { id: 'nutrition', label: 'Nutriție', icon: '🍽️', module: 'nutrition' },
+    { id: 'recipes', label: 'Rețete', icon: '👨‍🍳', module: 'nutrition' },
+    { id: 'meals', label: 'Meal Plan', icon: '📅', module: 'nutrition' },
+    
+    // Shared tabs
+    { id: 'import', label: 'Import', icon: '📥', module: 'shared' },
+    { id: 'export', label: 'Export', icon: '📤', module: 'shared' },
+    { id: 'rapoarte', label: 'Rapoarte', icon: '📑', module: 'finance' }
+  ];
 
-  function switchTab(tab) {
-  if (tab !== activeTab) {
-    previousTab = activeTab;
-    activeTab = tab;
-  }
-}
-
-function handlePDFImport(event) {
-  const importedTransactions = event.detail;
-  
-  // Adaugă tranzacțiile importate în lista existentă
-  importedTransactions.forEach(t => {
-    const newTransaction = {
-      ...t,
-      person: 'Comun',
-      fromAccount: $accounts[0]?.id,
-      toAccount: $accounts[0]?.id,
-      createdAt: new Date().toISOString()
-    };
-    addTransaction(newTransaction);
+  // Filter tabs based on active modules
+  $: availableTabs = allTabs.filter(tab => {
+    if (tab.module === 'shared') return true;
+    if (tab.module === 'finance') return APP_CONFIG.modules.finance;
+    if (tab.module === 'pantry') return APP_CONFIG.modules.pantry;
+    if (tab.module === 'nutrition') return APP_CONFIG.modules.nutrition;
+    return false;
   });
-  
-  showPDFImporter = false;
-  showNotification(`✅ ${importedTransactions.length} tranzacții importate cu succes!`, 'success');
-}
 
-// Enhanced notification system
-function showNotification(message, type = 'success') {
-  // Creează element de notificare
-  const notification = document.createElement('div');
-  notification.className = `notification ${type}`;
-  notification.textContent = message;
-  notification.style.cssText = `
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    padding: 15px 20px;
-    background: ${type === 'success' ? '#4CAF50' : '#f44336'};
-    color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-    z-index: 9999;
-    animation: slideIn 0.3s ease;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Arial;
-    font-weight: 500;
-    max-width: 350px;
-    word-wrap: break-word;
-  `;
-  
-  document.body.appendChild(notification);
-  
-  // Remove după 3 secunde
-  setTimeout(() => {
-    notification.style.animation = 'slideOut 0.3s ease';
-    setTimeout(() => notification.remove(), 300);
-  }, 3000);
-}
+  // Tab switching with animation direction
+  function switchTab(newTab) {
+    const currentIndex = availableTabs.findIndex(t => t.id === activeTab);
+    const newIndex = availableTabs.findIndex(t => t.id === newTab);
+    direction = newIndex > currentIndex ? 1 : -1;
+    previousTab = activeTab;
+    activeTab = newTab;
+  }
+
+  // Dark mode toggle
+  function toggleDarkMode() {
+    isDarkMode = !isDarkMode;
+    document.documentElement.classList.toggle('dark', isDarkMode);
+    localStorage.setItem('darkMode', isDarkMode.toString());
+  }
+
+  // Show notification helper
+  function showNotification(message, type = 'success') {
+    const event = new CustomEvent('show-notification', {
+      detail: { message, type }
+    });
+    window.dispatchEvent(event);
+  }
+
+  // Handle PDF import
+  function handlePDFImport(event) {
+    const importedTransactions = event.detail;
+    if (importedTransactions && importedTransactions.length > 0) {
+      transactions.update(trans => [...trans, ...importedTransactions]);
+      showNotification(`✅ ${importedTransactions.length} tranzacții importate cu succes!`);
+      activeTab = 'tranzactii';
+    }
+    showPDFImporter = false;
+  }
+
+  // Initialize dark mode
+  onMount(() => {
+    const savedDarkMode = localStorage.getItem('darkMode');
+    if (savedDarkMode === 'true') {
+      isDarkMode = true;
+      document.documentElement.classList.add('dark');
+    }
+  });
+
+  // Calculate total balance
+  $: totalBalance = calculateTotalBalance($accounts);
 </script>
 
 <div class="container">
   <header>
-    <div class="header-left">
-      <h1>💰 Finanțe Complete</h1>
-    </div>
-    
+    <h1>💰 N-OMAD Suite</h1>
     <div class="balance-display">
-      <div class="balance-total">{fmt($totalBalance.mainBalance)} RON</div>
+      <div class="balance-total">
+        Total: {totalBalance.toLocaleString('ro-RO', {
+          style: 'currency',
+          currency: 'RON'
+        })}
+      </div>
       <div class="balance-detail">
-        {#if $totalBalance.bankBalances['RON']}
-          <span class="balance-item">🏦 Bănci: {fmt($totalBalance.bankBalances['RON'])} RON</span>
-        {/if}
-        {#if $totalBalance.cashBalances['RON']}
-          <span class="balance-item">💵 Cash: {fmt($totalBalance.cashBalances['RON'])} RON</span>
-        {/if}
-        {#each Object.entries($totalBalance.balances) as [currency, amount]}
-          {#if currency !== 'RON' && amount !== 0}
-            <span class="balance-item">{fmt(amount)} {currency}</span>
-          {/if}
+        {#each $accounts as account}
+          <span class="balance-item">
+            {account.name}: {account.balance.toLocaleString('ro-RO', {
+              style: 'currency',
+              currency: account.currency
+            })}
+          </span>
         {/each}
       </div>
     </div>
-    
-    <div class="header-right">
-      <GlobalNotifications />
-      <button 
-        class="dark-mode-toggle"
-        on:click={toggleDarkMode}
-        aria-label="Toggle dark mode"
-        type="button"
-      >
-        {#if darkMode}
-          ☀️
-        {:else}
-          🌙
-        {/if}
-      </button>
-      
-      <div class="sync-buttons" style="display: flex; gap: 10px; margin-left: auto;">
-        <button 
-          on:click={exportData}
-          class="sync-btn"
-          title="Export pentru sincronizare"
-          style="
-            background: var(--primary);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-          "
-        >
-          💾 Export
-        </button>
-        
-        <button 
-          on:click={importData}
-          class="sync-btn"
-          title="Import date salvate"
-          style="
-            background: var(--success);
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 8px;
-            cursor: pointer;
-            display: flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 14px;
-          "
-        >
-          📂 Import
-        </button>
-      </div>
-      
-      <span class="badge no-print">🔒 100% local</span>
-    </div>
   </header>
 
-  <div class="tabs no-print">
-  {#each tabs as tab}
-    <button 
-      class="tab {activeTab === tab.id ? 'active' : ''}"
-      on:click={() => switchTab(tab.id)}
-      type="button"
-    >
-      <span class="tab-icon">{tab.icon}</span>
-      <span class="tab-label">{tab.label}</span>
-      {#if activeTab === tab.id}
-        <span class="tab-indicator" transition:slide={{ duration: 300, easing: quintOut }}></span>
-      {/if}
-    </button>
-  {/each}
-</div>
+  <button 
+    class="dark-mode-toggle" 
+    on:click={toggleDarkMode}
+    aria-label="Toggle dark mode"
+  >
+    {isDarkMode ? '☀️' : '🌙'}
+  </button>
+
+  <div class="tabs">
+    {#each availableTabs as tab}
+      <button 
+        class="tab {activeTab === tab.id ? 'active' : ''}"
+        on:click={() => switchTab(tab.id)}
+        type="button"
+      >
+        <span class="tab-icon">{tab.icon}</span>
+        <span class="tab-label">{tab.label}</span>
+        {#if activeTab === tab.id}
+          <span class="tab-indicator" transition:slide={{ duration: 300, easing: quintOut }}></span>
+        {/if}
+      </button>
+    {/each}
   </div>
 
-  <!-- Conținutul pentru fiecare tab -->
+  <!-- Content wrapper -->
   <div class="content-wrapper">
-  {#key activeTab}
-    <div 
-      class="tab-content"
-      in:fly={{ x: 50 * direction, duration: 300, delay: 100, easing: quintOut }}
-      out:fade={{ duration: 200 }}
-    >
-      {#if activeTab === 'dashboard'}
-        <LazyComponent componentName="Dashboard" />
-      {:else if activeTab === 'conturi'}
-        <Conturi />
-      {:else if activeTab === 'tranzactii'}
-        <Tranzactii />
-      {:else if activeTab === 'budgeturi'}
-        <Budgeturi />
-      {:else if activeTab === 'obiective'}
-        <Obiective />
-      {:else if activeTab === 'reconciliere'}
-        <Reconciliere />
-      {:else if activeTab === 'recurring'}
-        <RecurringPayments />
-      {:else if activeTab === 'shopping'}
-        <ShoppingList />
-      {:else if activeTab === 'rapoarte'}
-        <LazyComponent componentName="RapoarteAvansate" />
-      {:else if activeTab === 'grocery'}
-        <div class="grocery-tab">
-          <div class="grocery-header">
-            <h2>🛒 Smart Pantry Tracker</h2>
-            <button 
-              class="btn-receipt-parser" 
-              on:click={() => showReceiptParser = true}
-            >
-              📄 Importă Bon Fiscal
-            </button>
-          </div>
-          <LazyComponent componentName="GroceryDashboard" />
-        </div>
-      {:else if activeTab === 'recipes'}
-        <div class="nutrition-tab">
-          <div class="nutrition-header">
-            <h2>👨‍🍳 Recipe Suggester</h2>
-            <p class="nutrition-subtitle">Sugestii de rețete bazate pe CODEX N-OMAD cu instrucțiuni Instant Pot</p>
-          </div>
-          <RecipeSuggester />
-        </div>
-      {:else if activeTab === 'import'}
-        <div class="import-section">
-          <button 
-            class="btn-import-pdf"
-            on:click={() => showPDFImporter = true}
-          >
-            📄 Deschide Import PDF
-          </button>
+    {#key activeTab}
+      <div 
+        class="tab-content"
+        in:fly={{ x: 50 * direction, duration: 300, delay: 100, easing: quintOut }}
+        out:fade={{ duration: 200 }}
+      >
+        <!-- Finance Module -->
+        {#if activeTab === 'dashboard'}
+          <LazyComponent componentName="Dashboard" />
+        {:else if activeTab === 'conturi'}
+          <Conturi />
+        {:else if activeTab === 'tranzactii'}
+          <Tranzactii />
+        {:else if activeTab === 'budgeturi'}
+          <Budgeturi />
+        {:else if activeTab === 'obiective'}
+          <Obiective />
+        {:else if activeTab === 'reconciliere'}
+          <Reconciliere />
+        {:else if activeTab === 'recurring'}
+          <RecurringPayments />
+        {:else if activeTab === 'rapoarte'}
+          <LazyComponent componentName="RapoarteAvansate" />
           
-          <div class="import-info">
-            <h3>ℹ️ Instrucțiuni Import PDF</h3>
-            <ul>
-              <li>Suportă extrase de la: BT, BCR, ING, Raiffeisen, UniCredit</li>
-              <li>Detectează automat tranzacțiile</li>
-              <li>Categorizează automat după comerciant</li>
-              <li>Verifică duplicatele înainte de import</li>
-            </ul>
+        <!-- Pantry Module -->
+        {:else if activeTab === 'grocery'}
+          <div class="grocery-tab">
+            <div class="grocery-header">
+              <h2>🛒 Smart Pantry Tracker</h2>
+              <button 
+                class="btn-receipt-parser" 
+                on:click={() => showReceiptParser = true}
+              >
+                📄 Importă Bon Fiscal
+              </button>
+            </div>
+            <LazyComponent componentName="GroceryDashboard" />
           </div>
-        </div>
-      {:else if activeTab === 'export'}
-        <Export />
-      {/if}
-    </div>
-  {/key}
+        {:else if activeTab === 'shopping'}
+          <ShoppingList />
+          
+        <!-- Nutrition Module -->
+        {:else if activeTab === 'nutrition'}
+          <NutritionModule activeTab="dashboard" />
+        {:else if activeTab === 'recipes'}
+          <NutritionModule activeTab="recipes" />
+        {:else if activeTab === 'meals'}
+          <NutritionModule activeTab="meals" />
+          
+        <!-- Shared Functions -->
+        {:else if activeTab === 'import'}
+          <div class="import-section">
+            <button 
+              class="btn-import-pdf"
+              on:click={() => showPDFImporter = true}
+            >
+              📄 Deschide Import PDF
+            </button>
+            
+            <div class="import-info">
+              <h3>ℹ️ Instrucțiuni Import PDF</h3>
+              <ul>
+                <li>Suportă extrase de la: BT, BCR, ING, Raiffeisen, UniCredit</li>
+                <li>Detectează automat tranzacțiile</li>
+                <li>Categorizează automat după comerciant</li>
+                <li>Verifică duplicatele înainte de import</li>
+              </ul>
+            </div>
+          </div>
+        {:else if activeTab === 'export'}
+          <Export />
+        {/if}
+      </div>
+    {/key}
+  </div>
+
+  <!-- Toast notifications -->
+  <Toast />
+
+  <!-- Modals -->
+  {#if showPDFImporter}
+    <LazyComponent 
+      componentName="PDFImporter"
+      on:import={handlePDFImport}
+      on:close={() => showPDFImporter = false}
+    />
+  {/if}
+
+  {#if showReceiptParser}
+    <LazyComponent 
+      componentName="ReceiptParser" 
+      props={{ isOpen: showReceiptParser }}
+      on:productsAdded={() => {
+        showNotification('🛒 Produse adăugate cu succes în inventar!', 'success');
+        showReceiptParser = false;
+      }}
+      on:close={() => showReceiptParser = false}
+    />
+  {/if}
 </div>
 
-<!-- Toast notifications -->
-<Toast />
-
-{#if showPDFImporter}
-  <LazyComponent 
-    componentName="PDFImporter"
-    on:import={handlePDFImport}
-    on:close={() => showPDFImporter = false}
-  />
-{/if}
-
-{#if showReceiptParser}
-  <LazyComponent 
-    componentName="ReceiptParser" 
-    props={{ isOpen: showReceiptParser }}
-    on:productsAdded={() => {
-      showNotification('🛒 Produse adăugate cu succes în inventar!', 'success');
-      showReceiptParser = false;
-    }}
-    on:close={() => showReceiptParser = false}
-  />
-{/if}
-
 <style>
-  :global(:root) {
-    --bg: #0f1220;
-    --panel: #171a2b;
-    --panel2: #0b0e1a;
-    --ink: #e6e9ff;
-    --muted: #9aa3b2;
-    --acc: #80b8ff;
-    --ok: #7bd88f;
-    --warn: #ffd479;
-    --err: #ff6b6b;
-  }
-
-  :global(body) {
-    margin: 0;
-    font-family: Inter, ui-sans-serif, system-ui, -apple-system, Arial;
-    background: var(--bg);
-    color: var(--ink);
-  }
-
   .container {
     max-width: 1400px;
     margin: 0 auto;
     padding: 20px;
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.05);
   }
 
   header {
-    display: grid;
-    grid-template-columns: 1fr auto 1fr;
-    gap: 16px;
-    align-items: center;
-    background: var(--panel);
-    padding: 16px 18px;
-    border-radius: 14px;
-    margin-bottom: 16px;
-    position: relative;
-  }
-  
-  .header-left {
-    justify-self: start;
-  }
-  
-  .header-right {
-    justify-self: end;
     display: flex;
+    justify-content: space-between;
     align-items: center;
-    gap: 12px;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
   }
 
   h1 {
     margin: 0;
-    font-size: 1.4rem;
-    color: var(--acc);
-  }
-
-  .badge {
-    background: var(--ok);
-    color: #08131a;
-    padding: 6px 10px;
-    border-radius: 999px;
-    font-weight: 800;
+    font-size: 1.8rem;
+    font-weight: 700;
   }
 
   .balance-display {
     display: flex;
-    align-items: center;
-    gap: 20px;
-    flex-wrap: wrap;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 8px;
+    background: rgba(255, 255, 255, 0.15);
+    padding: 12px 20px;
+    border-radius: 10px;
+    backdrop-filter: blur(10px);
   }
 
   .balance-total {
-    font-size: 1.6rem;
-    font-weight: 900;
-    color: var(--ok);
+    font-size: 1.8rem;
+    font-weight: bold;
   }
 
   .balance-detail {
     display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
+    gap: 15px;
+    font-size: 0.9rem;
+    opacity: 0.95;
   }
 
   .balance-item {
-    background: var(--panel2);
-    padding: 6px 12px;
-    border-radius: 8px;
-    font-size: 0.9rem;
+    padding: 4px 12px;
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 15px;
+    white-space: nowrap;
   }
 
+  /* Tabs styling */
   .tabs {
     display: flex;
     gap: 8px;
-    flex-wrap: wrap;
-    margin: 14px 0;
+    padding: 12px;
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    border-radius: 12px;
+    margin-bottom: 20px;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+    overflow-x: auto;
+    scrollbar-width: thin;
+    scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
+  }
+
+  .tabs::-webkit-scrollbar {
+    height: 6px;
+  }
+
+  .tabs::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  .tabs::-webkit-scrollbar-thumb {
+    background: rgba(102, 126, 234, 0.3);
+    border-radius: 3px;
   }
 
   .tab {
-    background: var(--panel);
-    padding: 10px 14px;
-    border-radius: 12px;
+    position: relative;
+    padding: 12px 20px;
+    background: white;
+    border: none;
+    border-radius: 8px;
     cursor: pointer;
-    transition: all 0.2s;
+    font-size: 14px;
+    font-weight: 500;
+    color: #666;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+    white-space: nowrap;
   }
 
-  .tab:hover {
-    background: #1f2444;
+  .tab:hover:not(.active) {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
   }
 
   .tab.active {
-    outline: 2px solid var(--acc);
-    background: #1f2444;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transform: scale(1.05);
   }
 
-
-  @media print {
-    .no-print {
-      display: none !important;
-    }
-  }
-/* ===== ANIMAȚII TABS ===== */
-.tabs {
-  display: flex;
-  gap: 8px;
-  padding: 12px;
-  background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-  border-radius: 12px;
-  margin-bottom: 20px;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  overflow-x: auto;
-}
-
-.tab {
-  position: relative;
-  padding: 12px 20px;
-  background: white;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  font-size: 14px;
-  font-weight: 500;
-  color: #666;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
-  white-space: nowrap;
-}
-
-.tab:hover:not(.active) {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
-  background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-}
-
-.tab.active {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  transform: scale(1.05);
-}
-
-.tab-icon {
-  font-size: 18px;
-  transition: transform 0.3s ease;
-}
-
-.tab:hover .tab-icon {
-  transform: rotate(10deg) scale(1.1);
-}
-
-.tab.active .tab-icon {
-  animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% { transform: scale(1); }
-  50% { transform: scale(1.1); }
-}
-
-.tab-indicator {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: white;
-  border-radius: 3px 3px 0 0;
-}
-
-.content-wrapper {
-  position: relative;
-  min-height: 500px;
-  overflow: hidden;
-}
-
-.tab-content {
-  position: relative;
-}
-
-
-/* Responsive pentru mobile */
-@media (max-width: 768px) {
-  .container {
-    padding: 10px;
-  }
-  
-  .tabs {
-    gap: 4px;
-    padding: 8px;
-    overflow-x: auto;
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-  }
-  
-  .tabs::-webkit-scrollbar {
-    display: none;
-  }
-  
-  .tab {
-    padding: 12px 16px;
-    font-size: 13px;
-    min-width: 60px;
-    flex-shrink: 0;
-  }
-  
   .tab-icon {
     font-size: 18px;
+    transition: transform 0.3s ease;
   }
-  
-  .tab-label {
-    display: none;
+
+  .tab:hover .tab-icon {
+    transform: rotate(10deg) scale(1.1);
   }
-  
-  .tab.active .tab-label {
-    display: inline;
-    margin-left: 4px;
+
+  .tab.active .tab-icon {
+    animation: pulse 2s infinite;
   }
-  
-  .balance-display {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 8px;
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); }
+    50% { transform: scale(1.1); }
   }
-  
-  .balance-detail {
-    flex-wrap: wrap;
-    gap: 6px;
+
+  .tab-indicator {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: white;
+    border-radius: 3px 3px 0 0;
   }
-  
-  .balance-item {
-    font-size: 0.8rem;
-    padding: 4px 8px;
-  }
-  
-  .balance-total {
-    font-size: 1.4rem;
-  }
-  
-  header {
-    flex-wrap: wrap;
-    padding: 12px 16px;
-  }
-  
-  h1 {
-    font-size: 1.2rem;
-  }
-  
-  .dark-mode-toggle {
+
+  .content-wrapper {
     position: relative;
-    top: auto;
-    right: auto;
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
+    min-height: 500px;
+    overflow: hidden;
   }
-}
-/* ===== DARK MODE STYLES ===== */
-.dark-mode-toggle {
-  position: fixed;
-  top: 10px;
-  right: 90px; /* mărit de la 10px la 90px pentru a nu acoperi indicatorul 100% */
-  z-index: 999; /* redus din 1000 pentru a fi sub modal-uri */
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  border: none;
-  width: 50px;
-  height: 50px;
-  border-radius: 50%;
-  cursor: pointer;
-  font-size: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
-  transition: all 0.3s ease;
-}
 
-.dark-mode-toggle:hover {
-  transform: scale(1.1) rotate(180deg);
-  box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
-}
+  .tab-content {
+    position: relative;
+  }
 
-/* Dark mode variables */
-:global(html.dark) {
-  --bg-primary: #1a1a1a;
-  --bg-secondary: #2d2d2d;
-  --text-primary: #e0e0e0;
-  --text-secondary: #a0a0a0;
-  --border-color: #404040;
-  --shadow: rgba(0, 0, 0, 0.5);
-}
-
-:global(html.dark body) {
-  background: linear-gradient(135deg, #1a1a1a 0%, #2d2d2d 100%);
-  color: var(--text-primary);
-}
-
-:global(html.dark .container) {
-  background: var(--bg-secondary);
-  box-shadow: 0 10px 40px var(--shadow);
-}
-
-:global(html.dark header) {
-  background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
-  color: var(--text-primary);
-  border-bottom-color: var(--border-color);
-}
-
-:global(html.dark .tabs) {
-  background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
-}
-
-:global(html.dark .tab:not(.active)) {
-  background: var(--bg-secondary);
-  color: var(--text-secondary);
-  border: 1px solid var(--border-color);
-}
-
-:global(html.dark .tab:hover:not(.active)) {
-  background: linear-gradient(135deg, #3d3d3d 0%, #4d4d4d 100%);
-  color: var(--text-primary);
-}
-
-:global(html.dark .balance-display) {
-  background: rgba(102, 126, 234, 0.1);
-  border: 1px solid rgba(102, 126, 234, 0.3);
-}
-
-:global(html.dark input),
-:global(html.dark select),
-:global(html.dark textarea) {
-  background: var(--bg-secondary);
-  color: var(--text-primary);
-  border: 1px solid var(--border-color);
-}
-
-:global(html.dark button:not(.dark-mode-toggle):not(.tab)) {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  color: white;
-  border: none;
-}
-
-:global(html.dark .card),
-:global(html.dark .form-group) {
-  background: var(--bg-secondary);
-  border: 1px solid var(--border-color);
-}
-
-:global(html.dark table) {
-  background: var(--bg-secondary);
-}
-
-:global(html.dark th) {
-  background: #1a1a1a;
-  color: var(--text-primary);
-}
-
-:global(html.dark td) {
-  color: var(--text-primary);
-  border-color: var(--border-color);
-}
-
-:global(html.dark .placeholder) {
-  color: var(--text-secondary);
-}
-
-/* Animație pentru tranziție */
-:global(body),
-:global(.container),
-:global(header),
-:global(.tabs),
-:global(.tab),
-:global(input),
-:global(select),
-:global(textarea),
-:global(table) {
-  transition: background 0.3s ease, color 0.3s ease, border-color 0.3s ease;
-}
-
-.import-section {
-  padding: 40px;
-  text-align: center;
-}
-
-.btn-import-pdf {
-  background: #4CAF50;
-  color: white;
-  padding: 15px 30px;
-  border: none;
-  border-radius: 8px;
-  font-size: 18px;
-  cursor: pointer;
-  margin-bottom: 30px;
-}
-
-.btn-import-pdf:hover {
-  background: #45a049;
-}
-
-.import-info {
-  max-width: 500px;
-  margin: 0 auto;
-  text-align: left;
-}
-
-.import-info h3 {
-  color: #333;
-  margin-bottom: 15px;
-}
-
-.import-info ul {
-  list-style: none;
-  padding: 0;
-}
-
-.import-info li {
-  padding: 8px 0;
-  padding-left: 25px;
-  position: relative;
-}
-
-.import-info li:before {
-  content: "✓";
-  position: absolute;
-  left: 0;
-  color: #4CAF50;
-}
-
-.grocery-tab, .nutrition-tab {
-  padding: 20px;
-}
-
-.grocery-header, .nutrition-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 30px;
-  padding: 20px;
-  background: var(--panel);
-  border-radius: 12px;
-}
-
-.grocery-header h2, .nutrition-header h2 {
-  margin: 0;
-  color: var(--acc);
-  font-size: 1.5rem;
-}
-
-.nutrition-header {
-  flex-direction: column;
-  align-items: flex-start;
-  gap: 8px;
-}
-
-.nutrition-subtitle {
-  margin: 0;
-  color: var(--muted);
-  font-style: italic;
-  font-size: 0.9rem;
-}
-
-.btn-receipt-parser {
-  background: var(--acc);
-  color: #08131a;
-  border: 0;
-  border-radius: 10px;
-  padding: 12px 24px;
-  font-weight: 600;
-  cursor: pointer;
-  font-size: 1rem;
-  transition: all 0.2s;
-}
-
-.btn-receipt-parser:hover {
-  opacity: 0.9;
-  transform: translateY(-1px);
-}
-
-@media (max-width: 768px) {
-  .grocery-header, .nutrition-header {
-    flex-direction: column;
-    gap: 15px;
+  /* Import section */
+  .import-section {
+    padding: 30px;
     text-align: center;
   }
-  
+
+  .btn-import-pdf {
+    padding: 15px 30px;
+    font-size: 16px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    margin-bottom: 30px;
+  }
+
+  .btn-import-pdf:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
+  .import-info {
+    max-width: 500px;
+    margin: 0 auto;
+    text-align: left;
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+  }
+
+  .import-info h3 {
+    margin-top: 0;
+  }
+
+  .import-info ul {
+    margin: 10px 0;
+    padding-left: 20px;
+  }
+
+  /* Grocery tab */
+  .grocery-tab {
+    padding: 20px;
+  }
+
+  .grocery-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+  }
+
   .btn-receipt-parser {
-    width: 100%;
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s ease;
   }
-}
 
-/* Notification animations */
-@keyframes slideIn {
-  from {
-    transform: translateX(400px);
-    opacity: 0;
+  .btn-receipt-parser:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
   }
-  to {
-    transform: translateX(0);
-    opacity: 1;
-  }
-}
 
-@keyframes slideOut {
-  from {
-    transform: translateX(0);
-    opacity: 1;
+  /* Dark mode toggle */
+  .dark-mode-toggle {
+    position: fixed;
+    top: 10px;
+    right: 90px;
+    z-index: 999;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border: none;
+    width: 50px;
+    height: 50px;
+    border-radius: 50%;
+    cursor: pointer;
+    font-size: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 4px 15px rgba(102, 126, 234, 0.3);
+    transition: all 0.3s ease;
   }
-  to {
-    transform: translateX(400px);
-    opacity: 0;
+
+  .dark-mode-toggle:hover {
+    transform: scale(1.1) rotate(180deg);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
   }
-}
+
+  /* Dark mode styles */
+  :global(html.dark) {
+    --bg-primary: #1a1a1a;
+    --bg-secondary: #2d2d2d;
+    --text-primary: #e0e0e0;
+    --text-secondary: #a0a0a0;
+    --border-color: #404040;
+    --shadow: rgba(0, 0, 0, 0.5);
+  }
+
+  :global(html.dark .container) {
+    background: var(--bg-secondary);
+    box-shadow: 0 10px 40px var(--shadow);
+  }
+
+  :global(html.dark header) {
+    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+    color: var(--text-primary);
+  }
+
+  :global(html.dark .tabs) {
+    background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+  }
+
+  :global(html.dark .tab:not(.active)) {
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    border: 1px solid var(--border-color);
+  }
+
+  :global(html.dark .tab:hover:not(.active)) {
+    background: linear-gradient(135deg, #3d3d3d 0%, #4d4d4d 100%);
+    color: var(--text-primary);
+  }
+
+  /* Responsive design */
+  @media (max-width: 768px) {
+    .container {
+      padding: 10px;
+      border-radius: 0;
+    }
+    
+    .tabs {
+      gap: 4px;
+      padding: 8px;
+      overflow-x: auto;
+      scrollbar-width: none;
+    }
+    
+    .tabs::-webkit-scrollbar {
+      display: none;
+    }
+    
+    .tab {
+      padding: 10px 14px;
+      font-size: 13px;
+      min-width: 60px;
+      flex-shrink: 0;
+    }
+    
+    .tab-icon {
+      font-size: 16px;
+    }
+    
+    .tab-label {
+      display: none;
+    }
+    
+    .tab.active .tab-label {
+      display: inline;
+      margin-left: 4px;
+    }
+    
+    .balance-display {
+      flex-direction: column;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    
+    .balance-detail {
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    
+    .balance-item {
+      font-size: 0.8rem;
+      padding: 4px 8px;
+    }
+    
+    .balance-total {
+      font-size: 1.4rem;
+    }
+    
+    header {
+      flex-wrap: wrap;
+      padding: 12px 16px;
+    }
+    
+    h1 {
+      font-size: 1.2rem;
+    }
+    
+    .dark-mode-toggle {
+      position: relative;
+      top: auto;
+      right: auto;
+      width: 40px;
+      height: 40px;
+      font-size: 20px;
+    }
+  }
 </style>
