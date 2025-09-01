@@ -15,7 +15,7 @@
   
   onMount(async () => {
     try {
-      const pantryModule = await import('../../pantry/stores/pantryStore.js');
+      const pantryModule = await import('../../../stores/groceryStore.js');
       pantryInventory = pantryModule.groceryInventory;
       pantryAvailable = true;
     } catch (error) {

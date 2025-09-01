@@ -34,7 +34,7 @@
   let pantryAvailable = false;
   onMount(async () => {
     try {
-      await import('../../pantry/stores/pantryStore.js');
+      await import('../../stores/groceryStore.js');
       pantryAvailable = true;
     } catch {
       pantryAvailable = false;
