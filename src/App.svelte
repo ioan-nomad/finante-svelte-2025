@@ -11,6 +11,7 @@
   import LazyComponent from './components/LazyComponent.svelte';
   import RecurringPayments from './components/RecurringPayments.svelte';
   import ShoppingList from './components/ShoppingList.svelte';
+  import RecipeSuggester from './modules/nutrition/components/RecipeSuggester.svelte';
   import { totalBalance, fmt, accounts, transactions, addTransaction } from './lib/store.js';
   import { groceryInventory } from './stores/groceryStore.js';
   import { fade, fly, slide } from 'svelte/transition';
@@ -140,6 +141,7 @@ const tabs = [
   { id: 'shopping', label: 'Lista de Cumpărături', icon: '📝' },
   { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
   { id: 'grocery', label: 'Stoc Alimente', icon: '🛒' },
+  { id: 'recipes', label: 'Recipe Suggester', icon: '👨‍🍳' },
   { id: 'import', label: 'Import', icon: '📥' },
   { id: 'export', label: 'Export', icon: '📤' }
 ];
@@ -151,7 +153,7 @@ const tabs = [
   let showReceiptParser = false;
 
 // Ordinea tab-urilor pentru direcția animației
-const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'budgeturi', 'obiective', 'reconciliere', 'recurring', 'shopping', 'rapoarte', 'grocery', 'import', 'export'];
+const tabOrder = ['dashboard', 'conturi', 'tranzactii', 'budgeturi', 'obiective', 'reconciliere', 'recurring', 'shopping', 'rapoarte', 'grocery', 'recipes', 'import', 'export'];
 $: direction = tabOrder.indexOf(activeTab) > tabOrder.indexOf(previousTab) ? 1 : -1;
 
   function switchTab(tab) {
@@ -352,6 +354,14 @@ function showNotification(message, type = 'success') {
             </button>
           </div>
           <LazyComponent componentName="GroceryDashboard" />
+        </div>
+      {:else if activeTab === 'recipes'}
+        <div class="nutrition-tab">
+          <div class="nutrition-header">
+            <h2>👨‍🍳 Recipe Suggester</h2>
+            <p class="nutrition-subtitle">Sugestii de rețete bazate pe CODEX N-OMAD cu instrucțiuni Instant Pot</p>
+          </div>
+          <RecipeSuggester />
         </div>
       {:else if activeTab === 'import'}
         <div class="import-section">
@@ -850,11 +860,11 @@ function showNotification(message, type = 'success') {
   color: #4CAF50;
 }
 
-.grocery-tab {
+.grocery-tab, .nutrition-tab {
   padding: 20px;
 }
 
-.grocery-header {
+.grocery-header, .nutrition-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -864,10 +874,23 @@ function showNotification(message, type = 'success') {
   border-radius: 12px;
 }
 
-.grocery-header h2 {
+.grocery-header h2, .nutrition-header h2 {
   margin: 0;
   color: var(--acc);
   font-size: 1.5rem;
+}
+
+.nutrition-header {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 8px;
+}
+
+.nutrition-subtitle {
+  margin: 0;
+  color: var(--muted);
+  font-style: italic;
+  font-size: 0.9rem;
 }
 
 .btn-receipt-parser {
@@ -888,7 +911,7 @@ function showNotification(message, type = 'success') {
 }
 
 @media (max-width: 768px) {
-  .grocery-header {
+  .grocery-header, .nutrition-header {
     flex-direction: column;
     gap: 15px;
     text-align: center;
