@@ -1,6 +1,7 @@
 <!-- components/Dashboard.svelte -->
 <script>
   import { onMount, onDestroy } from 'svelte';
+  import { slide } from 'svelte/transition';
   import Chart from 'chart.js/auto';
   import { 
     transactions, 
@@ -12,6 +13,9 @@
     currentMonth,
     lastMonth
   } from '../lib/store.js';
+  import AdvancedCharts from './AdvancedCharts.svelte';
+
+  let showAdvancedCharts = false;
   
   // Chart instances
   let charts = {};
@@ -413,6 +417,18 @@
       </div>
     </div>
   </div>
+
+  <div class="dashboard-controls">
+    <button on:click={() => showAdvancedCharts = !showAdvancedCharts}>
+      {showAdvancedCharts ? '🔼' : '🔽'} Grafice Avansate
+    </button>
+  </div>
+
+  {#if showAdvancedCharts}
+    <div transition:slide>
+      <AdvancedCharts />
+    </div>
+  {/if}
 </div>
 
 <style>
@@ -499,6 +515,29 @@
     position: relative;
   }
   
+  .dashboard-controls {
+    display: flex;
+    gap: 10px;
+    margin: 20px 0;
+    justify-content: center;
+  }
+
+  .dashboard-controls button {
+    padding: 10px 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 500;
+    transition: all 0.3s ease;
+  }
+
+  .dashboard-controls button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  }
+
   @media (max-width: 768px) {
     .charts-grid {
       grid-template-columns: 1fr;
