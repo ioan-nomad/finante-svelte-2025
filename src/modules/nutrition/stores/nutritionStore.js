@@ -657,6 +657,341 @@ function createCodexRecipes() {
       'Servește imediat pentru textura optimă'
     ],
     nutritionalHighlight: '15 ingrediente = biodiversitate maximă pentru microbiota'
+  },
+
+  {
+    id: 'power-breakfast-bowl',
+    name: '💪 Power Breakfast Bowl',
+    description: 'Start puternic cu 35g proteine și 8 plante diferite',
+    cookingTime: 'quick',
+    difficulty: 'easy',
+    mealType: 'breakfast',
+    plantCount: 8,
+    protein: 35,
+    instantPot: false,
+    nutritionalGoals: ['mtor-high', 'energy-boost'],
+    ingredients: [
+      { name: 'Ovăz', amount: 80, unit: 'g' },
+      { name: 'Semințe chia', amount: 20, unit: 'g' },
+      { name: 'Semințe in', amount: 15, unit: 'g' },
+      { name: 'Migdale', amount: 30, unit: 'g' },
+      { name: 'Afine', amount: 50, unit: 'g' },
+      { name: 'Banană', amount: 1, unit: 'buc' },
+      { name: 'Proteină pudră', amount: 30, unit: 'g' },
+      { name: 'Scorțișoară', amount: 2, unit: 'g' }
+    ],
+    instructions: [
+      'Amestecă ovăzul cu semințele chia și in',
+      'Adaugă proteina pudră și scorțișoara',
+      'Combină cu lapte vegetal sau apă',
+      'Top cu afine, banană și migdale',
+      'Servește imediat pentru textura optimă'
+    ],
+    nutritionalHighlight: 'Complete amino acid profile + omega-3 boost'
+  },
+
+  {
+    id: 'mediterranean-quinoa',
+    name: '🌊 Mediterranean Quinoa Power',
+    description: 'Quinoa cu 12 plante mediteraneene, anti-inflamator maxim',
+    cookingTime: 'medium',
+    difficulty: 'easy',
+    mealType: 'lunch',
+    plantCount: 12,
+    protein: 18,
+    instantPot: true,
+    nutritionalGoals: ['anti-inflammatory', 'plant-diversity'],
+    ingredients: [
+      { name: 'Quinoa', amount: 150, unit: 'g' },
+      { name: 'Roșii cherry', amount: 200, unit: 'g' },
+      { name: 'Castravete', amount: 150, unit: 'g' },
+      { name: 'Ardei roșu', amount: 1, unit: 'buc' },
+      { name: 'Ceapă roșie', amount: 1, unit: 'buc' },
+      { name: 'Măsline Kalamata', amount: 50, unit: 'g' },
+      { name: 'Capere', amount: 20, unit: 'g' },
+      { name: 'Pătrunjel', amount: 30, unit: 'g' },
+      { name: 'Mentă', amount: 20, unit: 'g' },
+      { name: 'Oregano', amount: 5, unit: 'g' },
+      { name: 'Lămâie', amount: 1, unit: 'buc' },
+      { name: 'Ulei măsline', amount: 30, unit: 'ml' }
+    ],
+    instantPotInstructions: [
+      'Quinoa + 300ml apă în Instant Pot',
+      'Manual/Pressure Cook HIGH 1 minut',
+      'Natural Release 10 minute',
+      'Fluff și răcește',
+      'Amestecă cu restul ingredientelor crude'
+    ],
+    nutritionalHighlight: 'Polifenoli + fibre + proteine complete'
+  },
+
+  {
+    id: 'asian-mushroom-fusion',
+    name: '🍄 Asian Immunity Boost',
+    description: 'Ciuperci medicinale cu ghimbir și turmeric pentru imunitate',
+    cookingTime: 'quick',
+    difficulty: 'medium',
+    mealType: 'dinner',
+    plantCount: 9,
+    protein: 22,
+    instantPot: true,
+    nutritionalGoals: ['anti-inflammatory', 'immunity-boost'],
+    ingredients: [
+      { name: 'Shiitake', amount: 150, unit: 'g' },
+      { name: 'Pleurotus', amount: 150, unit: 'g' },
+      { name: 'Tofu', amount: 200, unit: 'g' },
+      { name: 'Ghimbir proaspăt', amount: 30, unit: 'g' },
+      { name: 'Usturoi', amount: 4, unit: 'căței' },
+      { name: 'Ceapă verde', amount: 3, unit: 'fire' },
+      { name: 'Sos soia', amount: 30, unit: 'ml' },
+      { name: 'Ulei susan', amount: 15, unit: 'ml' },
+      { name: 'Turmeric', amount: 5, unit: 'g' }
+    ],
+    instantPotInstructions: [
+      'Sauté: ulei susan, ghimbir, usturoi - 2 min',
+      'Add ciuperci și tofu cuburi - sauté 3 min',
+      'Add sos soia + 100ml apă',
+      'Pressure Cook HIGH 3 min, Quick Release',
+      'Garnish cu ceapă verde'
+    ],
+    nutritionalHighlight: 'Beta-glucani + curcumină + gingerol pentru imunitate'
+  },
+
+  {
+    id: 'protein-packed-dal',
+    name: '🌶️ Protein Dal Supreme',
+    description: 'Dal indian cu 28g proteine și 10 condimente vindecătoare',
+    cookingTime: 'medium',
+    difficulty: 'easy',
+    mealType: 'dinner',
+    plantCount: 10,
+    protein: 28,
+    instantPot: true,
+    nutritionalGoals: ['mtor-high', 'anti-inflammatory'],
+    ingredients: [
+      { name: 'Linte roșie', amount: 200, unit: 'g' },
+      { name: 'Năut', amount: 100, unit: 'g' },
+      { name: 'Ceapă', amount: 2, unit: 'buc' },
+      { name: 'Roșii', amount: 2, unit: 'buc' },
+      { name: 'Ghimbir', amount: 20, unit: 'g' },
+      { name: 'Turmeric', amount: 5, unit: 'g' },
+      { name: 'Coriandru', amount: 5, unit: 'g' },
+      { name: 'Chimion', amount: 3, unit: 'g' },
+      { name: 'Garam masala', amount: 5, unit: 'g' },
+      { name: 'Frunze curry', amount: 10, unit: 'buc' }
+    ],
+    instantPotInstructions: [
+      'Sauté: ceapă, ghimbir, condimente - 3 min',
+      'Add linte, năut, roșii tocate',
+      'Add 600ml apă sau bulion',
+      'Pressure Cook HIGH 15 min',
+      'Natural Release 10 min',
+      'Mash parțial pentru consistență cremoasă'
+    ],
+    nutritionalHighlight: '28g proteine complete + antiinflamator natural'
+  },
+
+  {
+    id: 'rainbow-veggie-lasagna',
+    name: '🌈 Rainbow Veggie Lasagna',
+    description: 'Lasagna cu 15 legume colorate, fără gluten',
+    cookingTime: 'long',
+    difficulty: 'medium',
+    mealType: 'dinner',
+    plantCount: 15,
+    protein: 20,
+    instantPot: false,
+    nutritionalGoals: ['plant-diversity', 'anti-inflammatory'],
+    ingredients: [
+      { name: 'Dovlecel', amount: 2, unit: 'buc' },
+      { name: 'Vinete', amount: 1, unit: 'buc' },
+      { name: 'Ardei roșu', amount: 1, unit: 'buc' },
+      { name: 'Ardei galben', amount: 1, unit: 'buc' },
+      { name: 'Spanac', amount: 200, unit: 'g' },
+      { name: 'Ricotta vegan', amount: 250, unit: 'g' },
+      { name: 'Roșii', amount: 400, unit: 'g' },
+      { name: 'Morcov', amount: 2, unit: 'buc' },
+      { name: 'Broccoli', amount: 200, unit: 'g' },
+      { name: 'Conopidă', amount: 200, unit: 'g' },
+      { name: 'Pătrunjel', amount: 30, unit: 'g' },
+      { name: 'Busuioc', amount: 20, unit: 'g' },
+      { name: 'Oregano', amount: 10, unit: 'g' },
+      { name: 'Usturoi', amount: 4, unit: 'căței' },
+      { name: 'Ceapă', amount: 1, unit: 'buc' }
+    ],
+    instructions: [
+      'Pretăiește toate legumele în felii de 5mm',
+      'Sautează separat fiecare legumă',
+      'Prepare sosul cu roșii, usturoi, ierburi',
+      'Stratifică în tăvă: sosul, legume, ricotta',
+      'Coace la 180°C pentru 45 minute',
+      'Lasă să se odihnească 15 minute înainte de tăiere'
+    ],
+    nutritionalHighlight: '15 culori = 15 tipuri diferite de antioxidanți'
+  },
+
+  {
+    id: 'omega3-power-salad',
+    name: '🐟 Omega-3 Brain Boost Salad',
+    description: 'Salată cu 5g omega-3 pentru creier și inflamație',
+    cookingTime: 'quick',
+    difficulty: 'easy',
+    mealType: 'lunch',
+    plantCount: 11,
+    protein: 25,
+    instantPot: false,
+    nutritionalGoals: ['anti-inflammatory', 'brain-health'],
+    ingredients: [
+      { name: 'Somon afumat', amount: 100, unit: 'g' },
+      { name: 'Nuci', amount: 40, unit: 'g' },
+      { name: 'Semințe in', amount: 20, unit: 'g' },
+      { name: 'Semințe chia', amount: 15, unit: 'g' },
+      { name: 'Avocado', amount: 1, unit: 'buc' },
+      { name: 'Spanac baby', amount: 100, unit: 'g' },
+      { name: 'Rucola', amount: 50, unit: 'g' },
+      { name: 'Sfeclă coaptă', amount: 150, unit: 'g' },
+      { name: 'Portocală', amount: 1, unit: 'buc' },
+      { name: 'Ulei in', amount: 20, unit: 'ml' },
+      { name: 'Oțet balsamic', amount: 10, unit: 'ml' }
+    ],
+    instructions: [
+      'Amestecă verdeața proaspătă în bol mare',
+      'Adaugă segmente de portocală și sfeclă',
+      'Top cu somon afumat desfăcut în bucăți',
+      'Presară nucile și semințele',
+      'Dressingul: ulei in + oțet balsamic',
+      'Servește imediat pentru prospețime maximă'
+    ],
+    nutritionalHighlight: '5g Omega-3 = protecție cardiovasculară și cognitivă maximă'
+  },
+
+  {
+    id: 'gut-healing-soup',
+    name: '🍵 Gut Healing Bone Broth',
+    description: 'Supă vindecătoare cu colagen și L-glutamină',
+    cookingTime: 'long',
+    difficulty: 'easy',
+    mealType: 'all',
+    plantCount: 8,
+    protein: 15,
+    instantPot: true,
+    nutritionalGoals: ['gut-health', 'anti-inflammatory'],
+    ingredients: [
+      { name: 'Oase vită', amount: 1000, unit: 'g' },
+      { name: 'Oțet mere', amount: 30, unit: 'ml' },
+      { name: 'Ceapă', amount: 2, unit: 'buc' },
+      { name: 'Morcov', amount: 3, unit: 'buc' },
+      { name: 'Țelină', amount: 3, unit: 'tije' },
+      { name: 'Pătrunjel', amount: 50, unit: 'g' },
+      { name: 'Ghimbir', amount: 30, unit: 'g' },
+      { name: 'Turmeric', amount: 10, unit: 'g' },
+      { name: 'Foi dafin', amount: 3, unit: 'buc' }
+    ],
+    instantPotInstructions: [
+      'Oase + oțet în IP, lasă 30 min',
+      'Add legume și condimente',
+      'Acoperă cu apă (2L)',
+      'Pressure Cook HIGH 120 min',
+      'Natural Release complet',
+      'Strecoară și servește'
+    ],
+    nutritionalHighlight: 'Colagen + glucozamină + L-glutamină pentru intestin'
+  },
+
+  {
+    id: 'sweet-potato-buddha',
+    name: '🍠 Sweet Potato Buddha Bowl',
+    description: 'Bowl echilibrat cu cartofi dulci și 10 legume',
+    cookingTime: 'medium',
+    difficulty: 'easy',
+    mealType: 'lunch',
+    plantCount: 10,
+    protein: 18,
+    instantPot: true,
+    nutritionalGoals: ['plant-diversity', 'energy-boost'],
+    ingredients: [
+      { name: 'Cartof dulce', amount: 300, unit: 'g' },
+      { name: 'Năut', amount: 150, unit: 'g' },
+      { name: 'Kale', amount: 100, unit: 'g' },
+      { name: 'Varză roșie', amount: 100, unit: 'g' },
+      { name: 'Morcov', amount: 100, unit: 'g' },
+      { name: 'Avocado', amount: 1, unit: 'buc' },
+      { name: 'Semințe dovleac', amount: 30, unit: 'g' },
+      { name: 'Tahini', amount: 30, unit: 'g' },
+      { name: 'Lămâie', amount: 1, unit: 'buc' },
+      { name: 'Sumac', amount: 5, unit: 'g' }
+    ],
+    instantPotInstructions: [
+      'Cartofi dulci cuburi în IP',
+      'Pressure Cook HIGH 4 min, Quick Release',
+      'Năut separat: HIGH 15 min dacă crud',
+      'Kale sauté 2 minute',
+      'Asamblează bowl cu toate componentele',
+      'Top cu tahini dressing'
+    ],
+    nutritionalHighlight: 'Beta-caroten + fibre prebiotice + proteine complete'
+  },
+
+  {
+    id: 'fermented-kraut-bowl',
+    name: '🥬 Probiotic Kraut Power',
+    description: 'Bowl fermentat cu 100 miliarde probiotice',
+    cookingTime: 'quick',
+    difficulty: 'easy',
+    mealType: 'lunch',
+    plantCount: 7,
+    protein: 15,
+    instantPot: false,
+    nutritionalGoals: ['gut-health', 'immunity-boost'],
+    ingredients: [
+      { name: 'Sauerkraut', amount: 200, unit: 'g' },
+      { name: 'Kimchi', amount: 100, unit: 'g' },
+      { name: 'Tempeh', amount: 150, unit: 'g' },
+      { name: 'Orez integral', amount: 150, unit: 'g' },
+      { name: 'Edamame', amount: 100, unit: 'g' },
+      { name: 'Alge nori', amount: 5, unit: 'g' },
+      { name: 'Susan', amount: 20, unit: 'g' }
+    ],
+    instructions: [
+      'Coace tempeh la tigaie până devine crocant',
+      'Încălzește orezul integral',
+      'Aranjează toate ingredientele în bowl',
+      'NU încălzi sauerkraut/kimchi (păstrează probioticele)',
+      'Garnish cu susan și alge nori',
+      'Servește la temperatura camerei'
+    ],
+    nutritionalHighlight: '100+ miliarde CFU probiotice pentru microbiom sănătos'
+  },
+
+  {
+    id: 'antioxidant-berry-parfait',
+    name: '🫐 Antioxidant Berry Parfait',
+    description: 'Desert sănătos cu ORAC score peste 10,000',
+    cookingTime: 'quick',
+    difficulty: 'easy',
+    mealType: 'snack',
+    plantCount: 8,
+    protein: 12,
+    instantPot: false,
+    nutritionalGoals: ['anti-inflammatory', 'brain-health'],
+    ingredients: [
+      { name: 'Afine', amount: 100, unit: 'g' },
+      { name: 'Zmeură', amount: 80, unit: 'g' },
+      { name: 'Mure', amount: 80, unit: 'g' },
+      { name: 'Goji', amount: 30, unit: 'g' },
+      { name: 'Iaurt grec', amount: 200, unit: 'g' },
+      { name: 'Granola', amount: 50, unit: 'g' },
+      { name: 'Cacao pudră', amount: 10, unit: 'g' },
+      { name: 'Mentă', amount: 5, unit: 'g' }
+    ],
+    instructions: [
+      'Stratifică în pahar: iaurt, berry mix, granola',
+      'Repetă straturile pentru efect vizual',
+      'Top cu cacao pudră și mentă proaspătă',
+      'Servește imediat sau refrigerează max 2h',
+      'Amestecă înainte de consum pentru gustul optim'
+    ],
+    nutritionalHighlight: 'ORAC 10,000+ = protecție celulară maximă'
   }];
 
   const { subscribe, set, update } = writable(defaultRecipes);
