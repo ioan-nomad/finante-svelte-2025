@@ -15,18 +15,39 @@ export default defineConfig({
           'vendor-chart': ['chart.js'],
           'vendor-pdf': ['pdfjs-dist', 'jspdf'],
           'vendor-xlsx': ['xlsx']
-        }
+        },
+        assetFileNames: 'assets/[name]-[hash].[ext]',
+        chunkFileNames: 'js/[name]-[hash].js',
+        entryFileNames: 'js/[name]-[hash].js'
       }
     },
     minify: 'terser',
     terserOptions: {
       compress: {
         drop_console: true,
-        drop_debugger: true
+        drop_debugger: true,
+        pure_funcs: ['console.log', 'console.info'],
+        passes: 2
+      },
+      format: {
+        comments: false
       }
-    }
+    },
+    reportCompressedSize: true,
+    chunkSizeWarningLimit: 500
   },
   optimizeDeps: {
-    include: ['chart.js', 'pdfjs-dist', 'xlsx', 'jspdf']
+    include: ['chart.js', 'pdfjs-dist', 'xlsx', 'jspdf'],
+    exclude: ['@napi-rs/canvas']
+  },
+  server: {
+    port: 5173,
+    strictPort: false,
+    open: true,
+    cors: true
+  },
+  preview: {
+    port: 4173,
+    open: true
   }
 })

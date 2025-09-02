@@ -706,24 +706,6 @@ function createCodexRecipes() {
 
 export const codexRecipes = createCodexRecipes();
 
-// ===== Recipe Index for Fast Searches =====
-export const recipeIndex = derived(codexRecipes, $recipes => {
-  const index = new Map();
-  $recipes.forEach(recipe => {
-    // Index by ingredients
-    recipe.ingredients.forEach(ing => {
-      const key = ing.name.toLowerCase();
-      if (!index.has(key)) index.set(key, []);
-      index.get(key).push(recipe.id);
-    });
-    // Index by goals
-    recipe.nutritionalGoals.forEach(goal => {
-      if (!index.has(goal)) index.set(goal, []);
-      index.get(goal).push(recipe.id);
-    });
-  });
-  return index;
-});
 
 // Auto-save recipes changes
 codexRecipes.subscribe(recipes => {
@@ -800,6 +782,107 @@ codexRecipes.loadFromStorage();
 setInterval(() => {
   nutritionProfile.updateCycleDay();
 }, 24 * 60 * 60 * 1000);
+
+// Performance optimized recipe index
+export const recipeIndex = derived(codexRecipes, $recipes => {
+  const index = {
+    byIngredient: new Map(),
+    byGoal: new Map(),
+    byProtein: new Map(),
+    byPlantCount: new Map(),
+    byTime: new Map()
+  };
+  
+  $recipes.forEach(recipe => {
+    // Index by ingredients
+    recipe.ingredients.forEach(ing => {
+      const key = ing.name.toLowerCase();
+      if (!index.byIngredient.has(key)) {
+        index.byIngredient.set(key, new Set());
+      }
+      index.byIngredient.get(key).add(recipe.id);
+    });
+    
+    // Index by nutritional goals
+    recipe.nutritionalGoals.forEach(goal => {
+      if (!index.byGoal.has(goal)) {
+        index.byGoal.set(goal, new Set());
+      }
+      index.byGoal.get(goal).add(recipe.id);
+    });
+    
+    // Index by protein range
+    const proteinRange = Math.floor(recipe.protein / 10) * 10;
+    if (!index.byProtein.has(proteinRange)) {
+      index.byProtein.set(proteinRange, new Set());
+    }
+    index.byProtein.get(proteinRange).add(recipe.id);
+    
+    // Index by plant count
+    const plantRange = Math.floor(recipe.plantCount / 3) * 3;
+    if (!index.byPlantCount.has(plantRange)) {
+      index.byPlantCount.set(plantRange, new Set());
+    }
+    index.byPlantCount.get(plantRange).add(recipe.id);
+    
+    // Index by cooking time
+    if (!index.byTime.has(recipe.cookingTime)) {
+      index.byTime.set(recipe.cookingTime, new Set());
+    }
+    index.byTime.get(recipe.cookingTime).add(recipe.id);
+  });
+  
+  return index;
+});
+
+// Fast recipe search using index
+export function searchRecipes(query, filters = {}) {
+  const results = new Set();
+  const index = get(recipeIndex);
+  const recipes = get(codexRecipes);
+  
+  if (query) {
+    const searchTerm = query.toLowerCase();
+    
+    // Search in ingredient index
+    if (index.byIngredient.has(searchTerm)) {
+      index.byIngredient.get(searchTerm).forEach(id => results.add(id));
+    }
+    
+    // Search in recipe names and descriptions
+    recipes.forEach(recipe => {
+      if (recipe.name.toLowerCase().includes(searchTerm) ||
+          recipe.description.toLowerCase().includes(searchTerm)) {
+        results.add(recipe.id);
+      }
+    });
+  }
+  
+  // Apply filters using indexes
+  if (filters.goal && index.byGoal.has(filters.goal)) {
+    const goalRecipes = index.byGoal.get(filters.goal);
+    if (results.size > 0) {
+      // Intersection
+      results.forEach(id => {
+        if (!goalRecipes.has(id)) results.delete(id);
+      });
+    } else {
+      goalRecipes.forEach(id => results.add(id));
+    }
+  }
+  
+  if (filters.proteinMin !== undefined) {
+    const range = Math.floor(filters.proteinMin / 10) * 10;
+    const proteinRecipes = index.byProtein.get(range) || new Set();
+    if (results.size > 0) {
+      results.forEach(id => {
+        if (!proteinRecipes.has(id)) results.delete(id);
+      });
+    }
+  }
+  
+  return recipes.filter(r => results.has(r.id));
+}
 
 // ===== Export for Recipe Suggestions =====
 export function getRecipeSuggestionsForProfile() {

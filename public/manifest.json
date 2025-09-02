@@ -1,12 +1,15 @@
 {
-  "name": "Finanțe & Smart Pantry",
-  "short_name": "Finanțe",
-  "description": "Aplicație completă pentru management financiar și tracking inventar",
+  "name": "N-OMAD Suite - Finance, Pantry & Nutrition",
+  "short_name": "N-OMAD",
+  "description": "Aplicație completă pentru management financiar, inventar alimentar și nutriție CODEX",
   "start_url": "/",
   "display": "standalone",
+  "orientation": "any",
   "background_color": "#0f1220",
   "theme_color": "#667eea",
-  "orientation": "portrait-primary",
+  "dir": "ltr",
+  "lang": "ro-RO",
+  "categories": ["finance", "productivity", "lifestyle", "health"],
   "icons": [
     {
       "src": "/icon-192.png",
@@ -21,19 +24,25 @@
       "purpose": "any maskable"
     }
   ],
-  "categories": ["finance", "productivity"],
+  "screenshots": [
+    {
+      "src": "/screenshot-1.png",
+      "sizes": "1280x720",
+      "type": "image/png"
+    }
+  ],
   "shortcuts": [
     {
-      "name": "Adaugă Tranzacție",
-      "short_name": "Tranzacție",
-      "url": "/?tab=tranzactii",
+      "name": "Dashboard",
+      "url": "/?tab=dashboard",
       "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
     },
     {
-      "name": "Dashboard",
-      "short_name": "Dashboard",
-      "url": "/?tab=dashboard",
+      "name": "Rețete",
+      "url": "/?tab=recipes",
       "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
     }
-  ]
+  ],
+  "prefer_related_applications": false,
+  "related_applications": []
 }

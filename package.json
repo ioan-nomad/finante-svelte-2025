@@ -7,9 +7,13 @@
     "dev": "vite",
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
+    "build:stats": "vite build && node scripts/build-stats.js",
     "preview": "vite preview",
-    "clean": "rm -rf dist node_modules package-lock.json",
-    "reinstall": "npm run clean && npm install"
+    "clean": "rm -rf dist node_modules package-lock.json .svelte-kit",
+    "reinstall": "npm run clean && npm install",
+    "optimize": "npm run clean && npm install && npm run build",
+    "test": "echo 'Tests coming soon'",
+    "lint": "echo 'Linting coming soon'"
   },
   "devDependencies": {
     "@sveltejs/vite-plugin-svelte": "^2.4.2",
