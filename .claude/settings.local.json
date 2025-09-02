@@ -20,7 +20,8 @@
       "Bash(git rm:*)",
       "Bash(npx svelte-check:*)",
       "WebFetch(domain:localhost)",
-      "Bash(npm cache clean:*)"
+      "Bash(npm cache clean:*)",
+      "WebSearch"
     ],
     "deny": [],
     "ask": []
