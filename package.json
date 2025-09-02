@@ -4,11 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "set BROWSER=none && vite --host localhost",
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
     "build:stats": "vite build && node scripts/build-stats.js",
-    "preview": "vite preview",
+    "preview": "set BROWSER=none && vite preview --host localhost",
     "clean": "rm -rf dist node_modules package-lock.json .svelte-kit",
     "reinstall": "npm run clean && npm install",
     "optimize": "npm run clean && npm install && npm run build",

@@ -43,11 +43,12 @@ export default defineConfig({
   server: {
     port: 5173,
     strictPort: false,
-    open: true,
-    cors: true
+    open: false,  // SCHIMBAT din true în false - NU mai deschide automat
+    cors: true,
+    host: 'localhost'
   },
   preview: {
     port: 4173,
-    open: true
+    open: false  // SCHIMBAT din true în false
   }
 })
