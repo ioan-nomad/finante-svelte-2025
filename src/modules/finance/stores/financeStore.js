@@ -1,4 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
+import { secureStorage } from '../../../lib/security/crypto.js';
 
 // Accounts store
 export const accounts = writable([
@@ -21,31 +22,31 @@ export function calculateTotalBalance(accountsList) {
   }, 0);
 }
 
-// Load data from localStorage
-export function loadFromStorage() {
+// Secure save data
+export function saveToStorage() {
   try {
-    const savedAccounts = localStorage.getItem('fs_accounts');
-    const savedTransactions = localStorage.getItem('fs_transactions');
-    
-    if (savedAccounts) {
-      accounts.set(JSON.parse(savedAccounts));
-    }
-    
-    if (savedTransactions) {
-      transactions.set(JSON.parse(savedTransactions));
-    }
+    secureStorage.secureSave('fs_accounts', get(accounts));
+    secureStorage.secureSave('fs_transactions', get(transactions));
   } catch (error) {
-    console.error('Error loading data:', error);
+    console.error('Error saving data:', error);
   }
 }
 
-// Save data to localStorage
-export function saveToStorage() {
+// Secure load data
+export function loadFromStorage() {
   try {
-    localStorage.setItem('fs_accounts', JSON.stringify(get(accounts)));
-    localStorage.setItem('fs_transactions', JSON.stringify(get(transactions)));
+    const savedAccounts = secureStorage.secureLoad('fs_accounts');
+    const savedTransactions = secureStorage.secureLoad('fs_transactions');
+    
+    if (savedAccounts) {
+      accounts.set(savedAccounts);
+    }
+    
+    if (savedTransactions) {
+      transactions.set(savedTransactions);
+    }
   } catch (error) {
-    console.error('Error saving data:', error);
+    console.error('Error loading data:', error);
   }
 }
 

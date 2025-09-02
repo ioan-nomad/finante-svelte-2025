@@ -28,6 +28,10 @@
   // Config
   import { APP_CONFIG } from './shared/config.js';
   
+  // Security imports
+  import { secureStorage, InputSanitizer, TamperProtection } from './lib/security/crypto.js';
+  import { CSPManager } from './lib/security/csp.js';
+  
   // Nutrition Module
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
   
@@ -110,6 +114,17 @@
 
   // Initialize dark mode
   onMount(() => {
+    // Initialize security on mount
+    // Apply CSP
+    CSPManager.apply();
+    
+    // Initialize tamper protection
+    TamperProtection.init();
+    
+    // Setup auto-lock after 15 minutes inactivity
+    secureStorage.setupAutoLock(15);
+    
+    // Existing dark mode code...
     const savedDarkMode = localStorage.getItem('darkMode');
     if (savedDarkMode === 'true') {
       isDarkMode = true;

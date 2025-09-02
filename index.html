@@ -4,8 +4,21 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
     
+    <!-- Advanced Security Headers -->
+    <meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=(), payment=()">
     <meta name="referrer" content="no-referrer">
-    <meta http-equiv="Permissions-Policy" content="interest-cohort=(), microphone=(), camera=(), payment=(), usb=(), geolocation=()">
+
+    <!-- Anti-clickjacking -->
+    <style id="antiClickjack">body{display:none !important;}</style>
+    <script>
+      if (self === top) {
+        var antiClickjack = document.getElementById("antiClickjack");
+        antiClickjack.parentNode.removeChild(antiClickjack);
+      } else {
+        top.location = self.location;
+      }
+    </script>
+    
     <script>
       // Block tracking
       window.ga = window.ga || function(){};
