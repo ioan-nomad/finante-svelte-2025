@@ -86,17 +86,36 @@
     activeTab = newTab;
   }
 
-  // Dark mode toggle
+  // Dark mode toggle with secure storage
   function toggleDarkMode() {
     isDarkMode = !isDarkMode;
     document.documentElement.classList.toggle('dark', isDarkMode);
-    localStorage.setItem('darkMode', isDarkMode.toString());
+    
+    // Use secure storage instead of plain localStorage
+    try {
+      secureStorage.secureSave('darkMode', { value: isDarkMode });
+    } catch (e) {
+      console.error('Failed to save dark mode preference:', e);
+      // Fallback to localStorage for non-critical data
+      localStorage.setItem('darkMode', isDarkMode.toString());
+    }
   }
 
-  // Show notification helper
+  // Show notification helper with input sanitization
   function showNotification(message, type = 'success') {
+    // Sanitize notification inputs to prevent XSS
+    const sanitizedMessage = InputSanitizer.sanitizeHTML(message || '');
+    const sanitizedType = InputSanitizer.sanitizeString(type, 20);
+    
+    // Validate type
+    const allowedTypes = ['success', 'error', 'warning', 'info'];
+    const validType = allowedTypes.includes(sanitizedType) ? sanitizedType : 'info';
+    
     const event = new CustomEvent('show-notification', {
-      detail: { message, type }
+      detail: { 
+        message: sanitizedMessage, 
+        type: validType 
+      }
     });
     window.dispatchEvent(event);
   }
@@ -124,12 +143,32 @@
     // Setup auto-lock after 15 minutes inactivity
     secureStorage.setupAutoLock(15);
     
-    // Existing dark mode code...
-    const savedDarkMode = localStorage.getItem('darkMode');
-    if (savedDarkMode === 'true') {
-      isDarkMode = true;
-      document.documentElement.classList.add('dark');
-    }
+    // Initialize dark mode with secure storage
+    const loadDarkMode = async () => {
+      try {
+        const secureData = await secureStorage.secureLoad('darkMode');
+        if (secureData && secureData.value === true) {
+          isDarkMode = true;
+          document.documentElement.classList.add('dark');
+        }
+      } catch (e) {
+        // Fallback to localStorage for migration
+        const savedDarkMode = localStorage.getItem('darkMode');
+        if (savedDarkMode === 'true') {
+          isDarkMode = true;
+          document.documentElement.classList.add('dark');
+          // Migrate to secure storage
+          try {
+            await secureStorage.secureSave('darkMode', { value: true });
+            localStorage.removeItem('darkMode');
+          } catch (migrationError) {
+            console.warn('Failed to migrate dark mode to secure storage');
+          }
+        }
+      }
+    };
+    
+    loadDarkMode();
   });
 
   // Calculate total balance reactively

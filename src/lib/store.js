@@ -1,5 +1,6 @@
 // lib/store.js
 import { writable, derived, get } from 'svelte/store';
+import { InputSanitizer, SecureStorage } from './security/crypto.js';
 
 // ===== Advanced Data Cache System =====
 class DataCache {
@@ -244,9 +245,15 @@ const DB = {
   }
 };
 
-// ===== Helper functions exact ca în HTML =====
+// ===== Secure Helper functions =====
 export function nid() { 
-  return Math.random().toString(36).slice(2) + Date.now().toString(36);
+  // Use cryptographically secure random instead of Math.random()
+  return SecureStorage.generateSecureId(16);
+}
+
+export function generateTransactionId() {
+  // Use UUID for transaction IDs to ensure uniqueness
+  return SecureStorage.generateUUID();
 }
 
 export function fmt(n) { 
@@ -352,12 +359,39 @@ export function computeAccountBalance(acc, transactionsList = null) {
 }
 
 export function addTransaction(tx) {
-  tx.id = nid();
+  // Validate and sanitize transaction data
+  if (!tx || typeof tx !== 'object') {
+    throw new Error('Invalid transaction data');
+  }
+  
+  // Sanitize and validate required fields
+  const sanitized = {
+    id: generateTransactionId(), // Use secure UUID
+    type: InputSanitizer.sanitizeString(tx.type, 20),
+    amount: InputSanitizer.sanitizeNumber(tx.amount, 0.01, 999999999),
+    description: InputSanitizer.sanitizeString(tx.description || '', 500),
+    category: InputSanitizer.sanitizeString(tx.category || '', 100),
+    date: tx.date && InputSanitizer.validateDate(tx.date) ? tx.date : new Date().toISOString().split('T')[0],
+    fromAccount: InputSanitizer.sanitizeString(tx.fromAccount || '', 50),
+    toAccount: InputSanitizer.sanitizeString(tx.toAccount || '', 50),
+    person: InputSanitizer.sanitizeString(tx.person || '', 100)
+  };
+  
+  // Validate business rules
+  if (!sanitized.type || !['income', 'expense', 'transfer'].includes(sanitized.type)) {
+    throw new Error('Invalid transaction type');
+  }
+  
+  if (!InputSanitizer.validateAmount(sanitized.amount)) {
+    throw new Error('Invalid transaction amount');
+  }
+  
   // Clear both cache systems when adding transaction
   balanceCache.clear();
-  dataCache.clear(); // Clear new cache system too
+  dataCache.clear();
+  
   transactions.update(txs => {
-    txs.unshift(tx);
+    txs.unshift(sanitized);
     return txs;
   });
 }
@@ -370,13 +404,43 @@ export function deleteTransaction(id) {
 }
 
 export function addAccount(acc) {
-  acc.id = acc.id || nid();
+  // Validate and sanitize account data
+  if (!acc || typeof acc !== 'object') {
+    throw new Error('Invalid account data');
+  }
+  
+  const sanitized = {
+    id: acc.id || nid(),
+    name: InputSanitizer.sanitizeString(acc.name || '', 100),
+    type: InputSanitizer.sanitizeString(acc.type, 20),
+    owner: InputSanitizer.sanitizeString(acc.owner || '', 100),
+    currency: InputSanitizer.sanitizeString(acc.currency, 10),
+    opening: InputSanitizer.sanitizeNumber(acc.opening || 0, -999999999, 999999999)
+  };
+  
+  // Validate required fields
+  if (!sanitized.name.trim()) {
+    throw new Error('Account name is required');
+  }
+  
+  if (!['bank', 'cash', 'investment'].includes(sanitized.type)) {
+    throw new Error('Invalid account type');
+  }
+  
+  if (!['RON', 'EUR', 'USD'].includes(sanitized.currency)) {
+    throw new Error('Invalid currency');
+  }
+  
+  // Clear caches when account changes
+  balanceCache.clear();
+  dataCache.clear();
+  
   accounts.update(accs => {
-    const existingIndex = accs.findIndex(a => a.id === acc.id);
+    const existingIndex = accs.findIndex(a => a.id === sanitized.id);
     if (existingIndex >= 0) {
-      accs[existingIndex] = acc;
+      accs[existingIndex] = sanitized;
     } else {
-      accs.push(acc);
+      accs.push(sanitized);
     }
     return accs;
   });
@@ -393,6 +457,7 @@ export function deleteAccount(id) {
 }
 
 // ===== Computed values =====
+// Optimized balance calculation - O(n) instead of O(n²)
 export const totalBalance = derived(
   [accounts, transactions], 
   ([$accounts, $transactions]) => {
@@ -401,21 +466,56 @@ export const totalBalance = derived(
     const bankBalances = {};
     const ownerBalances = {};
     
+    // Create account lookup map for O(1) access
+    const accountMap = new Map($accounts.map(acc => [acc.id, acc]));
+    
+    // Initialize balances with opening amounts
     for (const acc of $accounts) {
-      const bal = computeAccountBalance(acc, $transactions);
+      const opening = +acc.opening || 0;
+      balances[acc.currency] = (balances[acc.currency] || 0) + opening;
       
-      // Total per currency
-      balances[acc.currency] = (balances[acc.currency] || 0) + bal;
-      
-      // Cash vs bank
       if (acc.type === 'cash') {
-        cashBalances[acc.currency] = (cashBalances[acc.currency] || 0) + bal;
+        cashBalances[acc.currency] = (cashBalances[acc.currency] || 0) + opening;
       } else if (acc.type === 'bank') {
-        bankBalances[acc.currency] = (bankBalances[acc.currency] || 0) + bal;
+        bankBalances[acc.currency] = (bankBalances[acc.currency] || 0) + opening;
       }
       
-      // Owner totals
-      ownerBalances[acc.owner] = (ownerBalances[acc.owner] || 0) + bal;
+      ownerBalances[acc.owner] = (ownerBalances[acc.owner] || 0) + opening;
+    }
+    
+    // Single pass through transactions - O(n) complexity
+    for (const t of $transactions) {
+      const amount = +t.amount || 0;
+      
+      if (t.fromAccount) {
+        const fromAcc = accountMap.get(t.fromAccount);
+        if (fromAcc) {
+          balances[fromAcc.currency] = (balances[fromAcc.currency] || 0) - amount;
+          
+          if (fromAcc.type === 'cash') {
+            cashBalances[fromAcc.currency] = (cashBalances[fromAcc.currency] || 0) - amount;
+          } else if (fromAcc.type === 'bank') {
+            bankBalances[fromAcc.currency] = (bankBalances[fromAcc.currency] || 0) - amount;
+          }
+          
+          ownerBalances[fromAcc.owner] = (ownerBalances[fromAcc.owner] || 0) - amount;
+        }
+      }
+      
+      if (t.toAccount) {
+        const toAcc = accountMap.get(t.toAccount);
+        if (toAcc) {
+          balances[toAcc.currency] = (balances[toAcc.currency] || 0) + amount;
+          
+          if (toAcc.type === 'cash') {
+            cashBalances[toAcc.currency] = (cashBalances[toAcc.currency] || 0) + amount;
+          } else if (toAcc.type === 'bank') {
+            bankBalances[toAcc.currency] = (bankBalances[toAcc.currency] || 0) + amount;
+          }
+          
+          ownerBalances[toAcc.owner] = (ownerBalances[toAcc.owner] || 0) + amount;
+        }
+      }
     }
     
     return {
@@ -473,8 +573,28 @@ export function cleanupCache() {
   }
 }
 
-// Run cleanup every 10 minutes
-setInterval(cleanupCache, 10 * 60 * 1000);
+// Run cleanup every 10 minutes - with proper cleanup management
+let cleanupInterval = null;
+
+export function startCacheCleanup() {
+  if (cleanupInterval) clearInterval(cleanupInterval);
+  cleanupInterval = setInterval(cleanupCache, 10 * 60 * 1000);
+}
+
+export function stopCacheCleanup() {
+  if (cleanupInterval) {
+    clearInterval(cleanupInterval);
+    cleanupInterval = null;
+  }
+}
+
+// Start cleanup automatically
+startCacheCleanup();
+
+// Cleanup on page unload
+if (typeof window !== 'undefined') {
+  window.addEventListener('beforeunload', stopCacheCleanup);
+}
 
 // ===== Export helper pentru PDF parsing (va fi folosit în ImportPDF.svelte) =====
 export function suggestCategory(desc, type) {

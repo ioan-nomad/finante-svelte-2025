@@ -10,6 +10,13 @@
   
   let chartCanvas
   let chartInstance = null
+  let observer = null
+  let updateTimeout = null
+  let canvasContext = null
+  
+  // Theme color memoization
+  let cachedThemeColors = null
+  let lastTheme = null
   
   // Color palette
   const defaultColors = [
@@ -19,14 +26,26 @@
   ]
   
   onMount(() => {
-    if (data) {
+    if (isValidData(data)) {
       createChart()
     }
     
-    // Listen for dark mode changes
-    const observer = new MutationObserver(() => {
-      if (chartInstance) {
-        createChart() // Recreate chart with new colors
+    // Listen for dark mode changes only
+    observer = new MutationObserver((mutations) => {
+      let themeChanged = false
+      mutations.forEach(mutation => {
+        if (mutation.attributeName === 'class') {
+          const isDark = document.documentElement.classList.contains('dark')
+          if (lastTheme !== isDark) {
+            themeChanged = true
+            lastTheme = isDark
+            cachedThemeColors = null // Invalidate cache
+          }
+        }
+      })
+      
+      if (themeChanged && chartInstance) {
+        debouncedChartUpdate()
       }
     })
     
@@ -34,35 +53,114 @@
       attributes: true,
       attributeFilter: ['class']
     })
-    
-    // Store observer for cleanup
-    window._chartObserver = observer
   })
   
   onDestroy(() => {
+    // Clean up chart instance
     if (chartInstance) {
       chartInstance.destroy()
+      chartInstance = null
     }
     
     // Clean up observer
-    if (window._chartObserver) {
-      window._chartObserver.disconnect()
-      delete window._chartObserver
+    if (observer) {
+      observer.disconnect()
+      observer = null
     }
+    
+    // Clean up timeout
+    if (updateTimeout) {
+      clearTimeout(updateTimeout)
+      updateTimeout = null
+    }
+    
+    // Clean up cached context
+    canvasContext = null
+    cachedThemeColors = null
   })
   
+  // Data validation
+  function isValidData(data) {
+    if (!data) return false
+    
+    // Check if we have either labels+values or datasets
+    const hasLabelsAndValues = data.labels?.length > 0 && data.values?.length > 0
+    const hasDatasets = data.datasets?.length > 0 && 
+                       data.datasets[0]?.data?.length > 0
+    
+    return hasLabelsAndValues || hasDatasets
+  }
+  
+  // Security: Sanitize user input
+  function sanitizeLabel(label) {
+    if (typeof label !== 'string') return String(label)
+    return label.replace(/[<>'"&]/g, (match) => {
+      const map = { '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '&': '&amp;' }
+      return map[match]
+    })
+  }
+  
+  // Performance: Get canvas context with caching
+  function getCanvasContext() {
+    if (!canvasContext && chartCanvas) {
+      canvasContext = chartCanvas.getContext('2d')
+    }
+    return canvasContext
+  }
+  
+  // Performance: Debounced chart update
+  function debouncedChartUpdate() {
+    if (updateTimeout) {
+      clearTimeout(updateTimeout)
+    }
+    updateTimeout = setTimeout(() => {
+      if (chartCanvas && isValidData(data)) {
+        createChart()
+      }
+    }, 50)
+  }
+  
+  // Performance: Memoized theme colors
+  function getThemeColors() {
+    const isDark = document.documentElement.classList.contains('dark')
+    
+    if (lastTheme === isDark && cachedThemeColors) {
+      return cachedThemeColors
+    }
+    
+    const colors = {
+      textColor: isDark ? '#e6e9ff' : '#374151',
+      mutedColor: isDark ? '#9aa3b2' : '#6b7280',
+      gridColor: isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)',
+      tooltipBg: isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)',
+      borderColor: isDark ? '#1a1a1a' : '#fff',
+      tooltipBorder: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)'
+    }
+    
+    lastTheme = isDark
+    cachedThemeColors = colors
+    return colors
+  }
+
   function createChart() {
-    if (!chartCanvas || !data) return
+    if (!chartCanvas || !isValidData(data)) return
     
     // Destroy existing chart
     if (chartInstance) {
       chartInstance.destroy()
+      chartInstance = null
     }
     
-    const ctx = chartCanvas.getContext('2d')
+    const ctx = getCanvasContext()
+    if (!ctx) return
+    
     const config = getChartConfig()
     
-    chartInstance = new Chart(ctx, config)
+    try {
+      chartInstance = new Chart(ctx, config)
+    } catch (error) {
+      console.error('Error creating chart:', error)
+    }
   }
   
   function getChartConfig() {
@@ -82,19 +180,17 @@
   }
   
   function getPieConfig() {
-    const isDark = document.documentElement.classList.contains('dark')
-    const textColor = isDark ? '#e6e9ff' : '#374151'
-    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const colors = getThemeColors()
     
     return {
       type: chartType === 'doughnut' ? 'doughnut' : 'pie',
       data: {
-        labels: data.labels || [],
+        labels: (data.labels || []).map(sanitizeLabel),
         datasets: data.datasets || [{
           data: data.values || [],
           backgroundColor: data.colors || defaultColors,
           borderWidth: 2,
-          borderColor: isDark ? '#1a1a1a' : '#fff'
+          borderColor: colors.borderColor
         }]
       },
       options: {
@@ -105,23 +201,28 @@
             position: 'right',
             labels: {
               padding: 15,
-              color: textColor,
+              color: colors.textColor,
               font: {
                 size: 12,
                 family: 'Inter, ui-sans-serif'
               },
               generateLabels: function(chart) {
                 const dataset = chart.data.datasets[0]
-                const total = dataset.data.reduce((a, b) => a + b, 0)
+                if (!dataset || !dataset.data || dataset.data.length === 0) {
+                  return []
+                }
+                
+                const total = dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0)
+                if (total === 0) return []
                 
                 return chart.data.labels.map((label, i) => {
-                  const value = dataset.data[i]
+                  const value = dataset.data[i] || 0
                   const percentage = ((value / total) * 100).toFixed(1)
                   
                   return {
-                    text: `${label}: ${formatAmount(value)} (${percentage}%)`,
+                    text: `${sanitizeLabel(label)}: ${formatAmount(value)} (${percentage}%)`,
                     fillStyle: dataset.backgroundColor[i],
-                    fontColor: textColor,
+                    fontColor: colors.textColor,
                     hidden: false,
                     index: i
                   }
@@ -130,16 +231,18 @@
             }
           },
           tooltip: {
-            titleColor: textColor,
-            bodyColor: textColor,
-            backgroundColor: tooltipBg,
-            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            backgroundColor: colors.tooltipBg,
+            borderColor: colors.tooltipBorder,
             borderWidth: 1,
             callbacks: {
               label: function(context) {
-                const total = context.dataset.data.reduce((a, b) => a + b, 0)
+                const total = context.dataset.data.reduce((a, b) => (a || 0) + (b || 0), 0)
+                if (total === 0) return `${sanitizeLabel(context.label)}: ${formatAmount(context.parsed)}`
+                
                 const percentage = ((context.parsed / total) * 100).toFixed(1)
-                return `${context.label}: ${formatAmount(context.parsed)} (${percentage}%)`
+                return `${sanitizeLabel(context.label)}: ${formatAmount(context.parsed)} (${percentage}%)`
               }
             }
           }
@@ -149,16 +252,12 @@
   }
   
   function getBarConfig() {
-    const isDark = document.documentElement.classList.contains('dark')
-    const textColor = isDark ? '#e6e9ff' : '#374151'
-    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
-    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const colors = getThemeColors()
     
     return {
       type: 'bar',
       data: {
-        labels: data.labels || [],
+        labels: (data.labels || []).map(sanitizeLabel),
         datasets: data.datasets || [{
           label: 'Valoare',
           data: data.values || [],
@@ -173,22 +272,22 @@
         scales: {
           x: {
             ticks: {
-              color: mutedColor
+              color: colors.mutedColor
             },
             grid: {
-              color: gridColor
+              color: colors.gridColor
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: mutedColor,
+              color: colors.mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
             },
             grid: {
-              color: gridColor
+              color: colors.gridColor
             }
           }
         },
@@ -196,7 +295,7 @@
           legend: {
             display: data.datasets && data.datasets.length > 1,
             labels: {
-              color: textColor,
+              color: colors.textColor,
               font: {
                 size: 12,
                 family: 'Inter, ui-sans-serif'
@@ -204,14 +303,14 @@
             }
           },
           tooltip: {
-            titleColor: textColor,
-            bodyColor: textColor,
-            backgroundColor: tooltipBg,
-            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            backgroundColor: colors.tooltipBg,
+            borderColor: colors.tooltipBorder,
             borderWidth: 1,
             callbacks: {
               label: function(context) {
-                return `${context.dataset.label || ''}: ${formatAmount(context.parsed.y)}`
+                return `${sanitizeLabel(context.dataset.label) || ''}: ${formatAmount(context.parsed.y)}`
               }
             }
           }
@@ -221,16 +320,12 @@
   }
   
   function getLineConfig() {
-    const isDark = document.documentElement.classList.contains('dark')
-    const textColor = isDark ? '#e6e9ff' : '#374151'
-    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
-    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const colors = getThemeColors()
     
     return {
       type: 'line',
       data: {
-        labels: data.labels || [],
+        labels: (data.labels || []).map(sanitizeLabel),
         datasets: data.datasets || [{
           label: 'Trend',
           data: data.values || [],
@@ -249,29 +344,29 @@
         scales: {
           x: {
             ticks: {
-              color: mutedColor
+              color: colors.mutedColor
             },
             grid: {
-              color: gridColor
+              color: colors.gridColor
             }
           },
           y: {
             beginAtZero: true,
             ticks: {
-              color: mutedColor,
+              color: colors.mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
             },
             grid: {
-              color: gridColor
+              color: colors.gridColor
             }
           }
         },
         plugins: {
           legend: {
             labels: {
-              color: textColor,
+              color: colors.textColor,
               font: {
                 size: 12,
                 family: 'Inter, ui-sans-serif'
@@ -279,14 +374,14 @@
             }
           },
           tooltip: {
-            titleColor: textColor,
-            bodyColor: textColor,
-            backgroundColor: tooltipBg,
-            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            backgroundColor: colors.tooltipBg,
+            borderColor: colors.tooltipBorder,
             borderWidth: 1,
             callbacks: {
               label: function(context) {
-                return `${context.dataset.label}: ${formatAmount(context.parsed.y)}`
+                return `${sanitizeLabel(context.dataset.label)}: ${formatAmount(context.parsed.y)}`
               }
             }
           }
@@ -296,16 +391,12 @@
   }
   
   function getRadarConfig() {
-    const isDark = document.documentElement.classList.contains('dark')
-    const textColor = isDark ? '#e6e9ff' : '#374151'
-    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
-    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
+    const colors = getThemeColors()
     
     return {
       type: 'radar',
       data: {
-        labels: data.labels || [],
+        labels: (data.labels || []).map(sanitizeLabel),
         datasets: data.datasets || [{
           label: 'Valori',
           data: data.values || [],
@@ -320,16 +411,16 @@
           r: {
             beginAtZero: true,
             ticks: {
-              color: mutedColor,
+              color: colors.mutedColor,
               callback: function(value) {
                 return formatAmount(value)
               }
             },
             grid: {
-              color: gridColor
+              color: colors.gridColor
             },
             pointLabels: {
-              color: textColor,
+              color: colors.textColor,
               font: {
                 size: 11,
                 family: 'Inter, ui-sans-serif'
@@ -340,7 +431,7 @@
         plugins: {
           legend: {
             labels: {
-              color: textColor,
+              color: colors.textColor,
               font: {
                 size: 12,
                 family: 'Inter, ui-sans-serif'
@@ -348,10 +439,10 @@
             }
           },
           tooltip: {
-            titleColor: textColor,
-            bodyColor: textColor,
-            backgroundColor: tooltipBg,
-            borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
+            titleColor: colors.textColor,
+            bodyColor: colors.textColor,
+            backgroundColor: colors.tooltipBg,
+            borderColor: colors.tooltipBorder,
             borderWidth: 1
           }
         }
@@ -368,9 +459,9 @@
     }).format(value)
   }
   
-  // Recreate chart when data or type changes
-  $: if (chartInstance && (data || chartType)) {
-    createChart()
+  // Recreate chart when data or type changes (optimized)
+  $: if (chartInstance && isValidData(data)) {
+    debouncedChartUpdate()
   }
 </script>
 
