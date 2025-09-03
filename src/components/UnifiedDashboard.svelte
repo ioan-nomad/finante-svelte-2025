@@ -14,10 +14,11 @@
   // Local state
   let refreshInterval;
   let isLoading = false;
+  let mounted = false;
   
   // Computed metrics
-  $: totalBalance = $accounts.reduce((sum, acc) => sum + acc.balance, 0);
-  $: monthlyFoodExpenses = $transactions
+  $: if (mounted) totalBalance = $accounts.reduce((sum, acc) => sum + acc.balance, 0);
+  $: if (mounted) monthlyFoodExpenses = $transactions
     .filter(t => 
       t.type === 'expense' && 
       t.category === 'Alimente' && 
@@ -26,12 +27,12 @@
     )
     .reduce((sum, t) => sum + t.amount, 0);
   
-  $: budgetUtilization = $unifiedMetrics.monthlyFoodBudget > 0 
+  $: if (mounted) budgetUtilization = $unifiedMetrics.monthlyFoodBudget > 0 
     ? (monthlyFoodExpenses / $unifiedMetrics.monthlyFoodBudget) * 100 
     : 0;
     
   // Health score calculation
-  $: overallHealthScore = calculateOverallHealthScore(
+  $: if (mounted) overallHealthScore = calculateOverallHealthScore(
     $unifiedMetrics.codexScore,
     $unifiedMetrics.plantDiversityScore,
     $antiInflammatoryScore.score,
@@ -99,6 +100,7 @@
   }
   
   onMount(() => {
+    mounted = true;
     // Refresh data every 5 minutes
     refreshInterval = setInterval(refreshData, 5 * 60 * 1000);
   });

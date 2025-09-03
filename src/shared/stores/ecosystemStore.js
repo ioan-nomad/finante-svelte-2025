@@ -1,5 +1,6 @@
 import { writable, derived, get } from 'svelte/store';
 import { secureStorage } from '../../lib/security/crypto.js';
+import { debounce } from '../../lib/utils.js';
 
 // =============================================================================
 // CODEX N-OMAD ECOSYSTEM STORE
@@ -476,13 +477,26 @@ function getWeekNumber(date) {
 // PERSISTENCE
 // =============================================================================
 
-export function saveEcosystemData() {
+export async function saveEcosystemData() {
   try {
-    secureStorage.secureSave('ecosystem_data', get(ecosystemData));
+    const data = get(ecosystemData);
+    if (navigator.storage?.estimate) {
+      const {usage, quota} = await navigator.storage.estimate();
+      if ((usage / quota) * 100 > 90) {
+        data.receiptAnalysis = data.receiptAnalysis.slice(0, 30);
+        data.codexCompliance.weeklyGoals = Object.fromEntries(
+          Object.entries(data.codexCompliance.weeklyGoals).slice(-4)
+        );
+      }
+    }
+    secureStorage.secureSave('ecosystem_data', data);
   } catch (error) {
-    console.error('Error saving ecosystem data:', error);
+    console.error('Error saving:', error);
+    localStorage.setItem('ecosystem_backup', JSON.stringify(get(ecosystemData)));
   }
 }
+
+const debouncedSave = debounce(() => saveEcosystemData(), 1000);
 
 export function loadEcosystemData() {
   try {
@@ -495,8 +509,8 @@ export function loadEcosystemData() {
   }
 }
 
-// Auto-save on changes
-ecosystemData.subscribe(() => saveEcosystemData());
+// Auto-save on changes with debouncing
+ecosystemData.subscribe(() => debouncedSave());
 
 // Initialize on load
 if (typeof window !== 'undefined') {

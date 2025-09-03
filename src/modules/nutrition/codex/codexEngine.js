@@ -5,6 +5,10 @@ class CodexEngine {
   constructor() {
     this.rules = this.initializeCodexRules();
     this.instantPotRules = this.initializeInstantPotRules();
+    
+    // Performance caching
+    this.cache = new Map();
+    this.cacheTimeout = 5 * 60 * 1000; // 5 minutes
   }
 
   initializeCodexRules() {
@@ -105,7 +109,40 @@ class CodexEngine {
     };
   }
 
+  // Cache helper methods
+  getCacheKey(type, data) {
+    return `${type}_${JSON.stringify(data)}`;
+  }
+
+  getFromCache(key) {
+    const cached = this.cache.get(key);
+    if (cached && (Date.now() - cached.timestamp) < this.cacheTimeout) {
+      return cached.data;
+    }
+    this.cache.delete(key);
+    return null;
+  }
+
+  setCache(key, data) {
+    // Limit cache size to prevent memory issues
+    if (this.cache.size > 100) {
+      const firstKey = this.cache.keys().next().value;
+      this.cache.delete(firstKey);
+    }
+    
+    this.cache.set(key, {
+      data: data,
+      timestamp: Date.now()
+    });
+  }
+
   evaluateMeal(meal) {
+    const cacheKey = this.getCacheKey('meal', meal);
+    const cached = this.getFromCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const evaluation = {
       antiInflammatoryScore: this.calculateAntiInflammatoryScore(meal),
       plantDiversityScore: this.calculatePlantDiversityScore(meal),
@@ -115,6 +152,8 @@ class CodexEngine {
     };
 
     evaluation.overallScore = this.calculateOverallScore(evaluation);
+    
+    this.setCache(cacheKey, evaluation);
     return evaluation;
   }
 
@@ -259,11 +298,21 @@ class CodexEngine {
   }
 
   getTodaysRecommendations() {
+    const cacheKey = this.getCacheKey('recommendations', {
+      date: new Date().toDateString(),
+      phase: mtorTracker.getCurrentPhase()
+    });
+    
+    const cached = this.getFromCache(cacheKey);
+    if (cached) {
+      return cached;
+    }
+
     const currentPhase = mtorTracker.getCurrentPhase();
     const dayInCycle = mtorTracker.getDayInCycle();
     const plantProgress = plantDiversityTracker.currentWeekProgress;
 
-    return {
+    const recommendations = {
       phase: currentPhase,
       dayInCycle: dayInCycle,
       macroTargets: this.rules.nutrition.macronutrients[currentPhase],
@@ -272,6 +321,9 @@ class CodexEngine {
       antiInflammatoryFocus: this.getAntiInflammatoryFocus(),
       instantPotSuggestion: this.generateInstantPotSuggestion(currentPhase)
     };
+
+    this.setCache(cacheKey, recommendations);
+    return recommendations;
   }
 
   getNeededPlants(currentProgress) {

@@ -4,7 +4,7 @@ import { nid, today } from '../../../shared/stores/sharedStore.js';
 import { codexEngine } from '../codex/codexEngine.js';
 import { currentRecommendations, cycleProgress } from '../mtor/mtorTracker.js';
 import { currentWeekProgress, antiInflammatoryScore, logPlantConsumption } from '../plants/plantDiversityTracker.js';
-import { ecosystemStore } from '../../../shared/stores/ecosystemStore.js';
+let ecosystemStore = null;
 
 // ===== CODEX N-OMAD Core Principles =====
 const CODEX_PRINCIPLES = {
@@ -1067,7 +1067,13 @@ export function updateNutritionGoals(goals) {
 }
 
 // ===== CODEX Integration Functions =====
-export function logCodexMeal(mealData) {
+export async function logCodexMeal(mealData) {
+  // Dynamic import to avoid circular dependencies
+  if (!ecosystemStore) {
+    const module = await import('../../../shared/stores/ecosystemStore.js');
+    ecosystemStore = module.ecosystemStore;
+  }
+  
   // Evaluate meal with CODEX engine
   const evaluation = codexEngine.evaluateMeal(mealData);
   
