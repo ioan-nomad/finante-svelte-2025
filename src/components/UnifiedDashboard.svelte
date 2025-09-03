@@ -8,6 +8,7 @@
   import { unifiedMetrics, ecosystemData } from '../shared/stores/ecosystemStore.js';
   import { currentRecommendations, cycleProgress } from '../modules/nutrition/mtor/mtorTracker.js';
   import { currentWeekProgress, antiInflammatoryScore } from '../modules/nutrition/plants/plantDiversityTracker.js';
+  import { codexDashboardData } from '../modules/nutrition/stores/nutritionStore.js';
   import { accounts, transactions } from '../modules/finance/stores/financeStore.js';
   
   // Local state

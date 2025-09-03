@@ -1,6 +1,10 @@
 // modules/nutrition/stores/nutritionStore.js
 import { writable, derived, get } from 'svelte/store';
 import { nid, today } from '../../../shared/stores/sharedStore.js';
+import { codexEngine } from '../codex/codexEngine.js';
+import { currentRecommendations, cycleProgress } from '../mtor/mtorTracker.js';
+import { currentWeekProgress, antiInflammatoryScore, logPlantConsumption } from '../plants/plantDiversityTracker.js';
+import { ecosystemStore } from '../../../shared/stores/ecosystemStore.js';
 
 // ===== CODEX N-OMAD Core Principles =====
 const CODEX_PRINCIPLES = {
@@ -1062,23 +1066,109 @@ export function updateNutritionGoals(goals) {
   nutritionProfile.updateGoals(goals);
 }
 
+// ===== CODEX Integration Functions =====
+export function logCodexMeal(mealData) {
+  // Evaluate meal with CODEX engine
+  const evaluation = codexEngine.evaluateMeal(mealData);
+  
+  // Log plants for diversity tracking
+  if (mealData.ingredients) {
+    mealData.ingredients.forEach(ingredient => {
+      if (codexEngine.isPlantBased(ingredient.name)) {
+        logPlantConsumption({
+          name: ingredient.name,
+          species: ingredient.species || ingredient.name,
+          antiInflammatory: ingredient.antiInflammatory || 'moderate',
+          amount: ingredient.amount,
+          unit: ingredient.unit
+        });
+      }
+    });
+  }
+  
+  // Add meal to profile with CODEX evaluation
+  const enhancedMeal = {
+    ...mealData,
+    evaluation,
+    timestamp: new Date().toISOString(),
+    codexScore: evaluation.overallScore,
+    antiInflammatoryScore: evaluation.antiInflammatoryScore,
+    plantDiversityScore: evaluation.plantDiversityScore
+  };
+  
+  nutritionProfile.addMeal(enhancedMeal);
+  
+  // Update ecosystem store
+  ecosystemStore.update(state => ({
+    ...state,
+    nutrition: {
+      ...state.nutrition,
+      lastMeal: enhancedMeal,
+      dailyScore: evaluation.overallScore
+    }
+  }));
+  
+  return evaluation;
+}
+
+export function getCodexRecommendations() {
+  return codexEngine.getTodaysRecommendations();
+}
+
+export function generateInstantPotRecipe(ingredients, cookingTime) {
+  return codexEngine.generateInstantPotRecipe(ingredients, cookingTime);
+}
+
 // ===== Derived Stores =====
 export const weeklyProgress = derived(
-  nutritionProfile,
-  $profile => {
-    const plantProgress = Math.min(100, ($profile.weeklyPlantCount / CODEX_PRINCIPLES.WEEKLY_PLANT_GOAL) * 100);
+  [nutritionProfile, currentWeekProgress, antiInflammatoryScore],
+  ([$profile, $plantProgress, $antiInflammatory]) => {
+    const plantProgress = Math.min(100, ($plantProgress.consumedCount / CODEX_PRINCIPLES.WEEKLY_PLANT_GOAL) * 100);
     const mealCount = $profile.mealHistory.length;
     
     return {
       plantProgress: Math.round(plantProgress),
-      plantsAchieved: $profile.weeklyPlantCount,
-      plantsNeeded: Math.max(0, CODEX_PRINCIPLES.WEEKLY_PLANT_GOAL - $profile.weeklyPlantCount),
+      plantsAchieved: $plantProgress.consumedCount,
+      plantsNeeded: $plantProgress.remaining,
       mealsTracked: mealCount,
       currentPhase: $profile.currentPhase,
       cycleDay: $profile.cycleDay,
-      inflammationRisk: $profile.inflammationRisk
+      inflammationRisk: $profile.inflammationRisk,
+      antiInflammatoryScore: $antiInflammatory.score,
+      antiInflammatoryPercentage: $antiInflammatory.percentage
     };
   }
+);
+
+// Unified CODEX dashboard data
+export const codexDashboardData = derived(
+  [currentRecommendations, cycleProgress, currentWeekProgress, antiInflammatoryScore, nutritionProfile],
+  ([$mTorRecs, $cycle, $plants, $antiInflammatory, $nutrition]) => ({
+    mtor: {
+      phase: $cycle.phase,
+      dayInCycle: $cycle.currentDay,
+      daysLeftInPhase: $cycle.daysLeftInPhase,
+      recommendations: $mTorRecs
+    },
+    plants: {
+      weeklyProgress: $plants.progressPercentage,
+      consumedCount: $plants.consumedCount,
+      goal: $plants.goal,
+      remaining: $plants.remaining,
+      isComplete: $plants.isComplete
+    },
+    antiInflammatory: {
+      score: $antiInflammatory.score,
+      plantsCount: $antiInflammatory.antiInflammatoryPlants,
+      percentage: $antiInflammatory.percentage
+    },
+    nutrition: {
+      mealsTracked: $nutrition.mealHistory.length,
+      lastMealScore: $nutrition.mealHistory[$nutrition.mealHistory.length - 1]?.codexScore || 0,
+      averageScore: $nutrition.mealHistory.length > 0 ? 
+        $nutrition.mealHistory.reduce((sum, meal) => sum + (meal.codexScore || 0), 0) / $nutrition.mealHistory.length : 0
+    }
+  })
 );
 
 export const todaysRecommendations = derived(
