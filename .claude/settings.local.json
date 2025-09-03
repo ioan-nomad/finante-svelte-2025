@@ -21,7 +21,8 @@
       "Bash(npx svelte-check:*)",
       "WebFetch(domain:localhost)",
       "Bash(npm cache clean:*)",
-      "WebSearch"
+      "WebSearch",
+      "Read(C:\\Users\\ciupe\\Desktop\\FinanteNoiAugust2025/**)"
     ],
     "deny": [],
     "ask": []
