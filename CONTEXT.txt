@@ -1,179 +1,173 @@
-# CONTEXT.txt - N-OMAD Suite Enterprise Application
-# Ultima actualizare: 2 Decembrie 2024, 20:30
+# CONTEXT.txt - N-OMAD ECOSYSTEM STATUS
+# Ultima actualizare: 3 Septembrie 2025
 
-## 🎯 IDENTIFICARE PROIECT
-GitHub: https://github.com/ioan-nomad/finante-svelte-2025
-Local: C:\Users\ciupe\Desktop\FinanteNoiAugust2025\finante-app
-URL LIVE: https://n-omad.netlify.app/
-Stack: Svelte 4.2.0 + Vite + localStorage (encrypted)
-Arhitectură: 3 module independente (Finance, Pantry, Nutrition)
+## 🎯 ARHITECTURA ACTUALĂ
+FinanteNoiAugust2025/
+├── finante-app/               # Aplicația principală
+│   ├── src/
+│   │   ├── modules/
+│   │   │   ├── finance/      # ✅ Complet funcțional
+│   │   │   ├── pantry/       # ✅ Complet funcțional
+│   │   │   └── nutrition/    # ✅ Integrat cu CODEX
+│   │   ├── shared/
+│   │   │   └── stores/
+│   │   │       └── ecosystemStore.js # ✅ Sincronizare cross-module
+│   │   └── components/
+│   │       └── UnifiedDashboard.svelte # ✅ Dashboard integrat
+│   └── package.json
+│
+├── codex-nomad/              # ✅ CODEX modularizat
+│   ├── src/
+│   │   ├── database/         # Schema SQLite ready
+│   │   ├── engine/           # Recipe generator, meal planner
+│   │   ├── api/              # Bridge pentru integrare
+│   │   └── config/           # Principles, mTOR rules
+│   └── package.json
+│
+└── workspace.code-workspace  # ✅ VS Code monorepo
 
-## ✅ STATUS ACTUAL - DECEMBRIE 2024
+## 📦 STATUS MODULE
 
-### 🏆 REALIZĂRI MAJORE:
-1. **Arhitectură Modulară Completă** - 3 module independente funcționale
-2. **Security Hardening Enterprise** - Encriptare, CSP, Anti-tampering
-3. **Recipe Suggester CODEX** - 17 rețete terapeutice cu mTOR cycling
-4. **Performance Optimizat** - Bundle splitting, lazy loading, debounce
-5. **Smart Pantry AI** - Learning patterns pentru 7+ magazine
-6. **Dark Mode Persistent** - Cu animații fluide
-7. **PWA Full Support** - Offline ready, instalabil
+### FINANCE MODULE ✅
+- Multi-account management funcțional
+- Dashboard cu grafice avansate (predicții, heatmap, radar)
+- Receipt Parser integrat cu Pantry
+- Budget tracking cross-module
+- Calendar vizual plăți recurente
 
-### 📊 METRICI PERFORMANȚĂ:
-- Load time: <800ms
-- Bundle size: <320KB total
-- Lighthouse: 95+/100
-- Memory: <70MB
-- Zero external dependencies runtime
+### PANTRY MODULE ✅  
+- Smart inventory cu learning patterns
+- Receipt Parser pentru 7+ magazine RO
+- Shopping list generator intelligent
+- Price tracking și trend analysis
+- Sync cu Nutrition pentru ingrediente
 
-### 🔐 SECURITATE IMPLEMENTATĂ:
-- ✅ AES-style encryption pentru localStorage
-- ✅ Device fingerprinting unic
-- ✅ Auto-lock după 15 min inactivitate
-- ✅ CSP headers stricte
-- ✅ Input sanitization complet
-- ✅ Anti-tampering protection
-- ✅ DevTools detection
-- ✅ Integrity checks pentru date
-- ✅ Zero telemetry/tracking
+### NUTRITION MODULE ✅
+- Recipe Suggester cu CODEX principles
+- mTOR Cycling tracker (14 zile)
+- Plant diversity tracker (30+ goal)
+- Anti-inflammatory scoring
+- Instant Pot stratification rules
 
-## 🤝 MODUL DE LUCRU PREFERAT (IMPORTANT!)
+### CODEX N-OMAD ✅
+- SQLite schema implementat
+- Recipe generator modular
+- Nutrition analyzer
+- mTOR rules engine
+- Bridge API pentru Finance app
 
-### CE FUNCȚIONEAZĂ PERFECT:
-1. **Răspunsuri directe cu COD COMPLET** - nu instrucțiuni teoretice
-2. **Format "LIPEȘTE EXACT ASTA LUI CLAUDE CHAT"** - clar și executabil
-3. **Fără repetiții inutile** - direct la subiect
-4. **Propuneri concrete** cu opțiuni numerotate când e cazul
-5. **Verificare GitHub** după fiecare implementare
+### ECOSYSTEM INTEGRATION ✅
+- ecosystemStore.js pentru date unificate
+- UnifiedDashboard cu metrici cross-module
+- Receipt → Finance + Pantry + Nutrition flow
+- Shopping list din CODEX recipes
+- Budget aware meal planning
 
-### REGULI DE COMUNICARE:
-- ÎNTOTDEAUNA cod complet, nu fragmente
-- ÎNTOTDEAUNA specific ce fișier și unde
-- NICIODATĂ puncte sau liste care nu pot fi executate
-- Când dai cod pentru Claude Chat, începe cu "LIPEȘTE EXACT ASTA LUI CLAUDE CHAT:"
-- După implementare, verifică GitHub și confirmă succesul
+## 🔧 TEHNOLOGII
 
-### WORKFLOW IDEAL:
-1. Ioan descrie ce vrea
-2. Assistant oferă cod COMPLET executabil
-3. Ioan rulează și face commit
-4. Assistant verifică GitHub
-5. Confirmă succes sau oferă fix-uri
+### Frontend
+- Svelte 4.2.0 + Vite
+- Chart.js pentru grafice
+- PDF.js pentru receipt parsing
+- localStorage cu encryption
 
-## 📁 STRUCTURA ACTUALĂ
-src/
-├── App.svelte (orchestrator principal + security init)
-├── lib/
-│   ├── security/
-│   │   ├── crypto.js (encryption + anti-tampering)
-│   │   └── csp.js (Content Security Policy)
-│   └── utils/
-│       └── performance.js (debounce, throttle, memoize)
-├── modules/
-│   ├── finance/ (complet funcțional)
-│   ├── pantry/ (Smart AI learning)
-│   └── nutrition/ (17 rețete CODEX)
-└── shared/
-    └── config.js (module toggles)
+### Backend (pregătit pentru Tauri)
+- SQLite3 schema ready
+- Modular API structure
+- Bridge pattern pentru comunicare
+- Future: Rust + Tauri 2.0
 
-## 🚀 URMĂTORII PAȘI POSIBILI
+### Performance
+- Lazy loading modules
+- Debounced saves
+- Cache optimization
+- Bundle size <500KB total
 
-### OPȚIUNE 1: Meal Planner
-- Calendar săptămânal drag&drop
-- Auto-calculate macros
-- Shopping list agregată
+## 👥 PROFILE UTILIZATORI
 
-### OPȚIUNE 2: Migrare Tauri
-- Aplicație desktop nativă
-- SQLite pentru date mari
-- 10MB exe, 50MB RAM
+### IOAN
+- 46 ani, 171cm, 76kg
+- BMR: 1645, Target: 1400 kcal
+- Sedentary lifestyle
 
-### OPȚIUNE 3: Testing Suite
-- Vitest pentru unit tests
-- Playwright pentru E2E
-- Coverage >90%
+### NICO  
+- 44 ani, 141cm, 54kg
+- BMR: 1195, Target: 1100 kcal
+- Mobility reduced, inflammation prone
+- Allergies: MUSHROOMS (ciuperci)
+- Preferences: soft texture, anti-inflammatory
 
-### OPȚIUNE 4: Backup Automat
-- Export programat
-- Versioning pentru date
-- Restore points
+## 📍 LOCAȚIE & SHOPPING
+- Alba Iulia, România
+- Magazine: Kaufland, Lidl, Carrefour, Selgros
+- Budget alimentar: 2000 RON/lună
+- OMAD: 06:00-07:00
 
-## 💡 FILOZOFIE DEZVOLTARE
-
-### PRINCIPII FUNDAMENTALE:
-1. **Privacy First** - Zero date externe, totul local
-2. **Security by Design** - Nu adăugat după, ci integrat
-3. **Performance Obsessed** - Fiecare ms contează
-4. **User Control** - Utilizatorul decide tot
-5. **Clean Code** - Simplu, clar, maintainable
-
-### ANTI-PATTERNS (ce NU facem):
-- ❌ Backend servers
-- ❌ Cloud dependencies  
-- ❌ Telemetry/Analytics
-- ❌ Third-party auth
-- ❌ Vendor lock-in
-- ❌ Bloated features
-- ❌ Dark patterns
-
-## 🛠 COMENZI ESENȚIALE
+## 🚀 COMENZI RAPIDE
 
 ```bash
-npm run dev          # Development
-npm run build        # Production build
-npm run preview      # Test build local
-npm run clean        # Curățare totală
-npm run optimize     # Clean + install + build
+# Development
+npm run dev              # Pornește aplicația
 
-# Git workflow
+# În VS Code Terminal
+cd finante-app          # Pentru finance app
+cd ../codex-nomad       # Pentru CODEX
+
+# Git
 git add .
-git commit -m "type: description"
+git commit -m "feat: descriere"
 git push
 ```
 
-## 📊 COMMIT CONVENTION
-feat: new feature
-fix: bug fix
-perf: performance improvement
-security: security enhancement
-docs: documentation
-style: formatting, no code change
-refactor: code restructuring
-test: adding tests
-chore: maintenance
+## 📋 NEXT STEPS PRIORITARE
 
-## 🎯 PENTRU CONVERSAȚIE NOUĂ
-TEMPLATE PERFECT:
-```
-Salut! Continuăm N-OMAD Suite.
-GitHub: https://github.com/ioan-nomad/finante-svelte-2025
+### TESTARE COMPLETĂ (Septembrie)
+1. Test unified dashboard cu date reale
+2. Verificare sync cross-module
+3. Meal generation pentru 1 săptămână
 
-[descriu ce vreau]
+### MIGRARE DATE CODEX (Septembrie)
+1. Import rețete din CODEX original în SQLite
+2. Validare nutritional values
+3. Test recipe generator
 
-Dă-mi COD COMPLET pentru implementare, nu instrucțiuni.
-Vezi CONTEXT.txt pentru modul nostru de lucru.
-```
+### TAURI MIGRATION (Octombrie)
+1. Setup Tauri project
+2. Port Svelte code
+3. SQLite integration nativă
+4. Build pentru Windows
 
-## CE SĂ EVIȚI:
-- Nu cere "cum ai vrea să..."
-- Nu da liste de pași teoretici
-- Nu explica ce știe deja Ioan
-- Nu repeta cod identic
+### MOBILE READY (Q4 2025)
+1. Tauri 2.0 pentru Android/iOS
+2. Responsive design optimization
+3. Offline-first architecture
 
-## CE SĂ FACI MEREU:
-- Verifică GitHub după commit
-- Dă cod complet executabil
-- Propune îmbunătățiri concrete
-- Fii direct și eficient
+## 🔄 WORKFLOW CLAUDE CHAT
+- Pentru modificări Finance: "În finante-app/src/modules/finance/..."
+- Pentru CODEX: "În codex-nomad/src/..."
+- Pentru integrare: "În finante-app/src/shared/stores/ecosystemStore.js..."
+- Pentru UI: "În finante-app/src/components/..."
 
-## ❤️ NOTĂ PERSONALĂ
-Ioan apreciază:
-- Răspunsuri clare și directe
-- Cod complet, nu fragmente
-- Verificare GitHub după implementare
-- Propuneri concrete numerotate
-- Zero fluff, direct la subiect
+## ⚠️ REGULI IMPORTANTE
+- NU CIUPERCI pentru Nico - verifică toate rețetele
+- Instant Pot EXCLUSIV - toate rețetele
+- OMAD 06:00 - o masă pe zi
+- Anti-inflammatory PRIORITY pentru Nico
+- 30+ plants/week target obligatoriu
 
-Această aplicație e construită cu pasiune pentru privacy și performanță.
-Fiecare linie de cod e scrisă cu grijă pentru utilizator.
-Target: Aplicație mai sigură decât banking apps, mai rapidă decât native apps.
+## 📊 METRICI SUCCES
+✅ 3 module integrate funcțional
+✅ Cross-module data sync
+✅ CODEX principles implementate
+✅ SQLite ready pentru Tauri
+✅ Performance <2s load time
+✅ Bundle size <500KB
+✅ Zero breaking changes în migrare
+
+## 🆘 TROUBLESHOOTING
+- **Circular dependencies**: Folosește dynamic imports în nutritionStore.js
+- **Storage quota**: ecosystemStore are auto-cleanup la 90% capacity
+- **Performance issues**: Verifică debouncing în saves (1000ms delay)
+
+## STATUS: APLICAȚIE COMPLETĂ ȘI FUNCȚIONALĂ
+## READY FOR: Production use și Tauri migration
