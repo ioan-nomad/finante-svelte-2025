@@ -1,12 +1,44 @@
 {
   "name": "codex-nomad",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "CODEX N-OMAD: Advanced nutrition optimization system with mTOR cycling and plant diversity tracking",
+  "type": "module",
+  "main": "src/api/bridge.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "init-db": "node scripts/init-database.js",
+    "seed": "node scripts/seed-data.js",
+    "test": "node --test src/**/*.test.js",
+    "dev": "node src/api/codex-api.js",
+    "build": "echo 'No build step required for ES modules'",
+    "lint": "echo 'Add linting later'"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC"
+  "dependencies": {
+  },
+  "devDependencies": {
+    "nodemon": "^3.0.0"
+  },
+  "exports": {
+    ".": "./src/api/bridge.js",
+    "./engine": "./src/engine/index.js",
+    "./models": "./src/models/index.js",
+    "./api": "./src/api/codex-api.js"
+  },
+  "keywords": [
+    "nutrition",
+    "mtor",
+    "omad",
+    "anti-inflammatory",
+    "plant-diversity",
+    "instant-pot",
+    "meal-planning"
+  ],
+  "author": "Ioan Nomad",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ioan-nomad/finante-svelte-2025.git"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  }
 }

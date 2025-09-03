@@ -27,6 +27,7 @@
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^5.0.2",
     "pdfjs-dist": "^5.4.54",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "codex-nomad": "file:./codex-nomad"
   }
 }
