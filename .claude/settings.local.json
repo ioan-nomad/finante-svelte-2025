@@ -29,7 +29,14 @@
       "Bash(mkdir:*)",
       "Bash(node:*)",
       "Bash(echo:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(cat:*)",
+      "Bash(__NEW_LINE__ echo -e \"\\n🔬 CE AVEM ÎN CODEX-NOMAD (subpackage):\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n💎 CE AVEM ÎN N-OMAD SUITE (implementare completă):\")",
+      "Bash(__NEW_LINE__ echo -e \"\\n🔄 STATUS INTEGRARE:\")",
+      "Bash(__NEW_LINE__ echo \"📋 Căutăm PMID în codexDatabase.js:\")",
+      "Bash(__NEW_LINE__ echo \"📋 Căutăm PMID în codexCore.js:\")",
+      "Bash(__NEW_LINE__ echo \"📊 Total referințe științifice găsite:\")"
     ],
     "deny": [],
     "ask": []
