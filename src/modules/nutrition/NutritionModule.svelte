@@ -5,6 +5,8 @@
 
   // Import nutrition components
   import RecipeSuggester from './components/RecipeSuggester.svelte';
+  import BiomarkerTracking from './components/BiomarkerTracking.svelte';
+  import MealPlanner from './components/MealPlanner.svelte';
   
   // Import nutrition stores  
   import { 
@@ -14,7 +16,6 @@
   } from './stores/nutritionStore.js';
 
   // Future components (placeholders)
-  let MealPlanner = null;
   let CodexDatabase = null;
   let NutritionTracker = null;
 
@@ -22,7 +23,6 @@
     // Load future components dynamically when they're created
     try {
       // These will be implemented later
-      // MealPlanner = (await import('./components/MealPlanner.svelte')).default;
       // CodexDatabase = (await import('./components/CodexDatabase.svelte')).default;
       // NutritionTracker = (await import('./components/NutritionTracker.svelte')).default;
     } catch (error) {
@@ -75,11 +75,18 @@
       <RecipeSuggester />
     </div>
 
+  {:else if activeTab === 'biomarkers'}
+    <div class="tab-content">
+      <BiomarkerTracking />
+    </div>
+
   {:else if activeTab === 'meals'}
+    <div class="tab-content">
+      <MealPlanner />
+    </div>
+
+  {:else if activeTab === 'meals_old'}
     <div class="tab-content placeholder">
-      {#if MealPlanner}
-        <svelte:component this={MealPlanner} />
-      {:else}
         <div class="coming-soon">
           <h2>🍽️ Meal Planner</h2>
           <p>Planificarea meselor bazată pe ciclul mTOR și obiectivele nutriționale.</p>
@@ -121,7 +128,6 @@
             </div>
           </div>
         </div>
-      {/if}
     </div>
 
   {:else if activeTab === 'codex'}
@@ -293,10 +299,16 @@
             <p>Găsește rețete personalizate</p>
           </button>
           
-          <button class="action-card disabled">
+          <button class="action-card" on:click={() => activeTab = 'biomarkers'}>
+            <span class="icon">🔬</span>
+            <h3>Biomarker Tracking</h3>
+            <p>Monitorizează markerii de sănătate</p>
+          </button>
+          
+          <button class="action-card" on:click={() => activeTab = 'meals'}>
             <span class="icon">🍽️</span>
             <h3>Meal Planner</h3>
-            <p>În dezvoltare</p>
+            <p>Planificare inteligentă de mese</p>
           </button>
           
           <button class="action-card disabled">

@@ -1,5 +1,9 @@
-import { mtorTracker } from '../mtor/mtorTracker.js';
-import { plantDiversityTracker } from '../plants/plantDiversityTracker.js';
+import mtorTrackerModule from '../mtor/mtorTracker.js';
+import plantDiversityTrackerModule from '../plants/plantDiversityTracker.js';
+
+// Extract the specific exports we need from the default exports
+const { mtorCycleState, currentRecommendations, PHASE_PROTOCOLS } = mtorTrackerModule;
+const { plantDiversityState, currentWeekProgress } = plantDiversityTrackerModule;
 
 class CodexEngine {
   constructor() {
@@ -191,7 +195,9 @@ class CodexEngine {
   }
 
   evaluateMacronutrients(meal) {
-    const currentPhase = mtorTracker.getCurrentPhase();
+    // Get current phase from mTOR cycle state
+    const currentState = mtorCycleState.get ? mtorCycleState.get() : mtorCycleState;
+    const currentPhase = currentState.currentPhase === 'growth' ? 'highProteinDays' : 'lowProteinDays';
     const targets = this.rules.nutrition.macronutrients[currentPhase];
     
     return {
@@ -298,9 +304,13 @@ class CodexEngine {
   }
 
   getTodaysRecommendations() {
+    const currentState = mtorCycleState.get ? mtorCycleState.get() : mtorCycleState;
+    const currentPhase = currentState.currentPhase;
+    const dayInCycle = currentState.dayInPhase;
+    
     const cacheKey = this.getCacheKey('recommendations', {
       date: new Date().toDateString(),
-      phase: mtorTracker.getCurrentPhase()
+      phase: currentPhase
     });
     
     const cached = this.getFromCache(cacheKey);
@@ -308,30 +318,32 @@ class CodexEngine {
       return cached;
     }
 
-    const currentPhase = mtorTracker.getCurrentPhase();
-    const dayInCycle = mtorTracker.getDayInCycle();
-    const plantProgress = plantDiversityTracker.currentWeekProgress;
+    const plantProgressState = currentWeekProgress.get ? currentWeekProgress.get() : currentWeekProgress;
 
+    const phaseKey = currentPhase === 'growth' ? 'highProteinDays' : 'lowProteinDays';
     const recommendations = {
       phase: currentPhase,
       dayInCycle: dayInCycle,
-      macroTargets: this.rules.nutrition.macronutrients[currentPhase],
-      priorityPlants: this.getNeededPlants(plantProgress),
+      macroTargets: this.rules.nutrition.macronutrients[phaseKey],
+      priorityPlants: this.getNeededPlants(plantProgressState),
       mealTiming: this.rules.timing.omadWindow,
       antiInflammatoryFocus: this.getAntiInflammatoryFocus(),
-      instantPotSuggestion: this.generateInstantPotSuggestion(currentPhase)
+      instantPotSuggestion: this.generateInstantPotSuggestion(phaseKey)
     };
 
     this.setCache(cacheKey, recommendations);
     return recommendations;
   }
 
-  getNeededPlants(currentProgress) {
+  getNeededPlants(plantProgressState) {
     const needed = [];
     const categories = this.rules.nutrition.plantDiversity.categories;
     
+    // Handle different plantProgressState structures
+    const progress = plantProgressState.categories || {};
+    
     Object.entries(categories).forEach(([category, plants]) => {
-      const consumedInCategory = currentProgress.categories[category] || 0;
+      const consumedInCategory = progress[category] || 0;
       if (consumedInCategory < 3) {
         needed.push({
           category,

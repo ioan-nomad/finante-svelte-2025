@@ -25,8 +25,9 @@ export const APP_CONFIG = {
     ],
     nutrition: [
       { id: 'recipes', label: 'Recipe Suggester', icon: '👨‍🍳' },
-      { id: 'meals', label: 'Planuri Mese', icon: '🍽️' },
+      { id: 'meals', label: 'Meal Planner', icon: '🍽️' },
       { id: 'codex', label: 'CODEX Alimente', icon: '📚' },
+      { id: 'biomarkers', label: 'Biomarker Tracking', icon: '🔬' },
       { id: 'tracking', label: 'Progress Tracking', icon: '📊' }
     ]
   }

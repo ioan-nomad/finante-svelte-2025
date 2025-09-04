@@ -25,7 +25,11 @@
       "Read(C:\\Users\\ciupe\\Desktop\\FinanteNoiAugust2025/**)",
       "Bash(git remote add:*)",
       "Bash(git remote set-url:*)",
-      "Read(C:\\Users\\ciupe\\Desktop\\FinanteNoiAugust2025/**)"
+      "Read(C:\\Users\\ciupe\\Desktop\\FinanteNoiAugust2025/**)",
+      "Bash(mkdir:*)",
+      "Bash(node:*)",
+      "Bash(echo:*)",
+      "Bash(chmod:*)"
     ],
     "deny": [],
     "ask": []

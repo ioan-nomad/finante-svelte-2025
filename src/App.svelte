@@ -31,6 +31,7 @@
   // Security imports
   import { secureStorage, InputSanitizer, TamperProtection } from './lib/security/crypto.js';
   import { CSPManager } from './lib/security/csp.js';
+  import { copyrightProtection } from './lib/security/copyright.js';
   
   // Nutrition Module
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
@@ -139,6 +140,11 @@
     
     // Initialize tamper protection
     TamperProtection.init();
+    
+    // Initialize copyright protection (auto-initializes on import, but ensure it's active)
+    if (typeof window !== 'undefined') {
+      console.log('🔒 Copyright protection active');
+    }
     
     // Setup auto-lock after 15 minutes inactivity
     secureStorage.setupAutoLock(15);

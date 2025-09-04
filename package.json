@@ -1,8 +1,11 @@
 {
-  "name": "finante-app",
+  "name": "n-omad-suite",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.0-dev",
   "type": "module",
+  "license": "UNLICENSED",
+  "author": "Ioan Nomad",
+  "description": "PRIVATE - Proprietary software under development",
   "scripts": {
     "dev": "set BROWSER=none && vite --host localhost",
     "build": "vite build",

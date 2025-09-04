@@ -1,6 +1,6 @@
 // lib/store.js
 import { writable, derived, get } from 'svelte/store';
-import { InputSanitizer, SecureStorage } from './security/crypto.js';
+import { InputSanitizer, secureStorage } from './security/crypto.js';
 
 // ===== Advanced Data Cache System =====
 class DataCache {
@@ -248,12 +248,12 @@ const DB = {
 // ===== Secure Helper functions =====
 export function nid() { 
   // Use cryptographically secure random instead of Math.random()
-  return SecureStorage.generateSecureId(16);
+  return secureStorage.generateSecureId(16);
 }
 
 export function generateTransactionId() {
   // Use UUID for transaction IDs to ensure uniqueness
-  return SecureStorage.generateUUID();
+  return secureStorage.generateUUID();
 }
 
 export function fmt(n) { 

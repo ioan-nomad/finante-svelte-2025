@@ -1,384 +1,335 @@
-<!-- src/modules/nutrition/components/RecipeSuggester.svelte -->
 <script>
   import { onMount } from 'svelte';
-  import { writable, derived, get } from 'svelte/store';
-  import { 
-    nutritionProfile, 
-    codexRecipes,
-    todaysRecommendations,
-    addMealToProfile
-  } from '../stores/nutritionStore.js';
+  import { nutritionProfile } from '../stores/nutritionStore.js';
+  import { CodexScorer } from '../codex/codexScoring.js';
+  import { CODEX_INGREDIENTS } from '../codex/codexDatabase.js';
+  import { CODEX_PRINCIPLES } from '../codex/codexCore.js';
   
-  // Try to import pantry store if available
-  let pantryInventory = null;
-  let pantryAvailable = false;
+  const scorer = new CodexScorer();
   
-  onMount(async () => {
-    try {
-      const pantryModule = await import('../../../stores/groceryStore.js');
-      pantryInventory = pantryModule.groceryInventory;
-      pantryAvailable = true;
-    } catch (error) {
-      console.log('Pantry module not available - running in standalone mode');
+  let selectedRecipe = null;
+  let recipeScore = null;
+  let showScientificDetails = false;
+  
+  // Evidence-based recipes with CODEX scoring
+  const codexRecipes = [
+    {
+      id: 'longevity_bowl_v2',
+      name: 'Longevity Bowl Evidence-Based',
+      category: 'anti-inflammatory',
+      servings: 2,
+      totalCalories: 2500,
+      
+      ingredients: [
+        { name: 'turmeric', amount: 5, unit: 'g', carbs: 3.2 },
+        { name: 'ginger', amount: 15, unit: 'g', carbs: 2.7 },
+        { name: 'black pepper', amount: 2, unit: 'g', carbs: 1.3 },
+        { name: 'red lentils', amount: 200, unit: 'g', carbs: 40 },
+        { name: 'quinoa', amount: 150, unit: 'g', carbs: 30 },
+        { name: 'spinach', amount: 200, unit: 'g', carbs: 7 },
+        { name: 'broccoli', amount: 150, unit: 'g', carbs: 10 },
+        { name: 'sweet potato', amount: 300, unit: 'g', carbs: 60 },
+        { name: 'walnuts', amount: 30, unit: 'g', carbs: 4 },
+        { name: 'garlic', amount: 10, unit: 'g', carbs: 3 },
+        { name: 'lemon', amount: 30, unit: 'ml', carbs: 3 },
+        { name: 'olive oil', amount: 30, unit: 'ml', carbs: 0 }
+      ],
+      
+      evidence: {
+        antiInflammatory: {
+          score: 94,
+          mechanism: "Curcumin inhibits NF-κB, IL-6, TNF-α",
+          pmid: "27533649",
+          clinicalEffect: "CRP reduction 1.5mg/L in 8 weeks"
+        },
+        glycemicLoad: {
+          value: 18,
+          category: "Medium",
+          pmid: "34506976",
+          effect: "Stable glucose, no spikes >140mg/dL"
+        },
+        microbiome: {
+          plantCount: 9,
+          fiberGrams: 28,
+          pmid: "29795809",
+          effect: "Increased Akkermansia, Bifidobacterium"
+        }
+      },
+      
+      instantPot: {
+        layers: [
+          "Layer 1: Sauté garlic, ginger in olive oil (3 min)",
+          "Layer 2: Add turmeric, black pepper (30 sec)",
+          "Layer 3: Add lentils, quinoa with 600ml water",
+          "Layer 4: Sweet potato chunks on trivet above",
+          "Layer 5: Broccoli, spinach in steamer basket",
+          "NO STIRRING - maintains stratification"
+        ],
+        settings: "High Pressure 12 min, Natural Release 10 min",
+        pmid: "35294969"
+      },
+      
+      getTotalNutrients() {
+        return {
+          protein: 38,
+          fiber: 28,
+          omega3: 2.8,
+          vitaminA: 15000,
+          vitaminC: 120,
+          vitaminE: 8,
+          calcium: 450,
+          iron: 12,
+          magnesium: 380,
+          potassium: 2800,
+          saturatedFat: 4,
+          sugar: 12,
+          sodium: 180
+        };
+      },
+      
+      getTotalCalories() {
+        return 2500;
+      }
+    },
+    
+    {
+      id: 'mtor_cycling_high',
+      name: 'mTOR Activation Bowl (High Protein Day)',
+      category: 'muscle-synthesis',
+      servings: 2,
+      totalCalories: 2500,
+      
+      ingredients: [
+        { name: 'chicken breast', amount: 300, unit: 'g', carbs: 0 },
+        { name: 'white rice', amount: 200, unit: 'g', carbs: 56 },
+        { name: 'black beans', amount: 150, unit: 'g', carbs: 27 },
+        { name: 'eggs', amount: 100, unit: 'g', carbs: 1 },
+        { name: 'greek yogurt', amount: 150, unit: 'g', carbs: 6 },
+        { name: 'almonds', amount: 40, unit: 'g', carbs: 8 },
+        { name: 'kale', amount: 100, unit: 'g', carbs: 6 },
+        { name: 'cherry tomatoes', amount: 150, unit: 'g', carbs: 6 },
+        { name: 'avocado', amount: 100, unit: 'g', carbs: 9 },
+        { name: 'olive oil', amount: 20, unit: 'ml', carbs: 0 }
+      ],
+      
+      evidence: {
+        mTOR: {
+          activation: "3g leucine threshold met",
+          pmid: "28388417",
+          window: "4-hour anabolic window post-meal"
+        },
+        proteinSynthesis: {
+          rate: "280% increase MPS",
+          pmid: "35166330",
+          leucine: "3.2g per serving"
+        }
+      },
+      
+      instantPot: {
+        layers: [
+          "Layer 1: Chicken with herbs at bottom",
+          "Layer 2: Rice with 400ml bone broth",
+          "Layer 3: Black beans on trivet",
+          "Layer 4: Eggs in silicone cups",
+          "Post-cooking: Add fresh vegetables"
+        ],
+        settings: "High Pressure 8 min, Quick Release"
+      },
+      
+      getTotalNutrients() {
+        return {
+          protein: 95,
+          fiber: 18,
+          omega3: 0.8,
+          leucine: 6.4,
+          vitaminD: 80,
+          calcium: 380,
+          iron: 8,
+          magnesium: 290,
+          saturatedFat: 12,
+          sugar: 8,
+          sodium: 420
+        };
+      },
+      
+      getTotalCalories() {
+        return 2500;
+      }
     }
-  });
-
-  // Local state
-  let selectedFilter = 'all';
-  let searchQuery = '';
-  let searchTimer;
-  let showDetails = {};
-  let suggestions = writable([]);
-  let expandedRecipes = {};
-
-  // Debounced search handler
-  function handleSearch(event) {
-    clearTimeout(searchTimer);
-    searchQuery = event.target.value;
-    searchTimer = setTimeout(() => {
-      generateSuggestions();
-    }, 300); // 300ms debounce
-  }
-
-  // Filters
-  const filters = [
-    { value: 'all', label: 'Toate', icon: '📖' },
-    { value: 'mtor-high', label: 'mTOR High', icon: '💪' },
-    { value: 'anti-inflammatory', label: 'Anti-inflamator', icon: '🌿' },
-    { value: 'plant-diverse', label: '30+ Plante', icon: '🌈' },
-    { value: 'instant-pot', label: 'Instant Pot', icon: '🍲' },
-    { value: 'quick', label: 'Rapid (< 30 min)', icon: '⚡' }
   ];
-
-  // Utility functions
-  function nid() {
-    return Date.now().toString(36) + Math.random().toString(36).substr(2);
+  
+  function scoreRecipe(recipe) {
+    recipeScore = scorer.scoreRecipe(recipe);
+    console.log('CODEX Score:', recipeScore);
   }
-
-  function showNotification(message, type = 'info') {
-    const event = new CustomEvent('show-notification', {
-      detail: { message, type },
-      bubbles: true
-    });
-    window.dispatchEvent(event);
+  
+  function selectRecipe(recipe) {
+    selectedRecipe = recipe;
+    scoreRecipe(recipe);
   }
-
-  // Check pantry availability for ingredients
-  function checkPantryAvailability(recipe) {
-    if (!pantryAvailable || !$pantryInventory) return 0;
-    
-    const inventory = $pantryInventory.inventory || [];
-    let availableCount = 0;
-    let totalCount = recipe.ingredients.length;
-    
-    recipe.ingredients.forEach(ingredient => {
-      const available = inventory.find(item => 
-        item.name.toLowerCase().includes(ingredient.name.toLowerCase())
-      );
-      
-      if (available && available.quantity >= (ingredient.amount || 1)) {
-        availableCount++;
-      }
-    });
-
-    return (availableCount / totalCount) * 100;
+  
+  function getIngredientInfo(name) {
+    return CODEX_INGREDIENTS[name.toLowerCase().replace(' ', '')] || null;
   }
-
-  // Generate suggestions based on CODEX principles
-  function generateSuggestions() {
-    const profile = $nutritionProfile;
-    const today = new Date();
-    const dayOfCycle = Math.floor((today - profile.startDate) / (1000 * 60 * 60 * 24)) % 14;
-    
-    // mTOR cycling: High protein days 1-3, 8-10; Low protein days 4-7, 11-14
-    const isMtorHigh = (dayOfCycle >= 0 && dayOfCycle <= 2) || (dayOfCycle >= 7 && dayOfCycle <= 9);
-    
-    let recipeSuggestions = [...$codexRecipes];
-
-    // Filter based on mTOR cycle
-    if (isMtorHigh) {
-      recipeSuggestions = recipeSuggestions.filter(r => 
-        r.nutritionalGoals.includes('mtor-high') || r.protein >= 25
-      );
-    } else {
-      recipeSuggestions = recipeSuggestions.filter(r => 
-        r.nutritionalGoals.includes('anti-inflammatory') || r.plantCount >= 5
-      );
-    }
-
-    // Apply selected filter
-    if (selectedFilter !== 'all') {
-      recipeSuggestions = recipeSuggestions.filter(r => {
-        switch(selectedFilter) {
-          case 'mtor-high':
-            return r.nutritionalGoals.includes('mtor-high') || r.protein >= 25;
-          case 'anti-inflammatory':
-            return r.nutritionalGoals.includes('anti-inflammatory');
-          case 'plant-diverse':
-            return r.plantCount >= 8;
-          case 'instant-pot':
-            return r.instantPot === true;
-          case 'quick':
-            return r.cookingTime === 'quick';
-          default:
-            return true;
-        }
-      });
-    }
-
-    // Apply search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      recipeSuggestions = recipeSuggestions.filter(r =>
-        r.name.toLowerCase().includes(query) ||
-        r.description.toLowerCase().includes(query) ||
-        r.ingredients.some(i => i.name.toLowerCase().includes(query))
-      );
-    }
-
-    // Sort by relevance
-    recipeSuggestions.sort((a, b) => {
-      // Prioritize by pantry availability if module is available
-      if (pantryAvailable) {
-        const availA = checkPantryAvailability(a);
-        const availB = checkPantryAvailability(b);
-        if (availA !== availB) return availB - availA;
-      }
-      
-      // Then by mTOR cycle match
-      if (isMtorHigh) {
-        return (b.protein || 0) - (a.protein || 0);
-      } else {
-        return (b.plantCount || 0) - (a.plantCount || 0);
-      }
-    });
-
-    suggestions.set(recipeSuggestions);
-  }
-
-  // Cook recipe and add to nutrition profile
-  function cookRecipe(recipe) {
-    const meal = {
-      id: nid(),
-      date: new Date().toISOString().split('T')[0],
-      recipeName: recipe.name,
-      plantCount: recipe.plantCount,
-      protein: recipe.protein,
-      antiInflammatory: recipe.nutritionalGoals.includes('anti-inflammatory'),
-      mealType: recipe.mealType
-    };
-
-    addMealToProfile(meal);
-    
-    // Update ingredients in pantry if available
-    if (pantryAvailable && pantryInventory) {
-      recipe.ingredients.forEach(ingredient => {
-        pantryInventory.consumeItem(ingredient.name, ingredient.amount || 1);
-      });
-    }
-
-    showNotification(`✅ Rețeta "${recipe.name}" adăugată la profilul nutrițional!`, 'success');
-  }
-
-  // Generate shopping list from recipe
-  function generateShoppingList(recipe) {
-    const missingIngredients = [];
-    
-    recipe.ingredients.forEach(ingredient => {
-      let needToBuy = true;
-      
-      if (pantryAvailable && $pantryInventory) {
-        const available = $pantryInventory.inventory?.find(item =>
-          item.name.toLowerCase().includes(ingredient.name.toLowerCase())
-        );
-        
-        if (available && available.quantity >= (ingredient.amount || 1)) {
-          needToBuy = false;
-        }
-      }
-      
-      if (needToBuy) {
-        missingIngredients.push({
-          name: ingredient.name,
-          amount: ingredient.amount,
-          unit: ingredient.unit
-        });
-      }
-    });
-
-    if (missingIngredients.length === 0) {
-      showNotification('✅ Ai toate ingredientele în stoc!', 'success');
-      return;
-    }
-
-    // Create shopping list
-    const shoppingList = {
-      id: nid(),
-      name: `Shopping: ${recipe.name}`,
-      date: new Date().toISOString().split('T')[0],
-      items: missingIngredients
-    };
-
-    // Save to localStorage
-    const existingLists = JSON.parse(localStorage.getItem('shoppingLists') || '[]');
-    existingLists.push(shoppingList);
-    localStorage.setItem('shoppingLists', JSON.stringify(existingLists));
-    
-    // Copy to clipboard
-    const listText = missingIngredients
-      .map(i => `- ${i.name}: ${i.amount}${i.unit || ''}`)
-      .join('\n');
-    
-    navigator.clipboard.writeText(listText).then(() => {
-      showNotification(`📋 Listă shopping copiată în clipboard! (${missingIngredients.length} ingrediente)`, 'success');
-    });
-  }
-
-  // Toggle recipe details
-  function toggleRecipeDetails(recipeId) {
-    expandedRecipes[recipeId] = !expandedRecipes[recipeId];
-    expandedRecipes = expandedRecipes; // Trigger reactivity
-  }
-
-  // Initialize on mount
-  onMount(() => {
-    generateSuggestions();
-  });
-
-  // Reactive updates
-  $: if (selectedFilter || searchQuery) {
-    generateSuggestions();
-  }
-
-  $: cycleDay = Math.floor((new Date() - $nutritionProfile.startDate) / (1000 * 60 * 60 * 24)) % 14;
-  $: isMtorHighDay = (cycleDay >= 0 && cycleDay <= 2) || (cycleDay >= 7 && cycleDay <= 9);
 </script>
 
 <div class="recipe-suggester">
-  <!-- Header with cycle info -->
-  <div class="suggester-header">
-    <div class="cycle-status">
-      <div class="cycle-badge {isMtorHighDay ? 'high' : 'low'}">
-        {isMtorHighDay ? '💪 mTOR High' : '🌿 Plant Focus'}
-        <span class="cycle-day">Ziua {cycleDay + 1}/14</span>
-      </div>
-      
-      <div class="daily-goals">
-        <span class="goal">🎯 {isMtorHighDay ? '25-40g proteine' : '8-12 plante'}</span>
-        <span class="goal">🌱 {$nutritionProfile.weeklyPlantCount}/30 plante săptămâna asta</span>
-      </div>
+  <div class="codex-header">
+    <h2>🧬 CODEX Recipe System v2.0</h2>
+    <p class="subtitle">Evidence-Based Nutritional Engineering</p>
+    <div class="principles">
+      <span class="principle">Longevity: {CODEX_PRINCIPLES.foundations.LONGEVITY.targets["IGF-1"]}</span>
+      <span class="principle">Inflammation: {CODEX_PRINCIPLES.foundations.INFLAMMATION.targets["hs-CRP"]}</span>
+      <span class="principle">Metabolic: {CODEX_PRINCIPLES.foundations.METABOLIC.targets["HbA1c"]}</span>
     </div>
   </div>
 
-  <!-- Search and filters -->
-  <div class="search-section">
-    <div class="search-bar">
-      <input
-        type="text"
-        placeholder="🔍 Caută rețete sau ingrediente..."
-        on:input={handleSearch}
-        value={searchQuery}
-        class="search-input"
-      />
-    </div>
-    
-    <div class="filter-buttons">
-      {#each filters as filter}
-        <button
-          class="filter-btn {selectedFilter === filter.value ? 'active' : ''}"
-          on:click={() => selectedFilter = filter.value}
-        >
-          <span class="filter-icon">{filter.icon}</span>
-          <span class="filter-label">{filter.label}</span>
-        </button>
-      {/each}
-    </div>
-  </div>
-
-  <!-- Recipe suggestions -->
-  <div class="recipe-grid">
-    {#each $suggestions as recipe}
-      <div class="recipe-card {expandedRecipes[recipe.id] ? 'expanded' : ''}">
-        <div class="recipe-header" on:click={() => toggleRecipeDetails(recipe.id)}>
-          <h3 class="recipe-name">{recipe.name}</h3>
-          {#if pantryAvailable}
-            {@const availability = checkPantryAvailability(recipe)}
-            <div class="availability-badge" class:high={availability >= 80} class:medium={availability >= 50}>
-              {availability.toFixed(0)}% disponibil
-            </div>
+  <div class="recipes-grid">
+    {#each codexRecipes as recipe}
+      <div class="recipe-card" on:click={() => selectRecipe(recipe)}>
+        <h3>{recipe.name}</h3>
+        <div class="recipe-meta">
+          <span class="calories">🔥 {recipe.totalCalories} kcal</span>
+          <span class="servings">👥 {recipe.servings} servings</span>
+        </div>
+        <div class="evidence-badges">
+          {#if recipe.evidence.antiInflammatory}
+            <span class="badge anti-inflam">
+              Anti-Inflammatory: {recipe.evidence.antiInflammatory.score}
+            </span>
           {/if}
-        </div>
-        
-        <p class="recipe-description">{recipe.description}</p>
-        
-        <div class="recipe-stats">
-          <span class="stat">🌱 {recipe.plantCount} plante</span>
-          <span class="stat">💪 {recipe.protein}g proteine</span>
-          <span class="stat">⏱️ {recipe.cookingTime === 'quick' ? '<30 min' : recipe.cookingTime}</span>
-          {#if recipe.instantPot}
-            <span class="stat instant-pot">🍲 Instant Pot</span>
+          {#if recipe.evidence.mTOR}
+            <span class="badge mtor">mTOR Optimized</span>
           {/if}
-        </div>
-
-        <div class="recipe-tags">
-          {#each recipe.nutritionalGoals as goal}
-            <span class="tag {goal}">{goal.replace('-', ' ')}</span>
-          {/each}
-        </div>
-
-        {#if expandedRecipes[recipe.id]}
-          <div class="recipe-details">
-            <div class="ingredients-section">
-              <h4>Ingrediente:</h4>
-              <ul class="ingredients-list">
-                {#each recipe.ingredients as ingredient}
-                  {@const isAvailable = pantryAvailable && $pantryInventory?.inventory?.find(
-                    item => item.name.toLowerCase().includes(ingredient.name.toLowerCase()) &&
-                    item.quantity >= (ingredient.amount || 1)
-                  )}
-                  <li class:available={isAvailable} class:missing={!isAvailable}>
-                    {#if isAvailable}✅{:else}❌{/if}
-                    {ingredient.name}: {ingredient.amount}{ingredient.unit || ''}
-                  </li>
-                {/each}
-              </ul>
-            </div>
-
-            {#if recipe.instantPotInstructions}
-              <div class="instructions-section">
-                <h4>Instrucțiuni Instant Pot:</h4>
-                <ol class="instructions-list">
-                  {#each recipe.instantPotInstructions as step}
-                    <li>{step}</li>
-                  {/each}
-                </ol>
-              </div>
-            {/if}
-
-            {#if recipe.nutritionalHighlight}
-              <div class="nutrition-highlight">
-                💡 {recipe.nutritionalHighlight}
-              </div>
-            {/if}
-          </div>
-        {/if}
-
-        <div class="recipe-actions">
-          <button class="btn-cook" on:click={() => cookRecipe(recipe)}>
-            🍳 Gătește acum
-          </button>
-          <button class="btn-shopping" on:click={() => generateShoppingList(recipe)}>
-            🛒 Listă cumpărături
-          </button>
+          {#if recipe.evidence.microbiome}
+            <span class="badge microbiome">
+              {recipe.evidence.microbiome.plantCount} plants
+            </span>
+          {/if}
         </div>
       </div>
     {/each}
   </div>
 
-  {#if $suggestions.length === 0}
-    <div class="no-results">
-      <p>😔 Nu am găsit rețete care să corespundă criteriilor tale.</p>
-      <p>Încearcă să modifici filtrele sau termenii de căutare.</p>
+  {#if selectedRecipe && recipeScore}
+    <div class="recipe-detail">
+      <div class="score-panel">
+        <h3>CODEX Scoring Analysis</h3>
+        <div class="overall-score">
+          <div class="score-circle" data-score={recipeScore.overall}>
+            <span class="score-value">{recipeScore.overall}</span>
+            <span class="score-label">Overall Score</span>
+          </div>
+        </div>
+        
+        <div class="score-breakdown">
+          <div class="metric">
+            <span class="metric-name">Anti-Inflammatory</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: {recipeScore.breakdown.antiInflammatory}%"></div>
+            </div>
+            <span class="metric-value">{recipeScore.breakdown.antiInflammatory.toFixed(1)}/100</span>
+            <span class="metric-ref">PMID: 24172307</span>
+          </div>
+          
+          <div class="metric">
+            <span class="metric-name">Nutrient Density</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: {recipeScore.breakdown.nutrientDensity}%"></div>
+            </div>
+            <span class="metric-value">{recipeScore.breakdown.nutrientDensity.toFixed(1)}/100</span>
+            <span class="metric-ref">PMID: 31111871</span>
+          </div>
+          
+          <div class="metric">
+            <span class="metric-name">Glycemic Impact</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: {recipeScore.breakdown.glycemicImpact}%"></div>
+            </div>
+            <span class="metric-value">{recipeScore.breakdown.glycemicImpact.toFixed(1)}/100</span>
+            <span class="metric-ref">PMID: 34506976</span>
+          </div>
+          
+          <div class="metric">
+            <span class="metric-name">Microbiome Support</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: {recipeScore.breakdown.microbiome}%"></div>
+            </div>
+            <span class="metric-value">{recipeScore.breakdown.microbiome.toFixed(1)}/100</span>
+            <span class="metric-ref">PMID: 29795809</span>
+          </div>
+          
+          <div class="metric">
+            <span class="metric-name">Bioavailability</span>
+            <div class="metric-bar">
+              <div class="metric-fill" style="width: {recipeScore.breakdown.bioavailability}%"></div>
+            </div>
+            <span class="metric-value">{recipeScore.breakdown.bioavailability.toFixed(1)}/100</span>
+            <span class="metric-ref">PMID: 36678332</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="ingredients-scientific">
+        <h3>Ingredients with Scientific Data</h3>
+        <div class="ingredients-list">
+          {#each selectedRecipe.ingredients as ingredient}
+            {@const info = getIngredientInfo(ingredient.name)}
+            <div class="ingredient-row">
+              <span class="ing-name">{ingredient.name}</span>
+              <span class="ing-amount">{ingredient.amount}{ingredient.unit}</span>
+              {#if info}
+                <button class="info-btn" on:click={() => showScientificDetails = !showScientificDetails}>
+                  📚 Research
+                </button>
+              {/if}
+            </div>
+            
+            {#if info && showScientificDetails}
+              <div class="scientific-details">
+                {#if info.therapeutic}
+                  <div class="detail-section">
+                    <h4>Therapeutic Properties</h4>
+                    {#each Object.entries(info.therapeutic) as [key, value]}
+                      <p><strong>{key}:</strong> {value.mechanism || value.efficacy}</p>
+                      <p class="pmid">PMID: {value.pmid}</p>
+                    {/each}
+                  </div>
+                {/if}
+                
+                {#if info.ayurveda}
+                  <div class="detail-section">
+                    <h4>Ayurvedic Classification</h4>
+                    <p><strong>Rasa:</strong> {info.ayurveda.rasa}</p>
+                    <p><strong>Dosha:</strong> {info.ayurveda.dosha}</p>
+                    <p class="source">{info.ayurveda.source}</p>
+                  </div>
+                {/if}
+              </div>
+            {/if}
+          {/each}
+        </div>
+      </div>
+
+      <div class="instant-pot-protocol">
+        <h3>Instant Pot Protocol (Evidence-Based)</h3>
+        <div class="protocol-steps">
+          {#each selectedRecipe.instantPot.layers as step, i}
+            <div class="step">
+              <span class="step-number">{i + 1}</span>
+              <span class="step-text">{step}</span>
+            </div>
+          {/each}
+          <div class="settings">
+            <strong>Settings:</strong> {selectedRecipe.instantPot.settings}
+          </div>
+          {#if selectedRecipe.instantPot.pmid}
+            <div class="reference">
+              Nutrient retention study: PMID {selectedRecipe.instantPot.pmid}
+            </div>
+          {/if}
+        </div>
+      </div>
     </div>
   {/if}
 </div>
@@ -386,11 +337,12 @@
 <style>
   .recipe-suggester {
     padding: 20px;
-    max-width: 1200px;
+    max-width: 1400px;
     margin: 0 auto;
   }
 
-  .suggester-header {
+  .codex-header {
+    text-align: center;
     margin-bottom: 30px;
     padding: 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -398,345 +350,297 @@
     color: white;
   }
 
-  .cycle-status {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 15px;
-  }
-
-  .cycle-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 10px;
-    padding: 10px 20px;
-    border-radius: 25px;
-    font-weight: bold;
-    background: rgba(255, 255, 255, 0.2);
-    backdrop-filter: blur(10px);
-  }
-
-  .cycle-badge.high {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-  }
-
-  .cycle-badge.low {
-    background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-  }
-
-  .cycle-day {
-    font-size: 0.9em;
+  .subtitle {
+    font-size: 14px;
     opacity: 0.9;
+    margin: 5px 0 15px;
   }
 
-  .daily-goals {
+  .principles {
     display: flex;
+    justify-content: center;
     gap: 20px;
     flex-wrap: wrap;
   }
 
-  .goal {
-    padding: 8px 16px;
-    background: rgba(255, 255, 255, 0.1);
+  .principle {
+    background: rgba(255,255,255,0.2);
+    padding: 5px 15px;
     border-radius: 20px;
-    font-size: 0.95em;
+    font-size: 13px;
   }
 
-  .search-section {
-    margin-bottom: 25px;
-  }
-
-  .search-bar {
-    margin-bottom: 15px;
-  }
-
-  .search-input {
-    width: 100%;
-    padding: 12px 20px;
-    font-size: 16px;
-    border: 2px solid var(--border, #ddd);
-    border-radius: 25px;
-    outline: none;
-    transition: all 0.3s ease;
-  }
-
-  .search-input:focus {
-    border-color: var(--primary, #667eea);
-    box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-  }
-
-  .filter-buttons {
-    display: flex;
-    gap: 10px;
-    flex-wrap: wrap;
-  }
-
-  .filter-btn {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 8px 16px;
-    background: var(--panel, white);
-    border: 2px solid var(--border, #e0e0e0);
-    border-radius: 20px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    font-size: 14px;
-  }
-
-  .filter-btn:hover {
-    border-color: var(--primary, #667eea);
-    transform: translateY(-2px);
-  }
-
-  .filter-btn.active {
-    background: var(--primary, #667eea);
-    color: white;
-    border-color: var(--primary, #667eea);
-  }
-
-  .filter-icon {
-    font-size: 16px;
-  }
-
-  .recipe-grid {
+  .recipes-grid {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
     gap: 20px;
+    margin-bottom: 30px;
   }
 
   .recipe-card {
-    background: var(--panel, white);
-    border: 1px solid var(--border, #e0e0e0);
+    background: white;
+    border: 2px solid #e2e8f0;
     border-radius: 12px;
     padding: 20px;
-    transition: all 0.3s ease;
     cursor: pointer;
+    transition: all 0.3s ease;
   }
 
   .recipe-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    border-color: #667eea;
   }
 
-  .recipe-card.expanded {
-    grid-column: span 2;
-  }
-
-  .recipe-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: start;
-    margin-bottom: 10px;
-  }
-
-  .recipe-name {
-    margin: 0;
-    font-size: 1.2em;
-    color: var(--text, #333);
-  }
-
-  .availability-badge {
-    padding: 4px 12px;
-    border-radius: 15px;
-    font-size: 12px;
-    font-weight: bold;
-    background: #f0f0f0;
-    color: #666;
-  }
-
-  .availability-badge.high {
-    background: #d4edda;
-    color: #155724;
-  }
-
-  .availability-badge.medium {
-    background: #fff3cd;
-    color: #856404;
-  }
-
-  .recipe-description {
-    color: var(--text-secondary, #666);
-    margin: 10px 0;
-    font-size: 0.95em;
-  }
-
-  .recipe-stats {
+  .recipe-meta {
     display: flex;
     gap: 15px;
-    flex-wrap: wrap;
-    margin: 15px 0;
+    margin: 10px 0;
+    font-size: 14px;
+    color: #64748b;
   }
 
-  .stat {
-    font-size: 0.9em;
-    color: var(--text-secondary, #666);
-  }
-
-  .stat.instant-pot {
-    color: var(--primary, #667eea);
-    font-weight: bold;
-  }
-
-  .recipe-tags {
+  .evidence-badges {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    margin: 15px 0;
+    margin-top: 12px;
   }
 
-  .tag {
+  .badge {
     padding: 4px 10px;
     border-radius: 12px;
     font-size: 12px;
-    text-transform: capitalize;
-    background: var(--tag-bg, #f0f0f0);
-    color: var(--tag-color, #666);
+    font-weight: 600;
   }
 
-  .tag.anti-inflammatory {
-    background: #d4edda;
-    color: #155724;
+  .badge.anti-inflam {
+    background: #fef3c7;
+    color: #92400e;
   }
 
-  .tag.mtor-high {
-    background: #f8d7da;
-    color: #721c24;
+  .badge.mtor {
+    background: #dbeafe;
+    color: #1e40af;
   }
 
-  .tag.plant-diversity {
-    background: #d1ecf1;
-    color: #0c5460;
+  .badge.microbiome {
+    background: #d1fae5;
+    color: #065f46;
   }
 
-  .recipe-details {
-    margin: 20px 0;
-    padding: 20px;
-    background: var(--bg-secondary, #f8f9fa);
-    border-radius: 8px;
+  .recipe-detail {
+    background: white;
+    border-radius: 12px;
+    padding: 30px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.1);
   }
 
-  .ingredients-section,
-  .instructions-section {
-    margin-bottom: 20px;
+  .score-panel {
+    margin-bottom: 40px;
   }
 
-  .ingredients-section h4,
-  .instructions-section h4 {
-    margin: 0 0 10px 0;
-    color: var(--text, #333);
+  .overall-score {
+    text-align: center;
+    margin: 30px 0;
+  }
+
+  .score-circle {
+    display: inline-flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    width: 150px;
+    height: 150px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+  }
+
+  .score-value {
+    font-size: 48px;
+    font-weight: bold;
+  }
+
+  .score-label {
+    font-size: 12px;
+    opacity: 0.9;
+  }
+
+  .score-breakdown {
+    display: grid;
+    gap: 20px;
+  }
+
+  .metric {
+    display: grid;
+    grid-template-columns: 150px 1fr 80px 100px;
+    align-items: center;
+    gap: 15px;
+  }
+
+  .metric-name {
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .metric-bar {
+    height: 8px;
+    background: #f1f5f9;
+    border-radius: 4px;
+    overflow: hidden;
+  }
+
+  .metric-fill {
+    height: 100%;
+    background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+    border-radius: 4px;
+    transition: width 0.6s ease;
+  }
+
+  .metric-value {
+    text-align: right;
+    font-weight: 600;
+    font-size: 14px;
+  }
+
+  .metric-ref {
+    font-size: 11px;
+    color: #64748b;
+    text-align: right;
+  }
+
+  .ingredients-scientific {
+    margin: 40px 0;
   }
 
   .ingredients-list {
-    list-style: none;
-    padding: 0;
-    margin: 0;
+    margin-top: 20px;
   }
 
-  .ingredients-list li {
-    padding: 5px 0;
-    border-bottom: 1px solid var(--border, #e0e0e0);
-  }
-
-  .ingredients-list li.available {
-    color: #155724;
-  }
-
-  .ingredients-list li.missing {
-    color: #721c24;
-  }
-
-  .instructions-list {
-    margin: 0;
-    padding-left: 20px;
-  }
-
-  .instructions-list li {
-    margin: 8px 0;
-    line-height: 1.5;
-  }
-
-  .nutrition-highlight {
-    padding: 12px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border-radius: 8px;
-    font-size: 0.95em;
-  }
-
-  .recipe-actions {
+  .ingredient-row {
     display: flex;
-    gap: 10px;
-    margin-top: 15px;
+    align-items: center;
+    padding: 12px;
+    border-bottom: 1px solid #f1f5f9;
+    gap: 15px;
   }
 
-  .btn-cook,
-  .btn-shopping {
+  .ing-name {
     flex: 1;
-    padding: 10px 20px;
-    border: none;
-    border-radius: 8px;
-    font-weight: bold;
+    font-weight: 500;
+  }
+
+  .ing-amount {
+    color: #64748b;
+    font-size: 14px;
+  }
+
+  .info-btn {
+    padding: 4px 12px;
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    font-size: 12px;
     cursor: pointer;
-    transition: all 0.3s ease;
+    transition: all 0.2s;
   }
 
-  .btn-cook {
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  .info-btn:hover {
+    background: #667eea;
     color: white;
+    border-color: #667eea;
   }
 
-  .btn-cook:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
+  .scientific-details {
+    background: #f8fafc;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    font-size: 13px;
   }
 
-  .btn-shopping {
+  .detail-section {
+    margin-bottom: 15px;
+  }
+
+  .detail-section h4 {
+    color: #667eea;
+    margin-bottom: 8px;
+    font-size: 14px;
+  }
+
+  .pmid {
+    color: #64748b;
+    font-size: 11px;
+    font-style: italic;
+  }
+
+  .instant-pot-protocol {
+    background: #f8fafc;
+    padding: 25px;
+    border-radius: 12px;
+    margin-top: 30px;
+  }
+
+  .protocol-steps {
+    margin-top: 20px;
+  }
+
+  .step {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 15px;
+    gap: 15px;
+  }
+
+  .step-number {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    background: #667eea;
+    color: white;
+    border-radius: 50%;
+    font-weight: bold;
+    font-size: 14px;
+    flex-shrink: 0;
+  }
+
+  .step-text {
+    flex: 1;
+    line-height: 1.6;
+  }
+
+  .settings {
+    margin-top: 20px;
+    padding: 15px;
     background: white;
-    color: var(--primary, #667eea);
-    border: 2px solid var(--primary, #667eea);
+    border-radius: 8px;
+    border: 2px solid #667eea;
   }
 
-  .btn-shopping:hover {
-    background: var(--primary, #667eea);
-    color: white;
+  .reference {
+    margin-top: 10px;
+    font-size: 12px;
+    color: #64748b;
+    font-style: italic;
   }
 
-  .no-results {
-    text-align: center;
-    padding: 40px;
-    color: var(--text-secondary, #666);
-  }
-
-  /* Dark mode support */
-  :global(body.dark-mode) .recipe-suggester {
-    color: #e0e0e0;
-  }
-
-  :global(body.dark-mode) .recipe-card {
-    background: #2a2a2a;
-    border-color: #404040;
-  }
-
-  :global(body.dark-mode) .recipe-details {
-    background: #1a1a1a;
-  }
-
-  :global(body.dark-mode) .search-input {
-    background: #2a2a2a;
-    color: #e0e0e0;
-    border-color: #404040;
-  }
-
-  :global(body.dark-mode) .filter-btn {
-    background: #2a2a2a;
-    color: #e0e0e0;
-    border-color: #404040;
-  }
-
-  :global(body.dark-mode) .filter-btn.active {
-    background: var(--primary, #667eea);
-    color: white;
+  @media (max-width: 768px) {
+    .recipes-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .metric {
+      grid-template-columns: 1fr;
+      gap: 8px;
+    }
+    
+    .metric-ref {
+      text-align: left;
+    }
   }
 </style>
