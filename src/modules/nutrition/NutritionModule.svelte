@@ -7,6 +7,7 @@
   import RecipeSuggester from './components/RecipeSuggester.svelte';
   import BiomarkerTracking from './components/BiomarkerTracking.svelte';
   import MealPlanner from './components/MealPlanner.svelte';
+  import CodexDashboard from './components/CodexDashboard.svelte';
   
   // Import nutrition stores  
   import { 
@@ -84,6 +85,9 @@
     <div class="tab-content">
       <MealPlanner />
     </div>
+
+  {:else if activeTab === 'dashboard'}
+    <CodexDashboard />
 
   {:else if activeTab === 'meals_old'}
     <div class="tab-content placeholder">
@@ -311,10 +315,10 @@
             <p>Planificare inteligentă de mese</p>
           </button>
           
-          <button class="action-card disabled">
-            <span class="icon">📚</span>
-            <h3>CODEX Database</h3>
-            <p>În dezvoltare</p>
+          <button class="action-card" on:click={() => activeTab = 'dashboard'}>
+            <span class="icon">🧬</span>
+            <h3>CODEX Dashboard</h3>
+            <p>Evidence-based monitoring system</p>
           </button>
         </div>
       </div>
