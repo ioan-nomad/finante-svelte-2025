@@ -6,6 +6,7 @@ export { default as CODEX_PRINCIPLES } from './codexCore.js';
 export { CODEX_SOURCES } from './codexSources.js';
 export { CODEX_INGREDIENTS } from './codexDatabase.js';
 export { CodexScorer } from './codexScoring.js';
+export { CODEX_AUTHORITY, enforceAuthority } from './codexAuthority.js';
 
 // Initialize CODEX system
 export function initializeCodex() {
