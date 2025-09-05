@@ -7,6 +7,7 @@ export { CODEX_SOURCES } from './codexSources.js';
 export { CODEX_INGREDIENTS } from './codexDatabase.js';
 export { CodexScorer } from './codexScoring.js';
 export { CODEX_AUTHORITY, enforceAuthority } from './codexAuthority.js';
+export { CodexRecipeGenerator } from './codexRecipeGenerator.js';
 
 // Initialize CODEX system
 export function initializeCodex() {
