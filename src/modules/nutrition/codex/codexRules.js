@@ -368,33 +368,246 @@ export function calculateCODEXScore(mealData) {
 }
 
 function calculateTier1Score(ingredients) {
-  // Implementation for tier 1 scoring
-  return 0; // Placeholder
+  // Tier 1: Anti-inflammatory heroes (0-400 points max)
+  let score = 0;
+  const tier1Foods = {
+    // Anti-inflammatory spices
+    turmeric: 50,
+    ginger: 45,
+    garlic: 40,
+    cinnamon: 35,
+    
+    // Omega-3 rich fish
+    salmon_wild: 60,
+    sardines: 58,
+    mackerel: 55,
+    anchovies: 57,
+    
+    // Cruciferous vegetables
+    broccoli: 45,
+    kale: 48,
+    cauliflower: 40,
+    brussels_sprouts: 42,
+    
+    // Leafy greens
+    spinach: 35,
+    arugula: 38,
+    watercress: 40,
+    swiss_chard: 36,
+    
+    // Healthy fats
+    olive_oil: 45,
+    avocado: 42,
+    walnuts: 40,
+    almonds: 35
+  };
+  
+  ingredients.forEach(ingredient => {
+    const ingredientId = ingredient.id || ingredient.name?.toLowerCase().replace(/\s+/g, '_');
+    if (tier1Foods[ingredientId]) {
+      // Score based on amount (grams) and tier1 value
+      const amountMultiplier = Math.min(ingredient.amount / 100, 1.5); // Cap at 150% for large portions
+      score += tier1Foods[ingredientId] * amountMultiplier;
+    }
+  });
+  
+  // Cap at maximum 400 points
+  return Math.min(400, Math.round(score));
 }
 
 function calculateTier2Score(ingredients) {
-  // Implementation for tier 2 scoring
-  return 0; // Placeholder
+  // Tier 2: Support foods (0-300 points max)
+  let score = 0;
+  const tier2Foods = {
+    // Colorful vegetables
+    tomato: 30,
+    red_pepper: 32,
+    carrot: 28,
+    sweet_potato: 35,
+    purple_cabbage: 33,
+    
+    // Berries
+    blueberries: 40,
+    strawberries: 35,
+    raspberries: 38,
+    blackberries: 36,
+    
+    // Herbs
+    rosemary: 30,
+    oregano: 28,
+    thyme: 27,
+    basil: 26,
+    
+    // Seeds
+    chia_seeds: 35,
+    flax_seeds: 38,
+    hemp_seeds: 33,
+    pumpkin_seeds: 30
+  };
+  
+  ingredients.forEach(ingredient => {
+    const ingredientId = ingredient.id || ingredient.name?.toLowerCase().replace(/\s+/g, '_');
+    if (tier2Foods[ingredientId]) {
+      const amountMultiplier = Math.min(ingredient.amount / 50, 1.2);
+      score += tier2Foods[ingredientId] * amountMultiplier;
+    }
+  });
+  
+  return Math.min(300, Math.round(score));
 }
 
 function calculateTier3Score(ingredients) {
-  // Implementation for tier 3 scoring
-  return 0; // Placeholder
+  // Tier 3: Strategic additions (0-200 points max)
+  let score = 0;
+  const tier3Foods = {
+    // Fermented foods
+    sauerkraut: 25,
+    kimchi: 28,
+    kefir: 22,
+    yogurt: 20,
+    miso: 24,
+    
+    // Ancient grains
+    quinoa: 22,
+    buckwheat: 20,
+    amaranth: 18,
+    teff: 17,
+    
+    // Legumes
+    lentils: 25,
+    chickpeas: 23,
+    black_beans: 22,
+    kidney_beans: 20
+  };
+  
+  ingredients.forEach(ingredient => {
+    const ingredientId = ingredient.id || ingredient.name?.toLowerCase().replace(/\s+/g, '_');
+    if (tier3Foods[ingredientId]) {
+      const amountMultiplier = Math.min(ingredient.amount / 80, 1);
+      score += tier3Foods[ingredientId] * amountMultiplier;
+    }
+  });
+  
+  return Math.min(200, Math.round(score));
 }
 
 function calculateInflammatoryPenalty(ingredients) {
-  // Implementation for inflammatory penalty
-  return 0; // Placeholder
+  // Negative points for inflammatory foods (0 to -500 points)
+  let penalty = 0;
+  const inflammatoryFoods = {
+    // High inflammatory
+    processed_meat: -50,
+    white_sugar: -45,
+    white_flour: -40,
+    trans_fat: -60,
+    high_fructose_corn_syrup: -55,
+    
+    // Moderate inflammatory
+    refined_oil: -30,
+    conventional_dairy: -25,
+    farmed_fish: -20,
+    alcohol: -35,
+    
+    // Mild inflammatory
+    white_rice: -15,
+    white_bread: -18,
+    pasta_white: -16
+  };
+  
+  ingredients.forEach(ingredient => {
+    const ingredientId = ingredient.id || ingredient.name?.toLowerCase().replace(/\s+/g, '_');
+    
+    // Check for inflammatory ingredients
+    Object.keys(inflammatoryFoods).forEach(badFood => {
+      if (ingredientId.includes(badFood) || ingredient.name?.toLowerCase().includes(badFood)) {
+        const amountMultiplier = ingredient.amount / 100;
+        penalty += inflammatoryFoods[badFood] * amountMultiplier;
+      }
+    });
+    
+    // Check for mushrooms (Nico allergy) - automatic heavy penalty
+    if (ingredientId.includes('mushroom') || 
+        ingredientId.includes('ciuperci') || 
+        ingredient.name?.toLowerCase().includes('mushroom')) {
+      penalty -= 200; // Heavy penalty for allergen
+    }
+  });
+  
+  // Cap penalty at -500
+  return Math.max(-500, Math.round(penalty));
 }
 
 function calculateVarietyBonus(ingredients) {
-  // Implementation for variety bonus
-  return 0; // Placeholder
+  // Bonus for ingredient variety (0-50 points)
+  let bonus = 0;
+  
+  // Count unique plant species
+  const plantSpecies = new Set();
+  const colors = new Set();
+  
+  ingredients.forEach(ingredient => {
+    const name = (ingredient.name || ingredient.id || '').toLowerCase();
+    
+    // Track plant species
+    if (!name.includes('meat') && !name.includes('fish') && !name.includes('chicken')) {
+      plantSpecies.add(name);
+      
+      // Track colors for phytonutrient diversity
+      if (name.includes('red') || name.includes('tomato')) colors.add('red');
+      if (name.includes('orange') || name.includes('carrot') || name.includes('sweet_potato')) colors.add('orange');
+      if (name.includes('yellow') || name.includes('corn')) colors.add('yellow');
+      if (name.includes('green') || name.includes('spinach') || name.includes('broccoli')) colors.add('green');
+      if (name.includes('purple') || name.includes('eggplant')) colors.add('purple');
+      if (name.includes('white') || name.includes('garlic') || name.includes('onion')) colors.add('white');
+    }
+  });
+  
+  // 2 points per unique plant (max 30 points)
+  bonus += Math.min(30, plantSpecies.size * 2);
+  
+  // 4 points per color represented (max 20 points for 5+ colors)
+  bonus += Math.min(20, colors.size * 4);
+  
+  return Math.round(bonus);
 }
 
 function calculateTimingBonus(timing) {
-  // Implementation for timing bonus
-  return 0; // Placeholder
+  // Bonus for optimal meal timing (0-50 points)
+  if (!timing) return 0;
+  
+  let bonus = 0;
+  const currentHour = new Date().getHours();
+  
+  // OMAD window optimization (6-7 AM is optimal)
+  if (timing === 'OMAD' || timing === 'omad') {
+    if (currentHour >= 6 && currentHour <= 7) {
+      bonus = 50; // Perfect timing
+    } else if (currentHour >= 5 && currentHour <= 8) {
+      bonus = 40; // Good timing
+    } else if (currentHour >= 4 && currentHour <= 10) {
+      bonus = 30; // Acceptable timing
+    } else if (currentHour >= 11 && currentHour <= 14) {
+      bonus = 20; // Suboptimal but acceptable
+    } else {
+      bonus = 10; // Outside optimal window
+    }
+  } else if (timing === 'IF' || timing === 'intermittent') {
+    // Intermittent fasting window
+    if (currentHour >= 12 && currentHour <= 20) {
+      bonus = 35; // Within 8-hour window
+    } else {
+      bonus = 0; // Outside window
+    }
+  } else {
+    // Regular meal timing
+    if ((currentHour >= 6 && currentHour <= 9) ||   // Breakfast
+        (currentHour >= 12 && currentHour <= 14) ||  // Lunch
+        (currentHour >= 18 && currentHour <= 20)) {  // Dinner
+      bonus = 25;
+    }
+  }
+  
+  return bonus;
 }
 
 function generateRecommendations(mealData, breakdown) {
@@ -416,16 +629,16 @@ function generateRecommendations(mealData, breakdown) {
 }
 
 function getGrade(score) {
-  if (score >= 90) return 'A+';
-  if (score >= 85) return 'A';
-  if (score >= 80) return 'A-';
-  if (score >= 75) return 'B+';
-  if (score >= 70) return 'B';
-  if (score >= 65) return 'B-';
-  if (score >= 60) return 'C+';
-  if (score >= 55) return 'C';
-  if (score >= 50) return 'C-';
-  return 'D';
+  if (score >= 90) return 'A+ Excellent - Optimal Anti-Inflammatory';
+  if (score >= 85) return 'A Very Good - Strong Protection';
+  if (score >= 80) return 'A- Good - Beneficial';
+  if (score >= 75) return 'B+ Above Average';
+  if (score >= 70) return 'B Acceptable';
+  if (score >= 65) return 'B- Room for Improvement';
+  if (score >= 60) return 'C+ Needs Enhancement';
+  if (score >= 55) return 'C Suboptimal';
+  if (score >= 50) return 'C- Poor';
+  return 'D Inflammatory Risk - Revise Recipe';
 }
 
 export default CODEX_RULES;
