@@ -227,11 +227,11 @@ export const CODEX_AUTHORITY = {
     }
     
     // Logging pentru audit trail
-    console.log(`✓ VALIDATED: ${source.name} | Type: ${data_type} | Citation: ${source.citation}`);
+    console.log(`✓ VALIDATED: ${source} | Type: ${data_type} | Citation: ${source}`);
     return true;
   },
   
-  checkAuthorization: function(source) {
+  checkAuthorization: function(sourceName) {
     // Verifică în toate categoriile autorizate
     const allAuthorized = [
       ...Object.keys(this.AUTHORIZED_SOURCES.academic_databases),
@@ -241,20 +241,30 @@ export const CODEX_AUTHORITY = {
       ...Object.keys(this.AUTHORIZED_SOURCES.ayurveda_validated)
     ];
     
+    // Also check scientific journals
+    const journalNames = this.AUTHORIZED_SOURCES.scientific_journals.high_impact.map(j => j.name.toLowerCase());
+    
+    const sourceNameLower = sourceName.toLowerCase();
+    
     return allAuthorized.some(auth => 
-      source.toLowerCase().includes(auth.toLowerCase())
+      sourceNameLower.includes(auth.toLowerCase())
+    ) || journalNames.some(journal => 
+      sourceNameLower.includes(journal.toLowerCase()) || 
+      journal.includes(sourceNameLower)
     );
   },
   
-  hasCitation: function(source) {
-    // Verifică PMID (8 digits) sau DOI pattern
+  hasCitation: function(citation) {
+    if (!citation) return false;
+    
+    // Verifică PMID (7-9 digits) sau DOI pattern sau Cochrane
     const pmidPattern = /PMID:?\s*\d{7,9}/i;
     const doiPattern = /DOI:?\s*10\.\d+\/[\w\-\.]+/i;
     const cochranePattern = /CD\d{6}/;
     
-    return pmidPattern.test(source.citation) || 
-           doiPattern.test(source.citation) || 
-           cochranePattern.test(source.citation);
+    return pmidPattern.test(citation) || 
+           doiPattern.test(citation) || 
+           cochranePattern.test(citation);
   }
 };
 
@@ -264,7 +274,21 @@ export function enforceAuthority(dataPoint) {
     throw new Error("BLOCKED: Every data point MUST have source and citation");
   }
   
-  return CODEX_AUTHORITY.validateSource(dataPoint.source, dataPoint.type);
+  // Check if source is authorized
+  const authorized = CODEX_AUTHORITY.checkAuthorization(dataPoint.source);
+  if (!authorized) {
+    throw new Error(`BLOCKED: "${dataPoint.source}" is NOT an authorized source. Only official sources allowed.`);
+  }
+  
+  // Check if citation is valid
+  const validCitation = CODEX_AUTHORITY.hasCitation(dataPoint.citation);
+  if (!validCitation) {
+    throw new Error(`BLOCKED: No PMID/DOI citation for claim. Citation required.`);
+  }
+  
+  // Log successful validation
+  console.log(`✓ VALIDATED: ${dataPoint.source} | Type: ${dataPoint.type} | Citation: ${dataPoint.citation}`);
+  return true;
 }
 
 export default CODEX_AUTHORITY;
