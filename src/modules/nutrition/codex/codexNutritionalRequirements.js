@@ -500,6 +500,404 @@ export const NUTRITIONAL_REQUIREMENTS = {
     }
   },
   
+  // SISTEM COMPLET DE RAPOARTE NUTRIȚIONALE
+  nutritional_ratios: {
+    
+    // 1. RAPOARTE MACRONUTRIENȚI
+    macro_ratios: {
+      protein_energy: {
+        ioan: { target: "16-18%", actual: 0, dzr: 0 },
+        nico: { target: "18-20%", actual: 0, dzr: 0 },
+        formula: "(protein_g × 4) / total_calories × 100",
+        importance: "Muscle preservation critical after 40",
+        source: "WHO Technical Report 935",
+        pmid: "PMID: 17911673"
+      },
+      
+      fat_energy: {
+        ioan: { target: "30-35%", actual: 0, dzr: 0 },
+        nico: { target: "35-40%", actual: 0, dzr: 0 },
+        formula: "(fat_g × 9) / total_calories × 100",
+        importance: "Hormone production, vitamin absorption",
+        source: "EFSA Journal 2010",
+        pmid: "PMID: 21040622"
+      },
+      
+      carb_energy: {
+        ioan: { target: "47-54%", actual: 0, dzr: 0 },
+        nico: { target: "40-47%", actual: 0, dzr: 0 },
+        formula: "(carbs_g × 4) / total_calories × 100",
+        importance: "Energy, fiber, phytonutrients",
+        source: "Institute of Medicine DRI",
+        pmid: "PMID: 12449285"
+      }
+    },
+    
+    // 2. RAPOARTE ACIZI GRAȘI
+    fatty_acid_ratios: {
+      omega6_omega3: {
+        ideal: "2:1 to 4:1",
+        acceptable: "up to 10:1",
+        current_western: "15:1 (inflammatory)",
+        ioan: { target: 3, actual: 0, status: "" },
+        nico: { target: 2.5, actual: 0, status: "" },
+        formula: "total_omega6 / total_omega3",
+        critical_note: "Nico needs lower ratio due to inflammation from handicap",
+        source: "Biomedicine & Pharmacotherapy",
+        pmid: "PMID: 12442909"
+      },
+      
+      saturated_unsaturated: {
+        ideal: "1:2",
+        ioan: { max_saturated: "22g", actual: 0, dzr: 0 },
+        nico: { max_saturated: "15g", actual: 0, dzr: 0 },
+        source: "American Heart Association",
+        pmid: "PMID: 28620111"
+      },
+      
+      EPA_DHA_ratio: {
+        ideal: "2:1 EPA to DHA",
+        minimum_combined: "500mg EPA+DHA",
+        optimal_combined: "1000-2000mg",
+        source: "International Society for Study of Fatty Acids",
+        pmid: "PMID: 30103329"
+      }
+    },
+    
+    // 3. RAPOARTE FIBRE
+    fiber_ratios: {
+      soluble_insoluble: {
+        ideal_ratio: "1:3",
+        ioan: { 
+          soluble_target: "10g",
+          insoluble_target: "28g",
+          actual_soluble: 0,
+          actual_insoluble: 0,
+          dzr_soluble: 0,
+          dzr_insoluble: 0
+        },
+        nico: { 
+          soluble_target: "8g",
+          insoluble_target: "17g",
+          actual_soluble: 0,
+          actual_insoluble: 0,
+          dzr_soluble: 0,
+          dzr_insoluble: 0
+        },
+        soluble_sources: "oats, beans, apples, citrus",
+        insoluble_sources: "whole grains, nuts, vegetables",
+        source: "Journal of Nutrition",
+        pmid: "PMID: 19158230"
+      },
+      
+      prebiotic_fiber: {
+        minimum: "5g/day",
+        optimal: "8-12g/day",
+        sources: "inulin, FOS, GOS, resistant starch",
+        source: "Nature Reviews Gastroenterology",
+        pmid: "PMID: 28611480"
+      }
+    },
+    
+    // 4. RAPOARTE MINERALE CRITICE
+    mineral_ratios: {
+      calcium_magnesium: {
+        ideal_ratio: "2:1",
+        ioan: { ca: 1000, mg: 420, ratio: 2.38, status: "" },
+        nico: { ca: 1200, mg: 360, ratio: 3.33, status: "Needs more Mg" },
+        interaction: "Compete for absorption",
+        source: "Advances in Food and Nutrition Research",
+        pmid: "PMID: 28911769"
+      },
+      
+      calcium_phosphorus: {
+        ideal_ratio: "1:1 to 1.5:1",
+        ioan: { target: 1.43, actual: 0 },
+        nico: { target: 1.71, actual: 0 },
+        warning: "High P blocks Ca absorption",
+        source: "Clinical Kidney Journal",
+        pmid: "PMID: 26985371"
+      },
+      
+      sodium_potassium: {
+        ideal_ratio: "1:2 (reverse of typical)",
+        ioan: { na_max: 2300, k_target: 4700, ratio: 0.49 },
+        nico: { na_max: 2000, k_target: 4000, ratio: 0.50 },
+        critical: "For blood pressure control",
+        source: "WHO Guidelines 2012",
+        pmid: "PMID: 23658998"
+      },
+      
+      iron_copper: {
+        ideal_ratio: "10:1 to 15:1",
+        ioan: { fe: 8, cu: 0.9, ratio: 8.9 },
+        nico: { fe: 18, cu: 0.9, ratio: 20 },
+        note: "Copper needed for iron utilization",
+        source: "Journal of Trace Elements",
+        pmid: "PMID: 29895365"
+      },
+      
+      zinc_copper: {
+        ideal_ratio: "8:1 to 12:1",
+        ioan: { zn: 11, cu: 0.9, ratio: 12.2 },
+        nico: { zn: 8, cu: 0.9, ratio: 8.9 },
+        warning: "High zinc blocks copper",
+        source: "European Journal of Clinical Nutrition",
+        pmid: "PMID: 29955111"
+      }
+    },
+    
+    // 5. RAPOARTE VITAMINE
+    vitamin_ratios: {
+      vitamin_d_k2: {
+        synergy: "K2 directs calcium to bones",
+        ioan: { d3: 800, k2: 120, optimal: true },
+        nico: { d3: 800, k2: 90, needs_more_k2: true },
+        source: "International Journal of Endocrinology",
+        pmid: "PMID: 28656117"
+      },
+      
+      vitamin_e_c: {
+        synergy: "C regenerates E",
+        ideal: "200mg C per 15mg E",
+        source: "Free Radical Biology",
+        pmid: "PMID: 7744317"
+      },
+      
+      b_complex_ratios: {
+        b6_b9_b12: "Work together for homocysteine",
+        optimal: "2mg:400μg:6μg",
+        source: "American Journal of Clinical Nutrition",
+        pmid: "PMID: 22648721"
+      }
+    },
+    
+    // 6. RAPOARTE AMINOACIZI (pentru proteine complete)
+    amino_acid_ratios: {
+      leucine_protein: {
+        target: "10% of protein as leucine",
+        minimum_per_meal: "2.5-3g leucine",
+        importance: "mTOR activation for muscle",
+        source: "Journal of Nutrition",
+        pmid: "PMID: 25926415"
+      },
+      
+      methionine_glycine: {
+        ideal: "1:1 to 1:2",
+        importance: "Longevity optimization",
+        source: "Cell Metabolism",
+        pmid: "PMID: 30840912"
+      },
+      
+      tryptophan_LNAA: {
+        ratio_name: "Tryptophan to Large Neutral Amino Acids",
+        ideal: ">0.03",
+        importance: "Serotonin production",
+        source: "Molecular Psychiatry",
+        pmid: "PMID: 26782056"
+      }
+    },
+    
+    // 7. ANTIOXIDANT RATIOS
+    antioxidant_balance: {
+      vitamin_c_e_ratio: {
+        ideal: "13:1 (200mg C : 15mg E)",
+        function: "Synergistic protection",
+        source: "Advances in Food and Nutrition Research",
+        pmid: "PMID: 21462157"
+      },
+      
+      carotenoid_diversity: {
+        target: "5+ different carotenoids daily",
+        beta_carotene: "25%",
+        lycopene: "25%",
+        lutein_zeaxanthin: "25%",
+        other: "25%",
+        source: "American Journal of Clinical Nutrition",
+        pmid: "PMID: 24899156"
+      }
+    }
+  },
+  
+  // SISTEM DE CALCUL DZR% ȘI MONITORIZARE
+  calculateDZR: function(actualIntake, person = 'ioan') {
+    const requirements = this.daily_requirements;
+    const profile = this.profiles[person];
+    const dzrReport = {
+      person: person,
+      timestamp: new Date().toISOString(),
+      macros: {},
+      vitamins: {},
+      minerals: {},
+      ratios: {},
+      alerts: {
+        critical_deficits: [], // <50% DZR
+        moderate_deficits: [], // 50-70% DZR
+        slight_deficits: [],   // 70-90% DZR
+        optimal: [],           // 90-110% DZR
+        excess: []            // >150% DZR
+      }
+    };
+    
+    // Calculate Macros DZR%
+    dzrReport.macros = {
+      protein: {
+        actual: actualIntake.protein || 0,
+        target: requirements.macronutrients.protein[person].optimal,
+        dzr_percent: ((actualIntake.protein || 0) / requirements.macronutrients.protein[person].optimal) * 100,
+        status: this.getStatus((actualIntake.protein || 0) / requirements.macronutrients.protein[person].optimal * 100)
+      },
+      carbs: {
+        actual: actualIntake.carbs || 0,
+        target: requirements.macronutrients.carbohydrates[person].optimal,
+        dzr_percent: ((actualIntake.carbs || 0) / requirements.macronutrients.carbohydrates[person].optimal) * 100,
+        fiber: {
+          actual: actualIntake.fiber || 0,
+          target: requirements.macronutrients.carbohydrates[person].fiber,
+          dzr_percent: ((actualIntake.fiber || 0) / requirements.macronutrients.carbohydrates[person].fiber) * 100,
+          soluble_percent: ((actualIntake.fiber_soluble || 0) / 10) * 100,
+          insoluble_percent: ((actualIntake.fiber_insoluble || 0) / 28) * 100
+        }
+      },
+      fats: {
+        actual: actualIntake.fat || 0,
+        target: requirements.macronutrients.fats[person].optimal,
+        dzr_percent: ((actualIntake.fat || 0) / requirements.macronutrients.fats[person].optimal) * 100,
+        omega3: {
+          actual: actualIntake.omega3 || 0,
+          target: requirements.macronutrients.fats[person].omega3,
+          dzr_percent: ((actualIntake.omega3 || 0) / requirements.macronutrients.fats[person].omega3) * 100
+        }
+      }
+    };
+    
+    // Calculate all Vitamins DZR%
+    Object.keys(requirements.vitamins).forEach(vitamin => {
+      const target = requirements.vitamins[vitamin][person];
+      const actual = actualIntake[vitamin] || 0;
+      const dzr = (actual / target) * 100;
+      
+      dzrReport.vitamins[vitamin] = {
+        actual: actual,
+        target: target,
+        unit: requirements.vitamins[vitamin].unit,
+        dzr_percent: dzr,
+        status: this.getStatus(dzr)
+      };
+      
+      // Add to alerts
+      this.addToAlerts(dzrReport.alerts, vitamin, dzr);
+    });
+    
+    // Calculate all Minerals DZR%
+    Object.keys(requirements.minerals).forEach(mineral => {
+      if (mineral.includes('max')) return; // Skip max values
+      
+      const target = requirements.minerals[mineral][person];
+      const actual = actualIntake[mineral] || 0;
+      const dzr = (actual / target) * 100;
+      
+      dzrReport.minerals[mineral] = {
+        actual: actual,
+        target: target,
+        unit: requirements.minerals[mineral].unit,
+        dzr_percent: dzr,
+        status: this.getStatus(dzr)
+      };
+      
+      // Add to alerts
+      this.addToAlerts(dzrReport.alerts, mineral, dzr);
+    });
+    
+    // Calculate Critical Ratios
+    dzrReport.ratios = {
+      omega6_omega3: {
+        actual: (actualIntake.omega6 || 0) / (actualIntake.omega3 || 1),
+        target: this.nutritional_ratios.fatty_acid_ratios.omega6_omega3[person].target,
+        status: this.getRatioStatus('omega6_omega3', (actualIntake.omega6 || 0) / (actualIntake.omega3 || 1))
+      },
+      calcium_magnesium: {
+        actual: (actualIntake.calcium || 0) / (actualIntake.magnesium || 1),
+        target: 2,
+        status: this.getRatioStatus('ca_mg', (actualIntake.calcium || 0) / (actualIntake.magnesium || 1))
+      },
+      sodium_potassium: {
+        actual: (actualIntake.sodium || 0) / (actualIntake.potassium || 1),
+        target: 0.5,
+        status: this.getRatioStatus('na_k', (actualIntake.sodium || 0) / (actualIntake.potassium || 1))
+      },
+      zinc_copper: {
+        actual: (actualIntake.zinc || 0) / (actualIntake.copper || 1),
+        target: 10,
+        status: this.getRatioStatus('zn_cu', (actualIntake.zinc || 0) / (actualIntake.copper || 1))
+      },
+      protein_energy: {
+        actual: ((actualIntake.protein || 0) * 4) / (actualIntake.calories || 1) * 100,
+        target: person === 'ioan' ? 17 : 19,
+        status: this.getStatus(((actualIntake.protein || 0) * 4) / (actualIntake.calories || 1) * 100)
+      }
+    };
+    
+    return dzrReport;
+  },
+  
+  // Helper functions
+  getStatus: function(dzrPercent) {
+    if (dzrPercent < 50) return '🔴 Critical Deficit';
+    if (dzrPercent < 70) return '🟠 Moderate Deficit';
+    if (dzrPercent < 90) return '🟡 Slight Deficit';
+    if (dzrPercent <= 110) return '🟢 Optimal';
+    if (dzrPercent <= 150) return '🔵 Above Target';
+    return '⚠️ Excess';
+  },
+  
+  getRatioStatus: function(ratioType, actual) {
+    const ranges = {
+      omega6_omega3: { min: 1, optimal: 3, max: 10 },
+      ca_mg: { min: 1.5, optimal: 2, max: 3 },
+      na_k: { min: 0.3, optimal: 0.5, max: 1 },
+      zn_cu: { min: 6, optimal: 10, max: 15 }
+    };
+    
+    const range = ranges[ratioType];
+    if (!range) return 'Unknown';
+    
+    if (actual < range.min) return '⚠️ Too Low';
+    if (actual > range.max) return '⚠️ Too High';
+    if (Math.abs(actual - range.optimal) < range.optimal * 0.2) return '🟢 Optimal';
+    return '🟡 Acceptable';
+  },
+  
+  addToAlerts: function(alerts, nutrient, dzr) {
+    if (dzr < 50) {
+      alerts.critical_deficits.push({
+        nutrient: nutrient,
+        dzr: dzr.toFixed(1),
+        action: `URGENT: Increase ${nutrient} intake immediately`
+      });
+    } else if (dzr < 70) {
+      alerts.moderate_deficits.push({
+        nutrient: nutrient,
+        dzr: dzr.toFixed(1),
+        action: `Add more ${nutrient}-rich foods`
+      });
+    } else if (dzr < 90) {
+      alerts.slight_deficits.push({
+        nutrient: nutrient,
+        dzr: dzr.toFixed(1),
+        action: `Slightly increase ${nutrient}`
+      });
+    } else if (dzr <= 110) {
+      alerts.optimal.push(nutrient);
+    } else if (dzr > 150) {
+      alerts.excess.push({
+        nutrient: nutrient,
+        dzr: dzr.toFixed(1),
+        action: `Consider reducing ${nutrient}`
+      });
+    }
+  },
+  
   // VALIDATION FUNCTION
   validateNutritionalCompleteness: function(mealPlan) {
     const validation = {
