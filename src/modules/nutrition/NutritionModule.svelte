@@ -10,6 +10,12 @@
   import CodexDashboard from './components/CodexDashboard.svelte';
   import CodexRecipeUI from './components/CodexRecipeUI.svelte';
   
+  // Import CODEX N-OMAD v3.0 Components
+  import RecipeDisplay from './codex/RecipeDisplay.svelte';
+  import { ProfileEngine, CodexIntegration, NutrientDatabase } from './codex/CodexCore.js';
+  import { initializeNutrientDatabase } from './codex/database/nutrients.js';
+  import { CookingMethodIntegration } from './codex/CookingMethods.js';
+  
   // Import nutrition stores  
   import { 
     nutritionProfile, 
@@ -21,7 +27,18 @@
   let CodexDatabase = null;
   let NutritionTracker = null;
 
+  // CODEX N-OMAD v3.0 State
+  let currentProfile = "ioan";
+  let recipeData = null;
+  let nutritionAnalysis = null;
+  let isGeneratingRecipe = false;
+  let isAnalyzingNutrition = false;
+
   onMount(async () => {
+    // Initialize CODEX N-OMAD v3.0 Database
+    initializeNutrientDatabase(NutrientDatabase);
+    console.log('🧬 CODEX N-OMAD v3.0 initialized with complete nutrient database');
+    
     // Load future components dynamically when they're created
     try {
       // These will be implemented later
@@ -31,6 +48,44 @@
       console.log('Future nutrition components not yet available');
     }
   });
+
+  // CODEX N-OMAD v3.0 Event Handlers
+  async function handleGenerateRecipe(event) {
+    isGeneratingRecipe = true;
+    const profile = event.detail?.profile || currentProfile;
+    
+    try {
+      const plan = await CodexIntegration.generateOMADPlan(profile);
+      recipeData = plan.recipeSteps;
+      console.log('🔄 Generated OMAD recipe plan:', plan);
+    } catch (error) {
+      console.error('❌ Recipe generation failed:', error);
+    } finally {
+      isGeneratingRecipe = false;
+    }
+  }
+
+  async function handleAnalyzeNutrition(event) {
+    isAnalyzingNutrition = true;
+    const profile = event.detail?.profile || currentProfile;
+    
+    try {
+      // Mock ingredients for demo - in real app this would come from user input
+      const mockIngredients = [
+        { foodId: "RO_FISH_001", amount: 150 }, // Salmon
+        { foodId: "RO_VEG_001", amount: 200 }, // Brussels sprouts
+        { foodId: "RO_NUTS_001", amount: 30 },  // Walnuts
+        { foodId: "RO_GRAIN_002", amount: 80 }  // Quinoa
+      ];
+      
+      nutritionAnalysis = await CodexIntegration.analyzeNutrition(mockIngredients, profile);
+      console.log('📊 Nutrition analysis completed:', nutritionAnalysis);
+    } catch (error) {
+      console.error('❌ Nutrition analysis failed:', error);
+    } finally {
+      isAnalyzingNutrition = false;
+    }
+  }
 
   // Check pantry module availability for enhanced integration
   let pantryAvailable = false;
@@ -93,6 +148,32 @@
   {:else if activeTab === 'generator'}
     <div class="tab-content">
       <CodexRecipeUI />
+    </div>
+
+  {:else if activeTab === 'codex-nomad'}
+    <div class="tab-content">
+      <div class="codex-nomad-header">
+        <div class="header-info">
+          <h2>🧬 CODEX N-OMAD v3.0</h2>
+          <p>Complete evidence-based nutrition system for Ioan & Nico profiles</p>
+        </div>
+        
+        <div class="profile-selector">
+          <label>Active Profile:</label>
+          <select bind:value={currentProfile}>
+            <option value="ioan">Ioan (45, Male)</option>
+            <option value="nico">Nico (42, Female, Mushroom Allergy)</option>
+          </select>
+        </div>
+      </div>
+
+      <RecipeDisplay 
+        {recipeData} 
+        {nutritionAnalysis}
+        profile={currentProfile}
+        on:generate-recipe={handleGenerateRecipe}
+        on:analyze-nutrition={handleAnalyzeNutrition}
+      />
     </div>
 
   {:else if activeTab === 'meals_old'}
@@ -331,6 +412,13 @@
             <span class="icon">🚀</span>
             <h3>Recipe Generator v4.0</h3>
             <p>Generare rețete cu workflow logic impecabil</p>
+          </button>
+          
+          <button class="action-card featured" on:click={() => activeTab = 'codex-nomad'}>
+            <span class="icon">🧬</span>
+            <h3>CODEX N-OMAD v3.0</h3>
+            <p>Complete evidence-based nutrition system with PMID sources</p>
+            <div class="new-badge">NEW</div>
           </button>
         </div>
       </div>
@@ -709,10 +797,140 @@
     color: var(--muted, #9aa3b2);
   }
 
+  /* CODEX N-OMAD v3.0 Specific Styles */
+  .codex-nomad-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding: 20px;
+    background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
+    color: white;
+    border-radius: 12px;
+  }
+
+  .codex-nomad-header .header-info h2 {
+    margin: 0 0 5px 0;
+    color: white;
+    font-size: 24px;
+    font-weight: 600;
+  }
+
+  .codex-nomad-header .header-info p {
+    margin: 0;
+    opacity: 0.9;
+    font-size: 14px;
+  }
+
+  .profile-selector {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    background: rgba(255, 255, 255, 0.1);
+    padding: 10px 15px;
+    border-radius: 8px;
+    backdrop-filter: blur(10px);
+  }
+
+  .profile-selector label {
+    font-size: 12px;
+    font-weight: 600;
+    color: white;
+    opacity: 0.9;
+  }
+
+  .profile-selector select {
+    background: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 500;
+    color: #323130;
+    cursor: pointer;
+  }
+
+  .profile-selector select:focus {
+    outline: none;
+    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  }
+
+  .action-card.featured {
+    border: 2px solid var(--acc, #80b8ff);
+    background: linear-gradient(135deg, var(--panel, #2d2d2d) 0%, rgba(128, 184, 255, 0.1) 100%);
+    position: relative;
+    overflow: hidden;
+  }
+
+  .action-card.featured::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: linear-gradient(90deg, #0078d4, #106ebe, #80b8ff);
+  }
+
+  .new-badge {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    background: #107c10;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+  }
+
+  .action-card.featured:hover {
+    border-color: #106ebe;
+    transform: translateY(-3px);
+    box-shadow: 0 8px 25px rgba(128, 184, 255, 0.3);
+  }
+
+  /* Loading States */
+  .loading-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 12px;
+    z-index: 10;
+  }
+
+  .loading-spinner {
+    width: 40px;
+    height: 40px;
+    border: 3px solid rgba(255, 255, 255, 0.3);
+    border-top: 3px solid white;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+  }
+
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+
   @media (max-width: 768px) {
     .module-header {
       flex-direction: column;
       gap: 20px;
+    }
+
+    .codex-nomad-header {
+      flex-direction: column;
+      gap: 15px;
+      text-align: center;
     }
 
     .codex-status {
@@ -727,6 +945,11 @@
 
     .recommendations-grid {
       grid-template-columns: 1fr;
+    }
+
+    .profile-selector {
+      flex-direction: column;
+      gap: 8px;
     }
   }
 </style>
