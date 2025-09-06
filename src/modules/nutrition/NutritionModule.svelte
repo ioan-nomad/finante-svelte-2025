@@ -15,6 +15,7 @@
   import { ProfileEngine, CodexIntegration, NutrientDatabase } from './codex/CodexCore.js';
   import { initializeNutrientDatabase } from './codex/database/nutrients.js';
   import { CookingMethodIntegration } from './codex/CookingMethods.js';
+  import RecipeEngine from './codex/RecipeEngine.js';
   
   // Import nutrition stores  
   import { 
@@ -33,11 +34,16 @@
   let nutritionAnalysis = null;
   let isGeneratingRecipe = false;
   let isAnalyzingNutrition = false;
+  let recipeEngine = null;
 
   onMount(async () => {
     // Initialize CODEX N-OMAD v3.0 Database
     initializeNutrientDatabase(NutrientDatabase);
     console.log('🧬 CODEX N-OMAD v3.0 initialized with complete nutrient database');
+    
+    // Initialize RecipeEngine
+    recipeEngine = new RecipeEngine();
+    console.log('🚀 RecipeEngine v3.0 initialized with orchestration system');
     
     // Load future components dynamically when they're created
     try {
@@ -51,13 +57,25 @@
 
   // CODEX N-OMAD v3.0 Event Handlers
   async function handleGenerateRecipe(event) {
+    if (!recipeEngine) return;
+    
     isGeneratingRecipe = true;
     const profile = event.detail?.profile || currentProfile;
     
     try {
-      const plan = await CodexIntegration.generateOMADPlan(profile);
-      recipeData = plan.recipeSteps;
-      console.log('🔄 Generated OMAD recipe plan:', plan);
+      // Switch to selected profile
+      recipeEngine.switchProfile(profile);
+      
+      // Generate complete OMAD recipe with orchestration
+      const completeRecipe = await recipeEngine.generateOMADRecipe({
+        preferences: event.detail?.preferences || {},
+        dietaryRestrictions: profile === 'nico' ? ['mushrooms'] : []
+      });
+      
+      recipeData = completeRecipe;
+      nutritionAnalysis = completeRecipe.nutrition;
+      
+      console.log('🔄 Generated complete OMAD recipe:', completeRecipe);
     } catch (error) {
       console.error('❌ Recipe generation failed:', error);
     } finally {
@@ -66,20 +84,35 @@
   }
 
   async function handleAnalyzeNutrition(event) {
+    if (!recipeEngine) return;
+    
     isAnalyzingNutrition = true;
     const profile = event.detail?.profile || currentProfile;
     
     try {
-      // Mock ingredients for demo - in real app this would come from user input
-      const mockIngredients = [
-        { foodId: "RO_FISH_001", amount: 150 }, // Salmon
-        { foodId: "RO_VEG_001", amount: 200 }, // Brussels sprouts
-        { foodId: "RO_NUTS_001", amount: 30 },  // Walnuts
-        { foodId: "RO_GRAIN_002", amount: 80 }  // Quinoa
+      // Switch to selected profile
+      recipeEngine.switchProfile(profile);
+      
+      // Initialize sample pantry for demonstration
+      const samplePantry = [
+        { ingredient: "Somon", quantity: 200, unit: "g", expiryDate: "2025-09-10" },
+        { ingredient: "Broccoli", quantity: 300, unit: "g", expiryDate: "2025-09-08" },
+        { ingredient: "Quinoa", quantity: 150, unit: "g", expiryDate: "2025-12-01" },
+        { ingredient: "Ulei de măsline", quantity: 50, unit: "ml", expiryDate: "2025-12-01" },
+        { ingredient: "Nucă", quantity: 100, unit: "g", expiryDate: "2025-10-01" }
       ];
       
-      nutritionAnalysis = await CodexIntegration.analyzeNutrition(mockIngredients, profile);
-      console.log('📊 Nutrition analysis completed:', nutritionAnalysis);
+      recipeEngine.initializePantry(samplePantry);
+      
+      // Generate and analyze complete recipe
+      const completeAnalysis = await recipeEngine.generateOMADRecipe({
+        preferences: { maxCookingTime: 30, preferredCookingMethod: 'instant-pot' }
+      });
+      
+      nutritionAnalysis = completeAnalysis.nutrition;
+      recipeData = completeAnalysis;
+      
+      console.log('📊 Complete nutrition analysis:', completeAnalysis);
     } catch (error) {
       console.error('❌ Nutrition analysis failed:', error);
     } finally {
