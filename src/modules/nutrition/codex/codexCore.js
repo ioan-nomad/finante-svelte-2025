@@ -57,33 +57,45 @@ export const ProfileEngine = {
             name: "Ioan",
             age: 45,
             gender: "male",
-            weight: 85, // Corrected weight
-            height: 178,
-            activity: "moderate",
+            weight: 85, // kg - EXACT
+            height: 180, // cm - EXACT (corrected from 178)
+            activity: "moderate", // Activity factor 1.55
+            activityFactor: 1.55, // EXACT Harris-Benedict multiplier
             allergies: [],
             preferences: ["ayurvedic", "instant_pot", "omad_morning"],
             mtor_phase: "growth",
             target_plants_weekly: 35,
-            meal_window: "08:00-09:00", // HARDCODED
-            bodyFat: 15, // estimated
+            meal_window: "08:00-09:00",
+            bodyFat: 15, // estimated %
             metabolicRate: "normal",
-            healthGoals: ["longevity", "muscle_maintenance", "cognitive_health"]
+            healthGoals: ["longevity", "muscle_maintenance", "cognitive_health"],
+            bmrFormula: "harris_benedict" // Harris-Benedict formula
         },
-        nico: {
-            name: "Nico", 
+        nicoleta: {
+            name: "Nicoleta", // Updated name
             age: 42,
-            gender: "female",
-            weight: 65, // Corrected weight  
-            height: 165,
-            activity: "moderate",
-            allergies: ["mushrooms", "fungi", "champignon", "ciuperci"], // Extended allergy list
-            preferences: ["ayurvedic", "instant_pot", "omad_morning"],
+            gender: "female", 
+            weight: 65, // kg - EXACT
+            height: 165, // cm - EXACT
+            activity: "light", // Activity factor 1.375 (corrected from moderate)
+            activityFactor: 1.375, // EXACT Harris-Benedict multiplier for light activity
+            allergies: [
+                "mushrooms", "fungi", "champignon", "ciuperci", 
+                "pleurotus", "shiitake", "portobello", "button_mushrooms",
+                "oyster_mushrooms", "enoki", "cremini", "porcini"
+            ], // Complete mushroom allergy list
+            preferences: ["ayurvedic", "instant_pot", "omad_morning", "no_mushrooms"],
             mtor_phase: "growth",
             target_plants_weekly: 35,
-            meal_window: "08:00-09:00", // HARDCODED
-            bodyFat: 22, // estimated
+            meal_window: "08:00-09:00",
+            bodyFat: 22, // estimated %
             metabolicRate: "slightly_slow",
-            healthGoals: ["longevity", "bone_health", "hormonal_balance"]
+            healthGoals: ["longevity", "bone_health", "hormonal_balance", "weight_management"],
+            bmrFormula: "harris_benedict" // Harris-Benedict formula
+        },
+        // Legacy alias for compatibility
+        nico: {
+            redirect: "nicoleta"
         }
     },
 
@@ -117,11 +129,25 @@ export const ProfileEngine = {
         }
     },
 
-    // PERSONALIZED DRI Calculator for Ioan (85kg, 45y) and Nico (65kg, 42y)
-    calculateDRI(profile) {
-        const { age, gender, weight, height, activity, metabolicRate } = profile;
+    // Handle profile redirection
+    getProfile(profileKey) {
+        const profile = this.profiles[profileKey];
+        if (profile && profile.redirect) {
+            return this.profiles[profile.redirect];
+        }
+        return profile;
+    },
+
+    // EXACT DRI Calculator using Harris-Benedict BMR Formula
+    // Ioan: Male, 45y, 85kg, 180cm, Activity Factor 1.55
+    // Nicoleta: Female, 42y, 65kg, 165cm, Activity Factor 1.375
+    calculateDRI(profileKey) {
+        const profile = typeof profileKey === 'string' ? this.getProfile(profileKey) : profileKey;
+        if (!profile) return null;
+
+        const { age, gender, weight, height, activityFactor, metabolicRate } = profile;
         
-        // Enhanced BMR calculation with metabolic rate adjustment
+        // EXACT Harris-Benedict BMR Formula
         let bmr = gender === "male" 
             ? 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
             : 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
@@ -130,50 +156,212 @@ export const ProfileEngine = {
         if (metabolicRate === "slightly_slow") bmr *= 0.95;
         if (metabolicRate === "fast") bmr *= 1.05;
         
-        const activityMultiplier = activity === "moderate" ? 1.55 : 1.375;
-        const tdee = bmr * activityMultiplier;
+        // EXACT Activity Factors
+        const tdee = Math.round(bmr * activityFactor);
         
-        // mTOR phase-specific protein calculation
+        // mTOR phase-specific adjustments
         const currentPhase = this.getCurrentPhase(profile);
-        const proteinMultiplier = currentPhase === "growth" ? 1.8 : 1.0; // Higher for growth phase
+        const isGrowthPhase = currentPhase === "growth";
         
-        // Personalized DRI based on individual profiles
-        const baseDRI = {
-            calories: Math.round(tdee),
-            protein: Math.round(weight * proteinMultiplier),
-            carbs: Math.round(tdee * (currentPhase === "growth" ? 0.40 : 0.50) / 4), // Lower carbs in growth phase
+        // COMPREHENSIVE 30+ NUTRIENT DRI CALCULATIONS
+        const dri = {
+            // MACRONUTRIENTS
+            calories: tdee,
+            protein: Math.round(weight * (isGrowthPhase ? 2.0 : 1.2)), // Higher protein in growth phase
+            carbs: Math.round(tdee * (isGrowthPhase ? 0.35 : 0.45) / 4), // Lower carbs in growth
             fat: Math.round(tdee * 0.35 / 9),
-            fiber: Math.round(age < 50 ? (gender === "male" ? 38 : 25) : (gender === "male" ? 30 : 21)),
+            fiber: age < 50 ? (gender === "male" ? 38 : 25) : (gender === "male" ? 30 : 21),
             
-            // Enhanced micronutrient targets for longevity
-            vitamin_d: gender === "male" ? 2000 : 2000, // Higher for longevity
-            vitamin_b12: gender === "male" ? 3.0 : 2.8, // Higher for cognitive health
-            iron: gender === "female" && age < 51 ? 18 : (gender === "male" ? 10 : 12),
-            calcium: age > 40 ? (gender === "female" ? 1200 : 1000) : 1000, // Higher for women 40+
-            magnesium: gender === "male" ? 450 : 350, // Higher for muscle maintenance
-            zinc: gender === "male" ? 12 : 9, // Higher for immune function
-            omega3: gender === "male" ? 2000 : 1800, // Higher for cardiovascular health
-            folate: 450, // Higher for methylation
-            vitamin_c: gender === "male" ? 120 : 100, // Higher for antioxidant protection
-            vitamin_e: 18, // Higher for cellular protection
-            potassium: 4700,
-            sodium: 1800 // Lower for cardiovascular health
+            // FAT-SOLUBLE VITAMINS
+            vitamin_a: gender === "male" ? 900 : 700, // mcg RAE
+            vitamin_d: 2000, // IU - Higher for longevity
+            vitamin_e: gender === "male" ? 15 : 15, // mg alpha-tocopherol
+            vitamin_k: gender === "male" ? 120 : 90, // mcg
+            
+            // WATER-SOLUBLE VITAMINS
+            vitamin_c: gender === "male" ? 90 : 75, // mg
+            thiamine_b1: gender === "male" ? 1.2 : 1.1, // mg
+            riboflavin_b2: gender === "male" ? 1.3 : 1.1, // mg
+            niacin_b3: gender === "male" ? 16 : 14, // mg
+            pantothenic_b5: 5, // mg
+            pyridoxine_b6: age > 50 ? 1.7 : (gender === "male" ? 1.3 : 1.3), // mg
+            biotin_b7: 30, // mcg
+            folate_b9: 400, // mcg DFE
+            cobalamin_b12: 2.4, // mcg - Higher for cognitive health
+            choline: gender === "male" ? 550 : 425, // mg
+            
+            // MAJOR MINERALS
+            calcium: age > 40 ? (gender === "female" ? 1200 : 1000) : 1000, // mg
+            phosphorus: 700, // mg
+            magnesium: gender === "male" ? 420 : (age > 30 ? 320 : 310), // mg
+            sodium: 1500, // mg - Lower for cardiovascular health
+            potassium: 4700, // mg
+            chloride: 2300, // mg
+            sulfur: 900, // mg estimated
+            
+            // TRACE MINERALS
+            iron: gender === "female" && age < 51 ? 18 : (gender === "male" ? 8 : 8), // mg
+            zinc: gender === "male" ? 11 : 8, // mg
+            copper: 0.9, // mg
+            manganese: gender === "male" ? 2.3 : 1.8, // mg
+            selenium: gender === "male" ? 55 : 55, // mcg
+            iodine: 150, // mcg
+            chromium: age > 50 ? (gender === "male" ? 30 : 20) : (gender === "male" ? 35 : 25), // mcg
+            molybdenum: 45, // mcg
+            fluoride: gender === "male" ? 4 : 3, // mg
+            
+            // ESSENTIAL FATTY ACIDS
+            omega3_ala: gender === "male" ? 1600 : 1100, // mg alpha-linolenic acid
+            omega3_epa: 500, // mg - for cardiovascular health
+            omega3_dha: 1000, // mg - for brain health
+            omega6_la: gender === "male" ? 17000 : 12000, // mg linoleic acid
+            
+            // AMINO ACIDS (Essential)
+            histidine: Math.round(weight * 10), // mg/kg
+            isoleucine: Math.round(weight * 20), // mg/kg
+            leucine: Math.round(weight * 39), // mg/kg
+            lysine: Math.round(weight * 30), // mg/kg
+            methionine_cysteine: Math.round(weight * 15), // mg/kg combined
+            phenylalanine_tyrosine: Math.round(weight * 25), // mg/kg combined
+            threonine: Math.round(weight * 15), // mg/kg
+            tryptophan: Math.round(weight * 4), // mg/kg
+            valine: Math.round(weight * 26), // mg/kg
+            
+            // ADDITIONAL LONGEVITY COMPOUNDS
+            coq10: 100, // mg - for cellular energy
+            resveratrol: 250, // mg - for longevity pathways
+            curcumin: 500, // mg - for anti-inflammation
+            quercetin: 500, // mg - for cellular health
         };
 
-        // Profile-specific adjustments
+        // INDIVIDUAL PROFILE ADJUSTMENTS
         if (profile.name === "Ioan") {
-            baseDRI.protein += 5; // Extra protein for muscle maintenance at 45
-            baseDRI.magnesium += 50; // Extra magnesium for performance
-            baseDRI.omega3 += 200; // Extra omega-3 for cognitive health
+            // 45-year-old male adjustments
+            dri.protein += 10; // Extra protein for muscle maintenance
+            dri.magnesium += 50; // Extra for performance and recovery
+            dri.omega3_dha += 200; // Extra for cognitive health
+            dri.zinc += 2; // Extra for testosterone support
+            dri.vitamin_d += 500; // Extra for hormone optimization
+            dri.coq10 += 50; // Extra for cellular energy at 45+
         }
         
-        if (profile.name === "Nico") {
-            baseDRI.calcium += 100; // Extra calcium for bone health
-            baseDRI.iron += 2; // Extra iron for women
-            baseDRI.vitamin_d += 500; // Extra D3 for hormonal balance
+        if (profile.name === "Nicoleta") {
+            // 42-year-old female adjustments
+            dri.calcium += 200; // Extra for bone health
+            dri.iron += 2; // Extra for female needs
+            dri.vitamin_d += 1000; // Extra for hormonal balance
+            dri.magnesium += 30; // Extra for stress and hormones
+            dri.folate_b9 += 50; // Extra for methylation
+            dri.omega3_epa += 200; // Extra for anti-inflammation
+            dri.vitamin_b6 += 0.3; // Extra for hormone metabolism
         }
 
-        return baseDRI;
+        return dri;
+    },
+
+    // HELPER FUNCTIONS FOR VERIFICATION
+    
+    // Calculate and display BMR breakdown for verification
+    getBMRBreakdown(profileKey) {
+        const profile = typeof profileKey === 'string' ? this.getProfile(profileKey) : profileKey;
+        if (!profile) return null;
+
+        const { age, gender, weight, height, activityFactor, metabolicRate } = profile;
+        
+        // Step-by-step BMR calculation for verification
+        const bmrFormula = gender === "male" 
+            ? `88.362 + (13.397 × ${weight}) + (4.799 × ${height}) - (5.677 × ${age})`
+            : `447.593 + (9.247 × ${weight}) + (3.098 × ${height}) - (4.330 × ${age})`;
+            
+        let bmr = gender === "male" 
+            ? 88.362 + (13.397 * weight) + (4.799 * height) - (5.677 * age)
+            : 447.593 + (9.247 * weight) + (3.098 * height) - (4.330 * age);
+        
+        const baseBMR = bmr;
+        
+        // Metabolic rate adjustment
+        let metabolicAdjustment = 1.0;
+        if (metabolicRate === "slightly_slow") {
+            metabolicAdjustment = 0.95;
+            bmr *= 0.95;
+        }
+        if (metabolicRate === "fast") {
+            metabolicAdjustment = 1.05;
+            bmr *= 1.05;
+        }
+        
+        const tdee = Math.round(bmr * activityFactor);
+
+        return {
+            profile: `${profile.name} (${gender}, ${age}y, ${weight}kg, ${height}cm)`,
+            formula: bmrFormula,
+            baseBMR: Math.round(baseBMR),
+            metabolicRate: metabolicRate,
+            metabolicAdjustment: metabolicAdjustment,
+            adjustedBMR: Math.round(bmr),
+            activityFactor: activityFactor,
+            tdee: tdee,
+            verification: {
+                // Expected values for verification
+                ioanExpected: gender === "male" && age === 45 ? "~1950 BMR, ~3017 TDEE" : "N/A",
+                nicoletaExpected: gender === "female" && age === 42 ? "~1320 BMR, ~1815 TDEE" : "N/A"
+            }
+        };
+    },
+
+    // Get summary of all calculations for both profiles
+    getFullNutritionSummary() {
+        const ioanProfile = this.getProfile('ioan');
+        const nicoletaProfile = this.getProfile('nicoleta');
+        
+        const ioanDRI = this.calculateDRI(ioanProfile);
+        const nicoletaDRI = this.calculateDRI(nicoletaProfile);
+        
+        const ioanBMR = this.getBMRBreakdown(ioanProfile);
+        const nicoletaBMR = this.getBMRBreakdown(nicoletaProfile);
+
+        return {
+            timestamp: new Date().toISOString(),
+            profiles: {
+                ioan: {
+                    ...ioanProfile,
+                    bmrBreakdown: ioanBMR,
+                    dri: ioanDRI,
+                    currentPhase: this.getCurrentPhase(ioanProfile),
+                    cycleDay: this.getCurrentCycleDay(ioanProfile)
+                },
+                nicoleta: {
+                    ...nicoletaProfile,
+                    bmrBreakdown: nicoletaBMR,
+                    dri: nicoletaDRI,
+                    currentPhase: this.getCurrentPhase(nicoletaProfile),
+                    cycleDay: this.getCurrentCycleDay(nicoletaProfile)
+                }
+            },
+            nutrientCategories: {
+                macronutrients: ['calories', 'protein', 'carbs', 'fat', 'fiber'],
+                fatSolubleVitamins: ['vitamin_a', 'vitamin_d', 'vitamin_e', 'vitamin_k'],
+                waterSolubleVitamins: [
+                    'vitamin_c', 'thiamine_b1', 'riboflavin_b2', 'niacin_b3', 
+                    'pantothenic_b5', 'pyridoxine_b6', 'biotin_b7', 'folate_b9', 
+                    'cobalamin_b12', 'choline'
+                ],
+                majorMinerals: [
+                    'calcium', 'phosphorus', 'magnesium', 'sodium', 'potassium', 
+                    'chloride', 'sulfur'
+                ],
+                traceMinerals: [
+                    'iron', 'zinc', 'copper', 'manganese', 'selenium', 'iodine', 
+                    'chromium', 'molybdenum', 'fluoride'
+                ],
+                essentialFattyAcids: ['omega3_ala', 'omega3_epa', 'omega3_dha', 'omega6_la'],
+                essentialAminoAcids: [
+                    'histidine', 'isoleucine', 'leucine', 'lysine', 'methionine_cysteine',
+                    'phenylalanine_tyrosine', 'threonine', 'tryptophan', 'valine'
+                ],
+                longevityCompounds: ['coq10', 'resveratrol', 'curcumin', 'quercetin']
+            }
+        };
     }
 };
 

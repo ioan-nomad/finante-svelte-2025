@@ -1,7 +1,12 @@
 <!--
-CODEX N-OMAD v3.0 - Complete Windows-style Fixed Layout Recipe Display
-NEVER changes layout - ALWAYS same structure regardless of content
-Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
+CODEX N-OMAD v3.0 - ULTRA FIXED LAYOUT Recipe Display Component
+WINDOWS-STYLE FIXED LAYOUT - NEVER CHANGES STRUCTURE
+✅ Fixed Header: ALWAYS 80px height
+✅ Fixed Grid: CSS Grid with EXACT pixel dimensions
+✅ Fixed Table: ALWAYS 5 columns with FIXED widths
+✅ Fixed Font Sizes: NEVER scale or change
+✅ Dark Mode Support: FIXED color scheme
+✅ Responsive: Scales but maintains EXACT structure
 -->
 
 <script>
@@ -13,6 +18,7 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
     export let nutritionAnalysis = null;
     export let profile = "ioan";
     export let ingredients = [];
+    export let darkMode = false; // FIXED dark mode toggle
 
     const dispatch = createEventDispatcher();
 
@@ -141,8 +147,8 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
     }
 </script>
 
-<!-- FIXED WINDOWS LAYOUT - NEVER CHANGES -->
-<div class="recipe-window">
+<!-- ULTRA FIXED WINDOWS LAYOUT - NEVER CHANGES STRUCTURE -->
+<div class="recipe-window" class:dark-mode={darkMode}>
     <!-- FIXED HEADER with 4 Metrics -->
     <div class="window-header">
         <div class="header-title">
@@ -383,37 +389,51 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
 </div>
 
 <style>
+    /* ULTRA FIXED LAYOUT - WINDOWS STYLE - NEVER CHANGES */
     .recipe-window {
         width: 100%;
-        max-width: 1400px;
+        max-width: 1400px; /* FIXED maximum width */
+        min-width: 800px;  /* FIXED minimum width */
+        height: 100vh;     /* FIXED full viewport height */
         margin: 0 auto;
         background: #ffffff;
-        border: 1px solid #d1d1d1;
-        border-radius: 8px;
-        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        border: 2px solid #d1d1d1; /* FIXED border width */
+        border-radius: 8px; /* FIXED border radius */
+        box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1); /* FIXED shadow */
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; /* FIXED font */
+        font-size: 14px; /* FIXED base font size */
         overflow: hidden;
+        display: grid;
+        grid-template-rows: 80px auto 1fr 40px; /* FIXED grid rows: header, metrics, content, footer */
+        position: relative;
     }
 
-    /* FIXED HEADER */
+    /* FIXED HEADER - ALWAYS 80px HEIGHT */
     .window-header {
+        height: 80px; /* FIXED height - NEVER change */
         background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
         color: white;
-        padding: 16px 24px;
+        padding: 16px 24px; /* FIXED padding */
         display: flex;
         justify-content: space-between;
         align-items: center;
+        border-bottom: 2px solid rgba(255, 255, 255, 0.1); /* FIXED border */
+        box-sizing: border-box;
+        position: relative;
+        z-index: 1000; /* FIXED z-index */
     }
 
     .header-title h2 {
-        margin: 0 0 4px 0;
-        font-size: 20px;
-        font-weight: 600;
+        margin: 0 0 4px 0; /* FIXED margin */
+        font-size: 20px; /* FIXED font size */
+        font-weight: 600; /* FIXED weight */
+        line-height: 1.2; /* FIXED line height */
     }
 
     .phase-info {
-        font-size: 12px;
-        opacity: 0.9;
+        font-size: 12px; /* FIXED font size */
+        opacity: 0.9; /* FIXED opacity */
+        line-height: 1.3; /* FIXED line height */
     }
 
     .phase-badge {
@@ -503,12 +523,14 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
         letter-spacing: 0.5px;
     }
 
-    /* MAIN CONTENT - 3 FIXED COLUMNS */
+    /* MAIN CONTENT - 3 FIXED COLUMNS WITH EXACT PIXEL WIDTHS */
     .main-content {
         display: grid;
-        grid-template-columns: 400px 500px 1fr;
-        height: 600px;
+        grid-template-columns: 400px 500px 1fr; /* FIXED column widths - NEVER change */
+        height: calc(100vh - 200px); /* FIXED height calculation */
         overflow: hidden;
+        border-top: 1px solid #d1d1d1; /* FIXED border */
+        position: relative;
     }
 
     .left-column, .middle-column, .right-column {
@@ -545,33 +567,40 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
         background: #0078d4;
     }
 
-    /* INGREDIENTS TABLE - EXACT 5 COLUMNS */
+    /* INGREDIENTS TABLE - EXACT 5 COLUMNS WITH FIXED WIDTHS */
     .ingredients-table {
-        margin: 16px;
-        border: 1px solid #d1d1d1;
-        border-radius: 6px;
+        margin: 16px; /* FIXED margin */
+        border: 2px solid #d1d1d1; /* FIXED border */
+        border-radius: 6px; /* FIXED radius */
         overflow: hidden;
+        background: #ffffff; /* FIXED background */
     }
 
     .table-header, .table-row {
         display: grid;
-        grid-template-columns: 2fr 1fr 1fr 1fr 2fr;
+        grid-template-columns: 120px 80px 100px 80px 1fr; /* FIXED column widths - NEVER change */
+        height: 44px; /* FIXED row height */
+        align-items: center;
     }
 
     .table-header {
-        background: #f8f9fa;
-        font-weight: 600;
-        font-size: 11px;
-        color: #323130;
-        text-transform: uppercase;
-        letter-spacing: 0.3px;
+        background: #f8f9fa; /* FIXED background */
+        font-weight: 600; /* FIXED weight */
+        font-size: 11px; /* FIXED font size */
+        color: #323130; /* FIXED color */
+        text-transform: uppercase; /* FIXED transform */
+        letter-spacing: 0.3px; /* FIXED spacing */
+        border-bottom: 2px solid #e1e1e1; /* FIXED border */
     }
 
     .table-header > div, .table-row > div {
-        padding: 12px 8px;
-        border-right: 1px solid #d1d1d1;
+        padding: 8px 12px; /* FIXED padding */
+        border-right: 1px solid #d1d1d1; /* FIXED border */
         display: flex;
         align-items: center;
+        justify-content: flex-start;
+        font-size: 12px; /* FIXED font size */
+        line-height: 1.2; /* FIXED line height */
     }
 
     .table-header > div:last-child, .table-row > div:last-child {
@@ -929,28 +958,184 @@ Fixed 4 metrics, 5-column ingredient table, visual Instant Pot stratification
         border-radius: 3px;
     }
 
-    /* Responsive - Maintain Fixed Structure */
+    /* DARK MODE SUPPORT - FIXED COLOR SCHEME */
+    .recipe-window.dark-mode {
+        background: #1e1e1e; /* FIXED dark background */
+        border-color: #404040; /* FIXED dark border */
+        color: #e0e0e0; /* FIXED dark text */
+    }
+
+    .dark-mode .window-header {
+        background: linear-gradient(135deg, #0066cc 0%, #004499 100%); /* FIXED dark gradient */
+        border-bottom-color: rgba(255, 255, 255, 0.2); /* FIXED dark border */
+    }
+
+    .dark-mode .metrics-row {
+        background: #2d2d2d; /* FIXED dark background */
+        border-bottom-color: #404040; /* FIXED dark border */
+    }
+
+    .dark-mode .metric-card {
+        border-right-color: #404040; /* FIXED dark border */
+    }
+
+    .dark-mode .metric-card:hover {
+        background: #333333; /* FIXED dark hover */
+    }
+
+    .dark-mode .main-content {
+        border-top-color: #404040; /* FIXED dark border */
+    }
+
+    .dark-mode .left-column,
+    .dark-mode .middle-column,
+    .dark-mode .right-column {
+        border-right-color: #404040; /* FIXED dark borders */
+    }
+
+    .dark-mode .section-header {
+        background: #2d2d2d; /* FIXED dark background */
+        border-bottom-color: #404040; /* FIXED dark border */
+        color: #e0e0e0; /* FIXED dark text */
+    }
+
+    .dark-mode .ingredients-table {
+        border-color: #404040; /* FIXED dark border */
+        background: #2d2d2d; /* FIXED dark background */
+    }
+
+    .dark-mode .table-header {
+        background: #333333; /* FIXED dark header background */
+        border-bottom-color: #404040; /* FIXED dark border */
+        color: #e0e0e0; /* FIXED dark text */
+    }
+
+    .dark-mode .table-header > div,
+    .dark-mode .table-row > div {
+        border-right-color: #404040; /* FIXED dark borders */
+    }
+
+    .dark-mode .table-row:nth-child(even) {
+        background: #333333; /* FIXED dark alternating rows */
+    }
+
+    .dark-mode .table-row:hover {
+        background: #0066cc; /* FIXED dark hover */
+    }
+
+    .dark-mode .nutrition-table {
+        border-color: #404040; /* FIXED dark border */
+    }
+
+    .dark-mode .dri-row {
+        border-bottom-color: #404040; /* FIXED dark border */
+    }
+
+    .dark-mode .progress-bar {
+        background: #333333; /* FIXED dark progress background */
+    }
+
+    .dark-mode .deficiency-item.critical {
+        background: #2d1a1a; /* FIXED dark critical background */
+        border-left-color: #ff4444; /* FIXED dark critical border */
+    }
+
+    .dark-mode .deficiency-item.moderate {
+        background: #2d2419; /* FIXED dark moderate background */
+        border-left-color: #ffaa00; /* FIXED dark moderate border */
+    }
+
+    .dark-mode .window-footer {
+        background: #2d2d2d; /* FIXED dark footer background */
+        border-top-color: #404040; /* FIXED dark border */
+        color: #b0b0b0; /* FIXED dark text */
+    }
+
+    /* RESPONSIVE - SCALE BUT MAINTAIN FIXED STRUCTURE */
     @media (max-width: 1200px) {
         .main-content {
-            grid-template-columns: 350px 450px 1fr;
+            grid-template-columns: 350px 420px 1fr; /* FIXED scaled columns */
+        }
+        
+        .ingredients-table {
+            margin: 12px; /* FIXED scaled margin */
         }
     }
 
     @media (max-width: 900px) {
         .main-content {
-            grid-template-columns: 1fr;
-            grid-template-rows: auto auto auto;
-            height: auto;
+            grid-template-columns: 1fr; /* FIXED single column */
+            grid-template-rows: auto auto auto; /* FIXED row structure */
+            height: auto; /* FIXED auto height */
         }
         
         .left-column, .middle-column, .right-column {
             border-right: none;
-            border-bottom: 1px solid #d1d1d1;
-            height: 300px;
+            border-bottom: 2px solid #d1d1d1; /* FIXED border */
+            height: 350px; /* FIXED height */
+            overflow-y: auto; /* FIXED scrolling */
+        }
+        
+        .dark-mode .left-column,
+        .dark-mode .middle-column,
+        .dark-mode .right-column {
+            border-bottom-color: #404040; /* FIXED dark border */
         }
         
         .metrics-row {
-            grid-template-columns: repeat(2, 1fr);
+            grid-template-columns: repeat(2, 1fr); /* FIXED 2-column layout */
+        }
+        
+        .recipe-window {
+            min-width: 480px; /* FIXED minimum mobile width */
+        }
+    }
+
+    @media (max-width: 600px) {
+        .table-header, .table-row {
+            grid-template-columns: 100px 60px 80px 60px 1fr; /* FIXED smaller columns */
+        }
+        
+        .header-title h2 {
+            font-size: 16px; /* FIXED smaller title */
+        }
+        
+        .metric-value {
+            font-size: 14px; /* FIXED smaller metrics */
+        }
+        
+        .btn-generate, .btn-analyze {
+            padding: 6px 12px; /* FIXED smaller buttons */
+            font-size: 11px; /* FIXED smaller font */
+        }
+    }
+
+    /* PRINT STYLES - FIXED LAYOUT FOR PRINTING */
+    @media print {
+        .recipe-window {
+            height: auto !important; /* FIXED print height */
+            max-width: none !important; /* FIXED print width */
+            border: 2px solid #000000 !important; /* FIXED print border */
+            box-shadow: none !important; /* FIXED print shadow */
+        }
+        
+        .window-header {
+            background: #ffffff !important; /* FIXED print header */
+            color: #000000 !important; /* FIXED print text */
+            border-bottom: 2px solid #000000 !important; /* FIXED print border */
+        }
+        
+        .btn-generate, .btn-analyze {
+            display: none !important; /* FIXED hide buttons */
+        }
+        
+        .main-content {
+            height: auto !important; /* FIXED print content */
+        }
+        
+        .left-column, .middle-column, .right-column {
+            height: auto !important; /* FIXED print columns */
+            page-break-inside: avoid; /* FIXED print breaks */
         }
     }
 </style>
