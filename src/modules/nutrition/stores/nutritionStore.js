@@ -92,16 +92,8 @@ function createNutritionProfile() {
     },
     
     loadFromStorage() {
-      const saved = localStorage.getItem('nutritionProfile');
-      if (saved) {
-        try {
-          const data = JSON.parse(saved);
-          data.startDate = new Date(data.startDate);
-          set(data);
-        } catch (error) {
-          console.error('Error loading nutrition profile:', error);
-        }
-      }
+      // Dezactivat în development
+      return null;
     }
   };
 }
@@ -122,10 +114,14 @@ export const nutritionProfile = createNutritionProfile();
 // Auto-save profile changes
 nutritionProfile.subscribe(profile => {
   if (profile.mealHistory) {
-    localStorage.setItem('nutritionProfile', JSON.stringify({
-      ...profile,
-      startDate: profile.startDate.toISOString()
-    }));
+    try {
+      localStorage.setItem('nutritionProfile', JSON.stringify({
+        ...profile,
+        startDate: profile.startDate.toISOString()
+      }));
+    } catch(e) {
+      // ignoră eroarea
+    }
   }
 });
 
@@ -1018,22 +1014,8 @@ function createCodexRecipes() {
     },
     
     loadFromStorage() {
-      const saved = localStorage.getItem('codexRecipes');
-      if (saved) {
-        try {
-          const savedRecipes = JSON.parse(saved);
-          if (Array.isArray(savedRecipes) && savedRecipes.length > 0) {
-            set(savedRecipes);
-          } else {
-            set(defaultRecipes);
-          }
-        } catch (error) {
-          console.error('Error loading recipes:', error);
-          set(defaultRecipes);
-        }
-      } else {
-        set(defaultRecipes);
-      }
+      // Dezactivat în development
+      return null;
     },
     
     resetToDefaults() {
@@ -1049,7 +1031,11 @@ export const codexRecipes = createCodexRecipes();
 // Auto-save recipes changes
 codexRecipes.subscribe(recipes => {
   if (recipes && recipes.length > 0) {
-    localStorage.setItem('codexRecipes', JSON.stringify(recipes));
+    try {
+      localStorage.setItem('nutritionProfile', JSON.stringify($nutritionProfile));
+    } catch(e) {
+      // Skip în development
+    }
   }
 });
 

@@ -4,7 +4,7 @@
 // =============================================================================
 
 import { writable, derived, get } from 'svelte/store';
-import { secureStorage } from '../../../lib/security/crypto.js';
+import { secureStorage } from '../../../lib/security/disabled.js';
 
 // =============================================================================
 // mTOR CYCLE STATE MANAGEMENT

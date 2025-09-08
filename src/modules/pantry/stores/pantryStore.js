@@ -1,5 +1,5 @@
 import { writable, derived, get } from 'svelte/store';
-import { secureStorage } from '../../../lib/security/crypto.js';
+import { secureStorage } from '../../../lib/security/disabled.js';
 import { addToInventory, removeFromInventory, unifiedInventory } from '../../../shared/stores/ecosystemStore.js';
 import { getPlantByName, logPlantConsumption } from '../../nutrition/plants/plantDiversityTracker.js';
 

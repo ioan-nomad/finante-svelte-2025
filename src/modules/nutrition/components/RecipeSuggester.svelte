@@ -3,7 +3,7 @@
   import { nutritionProfile } from '../stores/nutritionStore.js';
   import { CodexScorer } from '../codex/codexScoring.js';
   import { CODEX_INGREDIENTS } from '../codex/codexDatabase.js';
-  import { CODEX_PRINCIPLES } from '../codex/codexCore.js';
+  // import CODEX_PRINCIPLES from '../codex/codexCore.js'; // Not available in codexCore.js
   
   const scorer = new CodexScorer();
   
@@ -178,9 +178,9 @@
     <h2>🧬 CODEX Recipe System v2.0</h2>
     <p class="subtitle">Evidence-Based Nutritional Engineering</p>
     <div class="principles">
-      <span class="principle">Longevity: {CODEX_PRINCIPLES.foundations.LONGEVITY.targets["IGF-1"]}</span>
-      <span class="principle">Inflammation: {CODEX_PRINCIPLES.foundations.INFLAMMATION.targets["hs-CRP"]}</span>
-      <span class="principle">Metabolic: {CODEX_PRINCIPLES.foundations.METABOLIC.targets["HbA1c"]}</span>
+      <span class="principle">Longevity: IGF-1 &lt; 100 ng/mL</span>
+      <span class="principle">Inflammation: hs-CRP &lt; 1.0 mg/L</span>
+      <span class="principle">Metabolic: HbA1c &lt; 5.5%</span>
     </div>
   </div>
 

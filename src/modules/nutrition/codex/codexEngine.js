@@ -15,7 +15,7 @@ export class CodexEngine {
     this.cookingMethods = this.initializeCookingMethods();
     this.antiInflammatoryScoring = this.initializeAntiInflammatoryScoring();
     this.ayurvedaRules = this.initializeAyurvedaRules();
-    this.instantPotDatabase = this.initializeInstantPotDatabase();
+    // this.instantPotDatabase = this.initializeInstantPotDatabase();
   }
   
   // ═══════════════════════════════════════════

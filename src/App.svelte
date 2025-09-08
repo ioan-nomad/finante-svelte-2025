@@ -28,10 +28,10 @@
   // Config
   import { APP_CONFIG } from './shared/config.js';
   
-  // Security imports
-  import { secureStorage, InputSanitizer, TamperProtection } from './lib/security/crypto.js';
-  import { CSPManager } from './lib/security/csp.js';
-  import { copyrightProtection } from './lib/security/copyright.js';
+  // Security imports - DISABLED for development
+  import { secureStorage, InputSanitizer, TamperProtection } from './lib/security/disabled.js';
+  import { CSPManager } from './lib/security/disabled.js';
+  import { copyrightProtection } from './lib/security/disabled.js';
   
   // Nutrition Module
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';

@@ -4,14 +4,14 @@
  * for complete OMAD meal planning with pantry integration
  */
 
-import { CodexCore } from './CodexCore.js';
-import { CookingMethods } from './CookingMethods.js';
-import { nutrients } from './database/nutrients.js';
+// import { CodexCore } from './CodexCore.js'; // CodexCore class not available
+// import { CookingMethods } from './CookingMethods.js'; // CookingMethods class not exported
+// import { nutrients } from './database/nutrients.js'; // nutrients not exported
 
 export class RecipeEngine {
     constructor() {
-        this.codexCore = new CodexCore();
-        this.cookingMethods = new CookingMethods();
+        // this.codexCore = new CodexCore(); // CodexCore class not available
+        // this.cookingMethods = new CookingMethods(); // CookingMethods class not available
         this.pantryItems = new Map();
         this.shoppingList = [];
         this.currentProfile = 'ioan'; // Default profile

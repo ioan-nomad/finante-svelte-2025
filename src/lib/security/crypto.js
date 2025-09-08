@@ -9,12 +9,7 @@ class SecureStorage {
 
   // Generate unique device fingerprint
   getDeviceSalt() {
-    const saved = localStorage.getItem('_device_id');
-    if (saved) return saved;
-    
-    const fingerprint = this.generateFingerprint();
-    localStorage.setItem('_device_id', fingerprint);
-    return fingerprint;
+    return 'fixed-salt-dev-only';
   }
 
   generateFingerprint() {

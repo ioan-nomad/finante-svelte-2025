@@ -4,7 +4,7 @@
  */
 
 import { CODEX_INGREDIENTS, getNicoSafeIngredients } from './codexDatabase.js';
-import { evaluateMealForNico } from './codexCore.js';
+// import { evaluateMealForNico } from './codexCore.js'; // Function not available in codexCore.js
 import { CODEX_AUTHORITY } from './codexAuthority.js';
 import { NUTRITIONAL_REQUIREMENTS, getPersonalizedRequirements } from './codexNutritionalRequirements.js';
 

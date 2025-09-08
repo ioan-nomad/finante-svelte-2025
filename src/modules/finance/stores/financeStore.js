@@ -1,5 +1,22 @@
 import { writable, derived, get } from 'svelte/store';
-import { secureStorage } from '../../../lib/security/crypto.js';
+// import { secureStorage } from '../../../lib/security/crypto.js';
+const secureStorage = {
+  secureSave: (key, data) => {
+    try {
+      localStorage.setItem(key, JSON.stringify(data));
+    } catch(e) {
+      console.log('Save skipped in dev');
+    }
+  },
+  secureLoad: (key) => {
+    try {
+      const data = localStorage.getItem(key);
+      return data ? JSON.parse(data) : null;
+    } catch(e) {
+      return null;
+    }
+  }
+};
 
 // Accounts store
 export const accounts = writable([

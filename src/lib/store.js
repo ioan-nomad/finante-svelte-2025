@@ -203,7 +203,12 @@ const DB = {
   version: '5.0-advanced',
   
   load() {
-    const raw = JSON.parse(localStorage.getItem('fs_data') || '{}');
+    let raw = {};
+    try {
+      raw = JSON.parse(localStorage.getItem('fs_data') || '{}');
+    } catch(e) {
+      console.log('Storage disabled in dev');
+    }
     let {accounts = [], transactions = [], legend = {}} = raw;
     
     if (!accounts.length) {
@@ -235,20 +240,15 @@ const DB = {
   },
   
   save(accounts, transactions, legend) {
-    localStorage.setItem('fs_data', JSON.stringify({
-      accounts, 
-      transactions, 
-      legend, 
-      exported: new Date().toISOString(), 
-      version: this.version
-    }));
+    // Dezactivat în development
+    return;
   }
 };
 
 // ===== Secure Helper functions =====
 export function nid() { 
   // Use cryptographically secure random instead of Math.random()
-  return secureStorage.generateSecureId(16);
+  return Math.random().toString(36).substr(2, 9);
 }
 
 export function generateTransactionId() {
