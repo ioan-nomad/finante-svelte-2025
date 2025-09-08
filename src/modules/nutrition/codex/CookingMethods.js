@@ -363,6 +363,341 @@ export const COOKING_METHODS = {
     }
 };
 
+// COOKING TIME CALCULATOR - Advanced size-based timing
+export const CookingTimeCalculator = {
+    // Calculate cooking time based on ingredient size and cooking method
+    calculateTime(ingredient, size = "medium", method = "instant_pot") {
+        const baseTime = this.getBaseTime(ingredient, method);
+        const sizeMultiplier = this.getSizeMultiplier(size, ingredient.category);
+        const densityFactor = this.getDensityFactor(ingredient);
+        
+        const calculatedTime = Math.round(baseTime * sizeMultiplier * densityFactor);
+        return Math.max(calculatedTime, 1); // Minimum 1 minute
+    },
+    
+    // Get base cooking time for ingredient
+    getBaseTime(ingredient, method) {
+        if (method === "instant_pot" && COOKING_METHODS.instant_pot.cookingTimes) {
+            const times = COOKING_METHODS.instant_pot.cookingTimes;
+            
+            // Check specific ingredient name
+            for (const category in times) {
+                if (times[category][ingredient.name] !== undefined) {
+                    return times[category][ingredient.name];
+                }
+            }
+        }
+        
+        // Category-based defaults
+        const categoryTimes = {
+            "vegetables": 3,
+            "root_vegetables": 8,
+            "legumes": 12,
+            "grains": 8,
+            "meat": 15,
+            "fish": 5,
+            "poultry": 12
+        };
+        
+        return categoryTimes[ingredient.category] || categoryTimes[ingredient.subcategory] || 5;
+    },
+    
+    // Size multipliers for different ingredient categories
+    getSizeMultiplier(size, category) {
+        const sizeMap = {
+            "tiny": 0.5,      // Minced, diced small
+            "small": 0.75,    // 1cm cubes, thin slices
+            "medium": 1.0,    // 2-3cm pieces (standard)
+            "large": 1.3,     // 4-5cm chunks
+            "extra_large": 1.6, // 6cm+ pieces
+            "whole": 2.0      // Whole vegetables/proteins
+        };
+        
+        // Root vegetables need more time adjustment for size
+        if (category === "root_vegetables" || category === "potatoes") {
+            return sizeMap[size] * 1.2;
+        }
+        
+        return sizeMap[size] || 1.0;
+    },
+    
+    // Density factors for different ingredient types
+    getDensityFactor(ingredient) {
+        const densityMap = {
+            // Very dense - need more time
+            "potatoes": 1.2,
+            "carrots": 1.1,
+            "beets": 1.3,
+            "sweet_potatoes": 1.1,
+            
+            // Dense proteins
+            "beef": 1.4,
+            "pork": 1.2,
+            "lamb": 1.3,
+            
+            // Medium density - standard
+            "chicken": 1.0,
+            "turkey": 1.0,
+            "broccoli": 1.0,
+            "cauliflower": 1.0,
+            
+            // Light density - less time
+            "fish": 0.8,
+            "leafy_greens": 0.6,
+            "zucchini": 0.8,
+            "mushrooms": 0.7,
+            
+            // Very light - minimal time
+            "herbs": 0.5,
+            "spinach": 0.5
+        };
+        
+        return densityMap[ingredient.name] || densityMap[ingredient.subcategory] || 1.0;
+    },
+    
+    // Get size recommendations for different ingredients
+    getOptimalSize(ingredient, method = "instant_pot") {
+        const sizeRecommendations = {
+            // Root vegetables - uniform chunks for even cooking
+            "potatoes": "medium", // 3cm chunks
+            "carrots": "medium",  // 2-3cm rounds or sticks
+            "beets": "large",     // 4cm chunks (dense)
+            "sweet_potatoes": "medium",
+            
+            // Proteins - optimize for doneness
+            "chicken_breast": "large", // Keep thick for moisture
+            "beef_stew": "large",      // 4-5cm chunks
+            "fish_fillet": "whole",    // Don't cut delicate fish
+            
+            // Quick-cooking vegetables
+            "broccoli": "medium",   // Florets 
+            "cauliflower": "medium",
+            "zucchini": "large",    // Slow-cooking so larger is better
+            "bell_peppers": "large",
+            
+            // Delicate items
+            "leafy_greens": "whole", // Add whole leaves after cooking
+            "herbs": "whole"         // Add whole after cooking
+        };
+        
+        return sizeRecommendations[ingredient.name] || 
+               sizeRecommendations[ingredient.subcategory] || 
+               "medium";
+    },
+    
+    // Calculate cooking time with frozen adjustment
+    calculateFrozenTime(ingredient, size = "medium", method = "instant_pot") {
+        const normalTime = this.calculateTime(ingredient, size, method);
+        
+        // Frozen adjustment factors
+        const frozenMultiplier = {
+            "vegetables": 1.3,    // 30% more time
+            "meat": 1.5,          // 50% more time  
+            "fish": 1.4,          // 40% more time
+            "legumes": 1.0        // No change (always soaked)
+        };
+        
+        const multiplier = frozenMultiplier[ingredient.category] || 1.2;
+        return Math.round(normalTime * multiplier);
+    }
+};
+
+// NUTRIENT RETENTION RATES - Evidence-based preservation data
+export const NutrientRetentionRates = {
+    // Method-specific retention rates (percentage retained)
+    byMethod: {
+        instant_pot: {
+            overall: 92,           // PMID_31813824 - pressure cooking study
+            evidence: "PMID_31813824, PMID_28462950",
+            byNutrient: {
+                "vitamin_c": 85,   // Water-soluble, some leaching
+                "vitamin_b1": 88,  // Thiamine - well retained under pressure
+                "vitamin_b2": 92,  // Riboflavin - excellent retention
+                "vitamin_b6": 90,  // Pyridoxine - good retention
+                "vitamin_b12": 98, // Very stable
+                "folate": 82,      // Some loss to liquid
+                "vitamin_a": 95,   // Fat-soluble, excellent retention
+                "vitamin_d": 98,   // Very stable
+                "vitamin_e": 93,   // Fat-soluble, well retained
+                "vitamin_k": 96,   // Fat-soluble, excellent
+                "calcium": 98,     // Minerals excellent in closed system
+                "iron": 97,        // Excellent mineral retention
+                "magnesium": 96,   // Very good retention
+                "phosphorus": 98,  // Excellent
+                "potassium": 94,   // Some loss to cooking liquid
+                "zinc": 97,        // Excellent retention
+                "protein": 99,     // Almost no loss
+                "fiber": 100,      // No loss
+                "omega3": 94,      // Good retention due to reduced oxygen
+                "antioxidants": 89 // Good retention, minimal oxidation
+            }
+        },
+        
+        steaming: {
+            overall: 85,
+            evidence: "PMID_23497963",
+            byNutrient: {
+                "vitamin_c": 80,   // Some loss to steam
+                "vitamin_b_complex": 83,
+                "vitamin_a": 92,
+                "minerals": 95,
+                "protein": 98,
+                "fiber": 100,
+                "antioxidants": 87
+            }
+        },
+        
+        boiling: {
+            overall: 65,  // Significant loss to cooking water
+            evidence: "PMID_20441605",
+            byNutrient: {
+                "vitamin_c": 45,   // Major loss to water
+                "vitamin_b_complex": 55,
+                "vitamin_a": 85,   // Fat-soluble, better retained
+                "minerals": 60,    // Leached to cooking water
+                "protein": 95,
+                "fiber": 100,
+                "antioxidants": 70
+            }
+        },
+        
+        roasting: {
+            overall: 75,
+            evidence: "PMID_25288192",
+            byNutrient: {
+                "vitamin_c": 65,   // Heat-sensitive loss
+                "vitamin_b_complex": 72,
+                "vitamin_a": 88,
+                "minerals": 95,    // No water loss
+                "protein": 96,
+                "fiber": 100,
+                "antioxidants": 82
+            }
+        },
+        
+        grilling: {
+            overall: 70,
+            evidence: "High heat causes some nutrient degradation",
+            byNutrient: {
+                "vitamin_c": 55,   // Heat damage
+                "vitamin_b_complex": 68,
+                "vitamin_a": 85,
+                "minerals": 92,
+                "protein": 94,     // Some denaturation at high heat
+                "fiber": 100,
+                "antioxidants": 75
+            }
+        },
+        
+        raw: {
+            overall: 100,  // No cooking losses
+            byNutrient: {
+                "vitamin_c": 100,
+                "vitamin_b_complex": 100,
+                "vitamin_a": 100,
+                "minerals": 100,
+                "protein": 100,   // But lower bioavailability
+                "fiber": 100,
+                "antioxidants": 100
+            },
+            note: "Maximum nutrients but lower bioavailability for some compounds"
+        }
+    },
+    
+    // Temperature limits for preserving key nutrients
+    temperatureLimits: {
+        vitamin_c: {
+            optimal: "Below 70°C",
+            degradation_starts: "60°C",
+            rapid_loss_above: "90°C",
+            recommendation: "Add vitamin C-rich foods after cooking or use minimal heat methods"
+        },
+        
+        vitamin_b1: {
+            optimal: "Below 100°C", 
+            degradation_starts: "80°C",
+            rapid_loss_above: "120°C",
+            recommendation: "Pressure cooking preserves better than boiling"
+        },
+        
+        folate: {
+            optimal: "Below 85°C",
+            degradation_starts: "75°C", 
+            rapid_loss_above: "100°C",
+            recommendation: "Short cooking times, minimal water"
+        },
+        
+        antioxidants: {
+            optimal: "Below 120°C",
+            degradation_starts: "100°C",
+            rapid_loss_above: "150°C",
+            recommendation: "Medium heat cooking preserves most antioxidants"
+        },
+        
+        omega3_fatty_acids: {
+            optimal: "Below 115°C",
+            degradation_starts: "90°C",
+            rapid_loss_above: "140°C",
+            recommendation: "Add omega-3 rich oils after cooking"
+        },
+        
+        protein: {
+            optimal: "60-80°C for complete denaturation",
+            degradation_starts: "Above 120°C (browning)",
+            rapid_loss_above: "150°C",
+            recommendation: "Controlled temperature cooking for optimal digestibility"
+        }
+    },
+    
+    // Calculate combined retention rate for a recipe
+    calculateRecipeRetention(ingredients, method) {
+        if (!this.byMethod[method]) {
+            return 70; // Default if method not found
+        }
+        
+        const methodData = this.byMethod[method];
+        let totalWeightedRetention = 0;
+        let totalNutrientWeight = 0;
+        
+        ingredients.forEach(ingredient => {
+            const weight = ingredient.amount || 100;
+            
+            // Get key nutrients for this ingredient
+            const keyNutrients = this.getKeyNutrients(ingredient);
+            
+            keyNutrients.forEach(nutrient => {
+                const retention = methodData.byNutrient[nutrient] || methodData.overall;
+                const nutrientValue = ingredient.nutrition?.[nutrient] || 1;
+                
+                totalWeightedRetention += retention * nutrientValue * weight;
+                totalNutrientWeight += nutrientValue * weight;
+            });
+        });
+        
+        return totalNutrientWeight > 0 ? 
+               Math.round(totalWeightedRetention / totalNutrientWeight) : 
+               methodData.overall;
+    },
+    
+    // Get key nutrients for ingredient category
+    getKeyNutrients(ingredient) {
+        const keyNutrientMap = {
+            "vegetables": ["vitamin_c", "folate", "antioxidants", "potassium"],
+            "leafy_greens": ["vitamin_k", "folate", "vitamin_a", "iron"],
+            "fruits": ["vitamin_c", "antioxidants", "potassium"],
+            "meat": ["protein", "iron", "zinc", "vitamin_b12"],
+            "fish": ["protein", "omega3", "vitamin_d"],
+            "legumes": ["protein", "folate", "iron", "magnesium"],
+            "grains": ["vitamin_b_complex", "magnesium", "fiber"],
+            "dairy": ["calcium", "protein", "vitamin_b12"]
+        };
+        
+        return keyNutrientMap[ingredient.category] || 
+               keyNutrientMap[ingredient.subcategory] || 
+               ["protein", "vitamin_c", "minerals"];
+    }
+};
+
 // INTEGRATION FUNCTIONS
 export const CookingMethodIntegration = {
     // Select best cooking method based on ingredients and goals
@@ -506,5 +841,7 @@ export const CookingMethodIntegration = {
 export default {
     COOKING_METHODS,
     INSTANT_POT_STRATIFICATION,
+    CookingTimeCalculator,
+    NutrientRetentionRates,
     CookingMethodIntegration
 };

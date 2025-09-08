@@ -3237,6 +3237,1179 @@ export const ROMANIAN_FOODS_DATABASE = [
         cookingMethods: ["toasted", "tahini", "oil"],
         omadBenefits: ["calcium_rich", "copper", "lignans"],
         plantDiversityScore: 9.5
+    },
+
+    // CARNE - MEAT SECTION (20+ items)
+    {
+        id: "RO_MEAT_001",
+        name: "Piept de pui",
+        nameRo: "Piept de pui",
+        nameEn: "Chicken Breast",
+        category: "meat",
+        subcategory: "poultry",
+        seasonality: "all_year",
+        source: "USDA_05064",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 165,
+            protein: 31,
+            carbs: 0,
+            fat: 3.6,
+            fiber: 0,
+            iron: 0.7,
+            zinc: 0.9,
+            phosphorus: 228,
+            potassium: 256,
+            sodium: 74,
+            selenium: 27.6,
+            niacin: 14.8,
+            vitamin_b6: 0.87,
+            choline: 85
+        },
+        cookingMethods: ["grilling", "baking", "instant_pot", "pan_frying"],
+        omadBenefits: ["high_protein", "low_fat", "complete_amino_acids"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_002",
+        name: "Pulpe de pui",
+        nameRo: "Pulpe de pui",
+        nameEn: "Chicken Thighs",
+        category: "meat",
+        subcategory: "poultry",
+        seasonality: "all_year",
+        source: "USDA_05091",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 209,
+            protein: 26,
+            carbs: 0,
+            fat: 10.9,
+            fiber: 0,
+            iron: 1.3,
+            zinc: 2.1,
+            phosphorus: 185,
+            potassium: 240,
+            sodium: 95,
+            selenium: 18.6,
+            niacin: 5.8,
+            vitamin_b6: 0.33
+        },
+        cookingMethods: ["braising", "roasting", "instant_pot", "slow_cooking"],
+        omadBenefits: ["high_protein", "iron_source", "zinc_rich"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_003",
+        name: "Vită slabă (mușchi)",
+        nameRo: "Vită slabă (mușchi)",
+        nameEn: "Lean Beef (Tenderloin)",
+        category: "meat",
+        subcategory: "beef",
+        seasonality: "all_year",
+        source: "USDA_23573",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "pitta_kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 186,
+            protein: 26.5,
+            carbs: 0,
+            fat: 8.2,
+            fiber: 0,
+            iron: 2.6,
+            zinc: 4.1,
+            phosphorus: 198,
+            potassium: 318,
+            sodium: 55,
+            selenium: 24.6,
+            vitamin_b12: 2.6,
+            niacin: 5.8
+        },
+        cookingMethods: ["grilling", "pan_searing", "roasting"],
+        omadBenefits: ["high_protein", "iron_rich", "b12_source"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_004",
+        name: "Vită grasă (antricot)",
+        nameRo: "Vită grasă (antricot)",
+        nameEn: "Fatty Beef (Ribeye)",
+        category: "meat",
+        subcategory: "beef",
+        seasonality: "all_year",
+        source: "USDA_23063",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 291,
+            protein: 25.1,
+            carbs: 0,
+            fat: 20.8,
+            fiber: 0,
+            iron: 2.3,
+            zinc: 4.7,
+            phosphorus: 186,
+            potassium: 282,
+            sodium: 59,
+            selenium: 23.8,
+            vitamin_b12: 2.8,
+            saturated_fat: 8.3
+        },
+        cookingMethods: ["grilling", "pan_searing", "braising"],
+        omadBenefits: ["high_protein", "saturated_fat", "creatine"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_005",
+        name: "Porc cotlet",
+        nameRo: "Porc cotlet",
+        nameEn: "Pork Chops",
+        category: "meat",
+        subcategory: "pork",
+        seasonality: "all_year",
+        source: "USDA_10009",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 231,
+            protein: 23.7,
+            carbs: 0,
+            fat: 14.6,
+            fiber: 0,
+            iron: 0.8,
+            zinc: 2.4,
+            phosphorus: 195,
+            potassium: 362,
+            sodium: 62,
+            thiamine: 0.87,
+            niacin: 4.9,
+            vitamin_b6: 0.46
+        },
+        cookingMethods: ["pan_frying", "grilling", "baking", "braising"],
+        omadBenefits: ["high_protein", "thiamine_rich", "potassium"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_006",
+        name: "Porc ceafă",
+        nameRo: "Porc ceafă",
+        nameEn: "Pork Neck",
+        category: "meat",
+        subcategory: "pork",
+        seasonality: "all_year",
+        source: "USDA_10972",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 276,
+            protein: 21.8,
+            carbs: 0,
+            fat: 20.2,
+            fiber: 0,
+            iron: 1.2,
+            zinc: 2.9,
+            phosphorus: 168,
+            potassium: 285,
+            sodium: 58,
+            thiamine: 0.45,
+            saturated_fat: 7.2
+        },
+        cookingMethods: ["slow_cooking", "braising", "smoking", "instant_pot"],
+        omadBenefits: ["high_protein", "collagen", "thiamine"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_007",
+        name: "Curcan piept",
+        nameRo: "Curcan piept",
+        nameEn: "Turkey Breast",
+        category: "meat",
+        subcategory: "poultry",
+        seasonality: "all_year",
+        source: "USDA_05189",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 135,
+            protein: 30.1,
+            carbs: 0,
+            fat: 1,
+            fiber: 0,
+            iron: 1.4,
+            zinc: 1.7,
+            phosphorus: 230,
+            potassium: 325,
+            sodium: 63,
+            selenium: 31.7,
+            niacin: 11.8,
+            vitamin_b6: 0.64
+        },
+        cookingMethods: ["roasting", "grilling", "baking", "instant_pot"],
+        omadBenefits: ["very_high_protein", "low_fat", "selenium_rich"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_008",
+        name: "Rață domestică",
+        nameRo: "Rață domestică",
+        nameEn: "Duck Meat",
+        category: "meat",
+        subcategory: "poultry",
+        seasonality: "all_year",
+        source: "USDA_05141",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 337,
+            protein: 19,
+            carbs: 0,
+            fat: 28.4,
+            fiber: 0,
+            iron: 2.7,
+            zinc: 1.9,
+            phosphorus: 156,
+            potassium: 204,
+            sodium: 74,
+            selenium: 14,
+            saturated_fat: 9.7
+        },
+        cookingMethods: ["roasting", "confit", "braising"],
+        omadBenefits: ["high_fat", "iron_source", "traditional_fat"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_009",
+        name: "Miel cotlet",
+        nameRo: "Miel cotlet",
+        nameEn: "Lamb Chops",
+        category: "meat",
+        subcategory: "lamb",
+        seasonality: "spring_summer",
+        source: "USDA_17016",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "pitta_kapha_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 294,
+            protein: 24.5,
+            carbs: 0,
+            fat: 20.9,
+            fiber: 0,
+            iron: 1.6,
+            zinc: 2.9,
+            phosphorus: 188,
+            potassium: 310,
+            sodium: 72,
+            vitamin_b12: 2.6,
+            selenium: 26.4
+        },
+        cookingMethods: ["grilling", "pan_searing", "roasting"],
+        omadBenefits: ["high_protein", "cla_source", "zinc_rich"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_MEAT_010",
+        name: "Ficat de vită",
+        nameRo: "Ficat de vită",
+        nameEn: "Beef Liver",
+        category: "meat",
+        subcategory: "organ_meat",
+        seasonality: "all_year",
+        source: "USDA_13325",
+        ayurvedicProperties: {
+            tastes: ["sweet", "metallic"],
+            dosha: "pitta_increasing",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 135,
+            protein: 20.4,
+            carbs: 3.9,
+            fat: 3.6,
+            fiber: 0,
+            iron: 6.2,
+            zinc: 4,
+            vitamin_a: 16899,
+            vitamin_b12: 59.3,
+            folate: 290,
+            copper: 9.8,
+            selenium: 39.7
+        },
+        cookingMethods: ["pan_frying", "grilling", "pate"],
+        omadBenefits: ["nutrient_dense", "iron_powerhouse", "b12_rich"],
+        plantDiversityScore: 0
+    },
+
+    // OUĂ - EGGS SECTION (5+ items)
+    {
+        id: "RO_EGG_001",
+        name: "Ouă de găină crude",
+        nameRo: "Ouă de găină crude",
+        nameEn: "Raw Chicken Eggs",
+        category: "eggs",
+        subcategory: "chicken_eggs",
+        seasonality: "all_year",
+        source: "USDA_01123",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 155,
+            protein: 13,
+            carbs: 1.1,
+            fat: 10.6,
+            fiber: 0,
+            vitamin_a: 540,
+            vitamin_d: 87,
+            vitamin_b12: 1.1,
+            folate: 47,
+            choline: 294,
+            selenium: 30.7,
+            iron: 1.2
+        },
+        cookingMethods: ["raw", "soft_boiled", "hard_boiled", "scrambled"],
+        omadBenefits: ["complete_protein", "choline_rich", "vitamin_d"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_EGG_002",
+        name: "Ouă de găină fierte",
+        nameRo: "Ouă de găină fierte",
+        nameEn: "Boiled Chicken Eggs",
+        category: "eggs",
+        subcategory: "chicken_eggs",
+        seasonality: "all_year",
+        source: "USDA_01129",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_increasing",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 155,
+            protein: 13,
+            carbs: 1.1,
+            fat: 10.6,
+            fiber: 0,
+            vitamin_a: 540,
+            vitamin_d: 87,
+            vitamin_b12: 1.1,
+            folate: 44,
+            choline: 294,
+            selenium: 30.7,
+            iron: 1.2
+        },
+        cookingMethods: ["boiling", "steaming"],
+        omadBenefits: ["complete_protein", "easily_digestible", "choline"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_EGG_003",
+        name: "Ouă de prepeliță",
+        nameRo: "Ouă de prepeliță",
+        nameEn: "Quail Eggs",
+        category: "eggs",
+        subcategory: "quail_eggs",
+        seasonality: "all_year",
+        source: "USDA_01140",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 158,
+            protein: 13.05,
+            carbs: 0.41,
+            fat: 11.09,
+            fiber: 0,
+            vitamin_a: 543,
+            vitamin_b12: 1.58,
+            iron: 3.65,
+            selenium: 32,
+            phosphorus: 226,
+            choline: 263
+        },
+        cookingMethods: ["boiling", "raw", "pickled"],
+        omadBenefits: ["high_iron", "compact_nutrition", "traditional_medicine"],
+        plantDiversityScore: 0
+    },
+
+    // LEGUME SUPLIMENTARE - ADDITIONAL VEGETABLES (30+ items)
+    {
+        id: "RO_VEG_030",
+        name: "Păstârnac",
+        nameRo: "Păstârnac",
+        nameEn: "Parsnips",
+        category: "vegetables",
+        subcategory: "root_vegetables",
+        seasonality: "autumn_winter",
+        source: "USDA_11298",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 75,
+            protein: 1.2,
+            carbs: 17.99,
+            fat: 0.3,
+            fiber: 4.9,
+            vitamin_c: 17,
+            folate: 67,
+            potassium: 375,
+            phosphorus: 71,
+            magnesium: 29,
+            manganese: 0.56
+        },
+        cookingMethods: ["roasting", "boiling", "instant_pot", "mashing"],
+        omadBenefits: ["fiber_rich", "potassium", "winter_warming"],
+        plantDiversityScore: 7.5
+    },
+    {
+        id: "RO_VEG_031",
+        name: "Sfeclă roșie",
+        nameRo: "Sfeclă roșie",
+        nameEn: "Red Beetroot",
+        category: "vegetables",
+        subcategory: "root_vegetables",
+        seasonality: "autumn_winter",
+        source: "USDA_11080",
+        ayurvedicProperties: {
+            tastes: ["sweet", "earthy"],
+            dosha: "pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 43,
+            protein: 1.61,
+            carbs: 9.56,
+            fat: 0.17,
+            fiber: 2.8,
+            folate: 109,
+            potassium: 325,
+            magnesium: 23,
+            iron: 0.8,
+            nitrates: 250,
+            betalains: 85
+        },
+        cookingMethods: ["roasting", "boiling", "raw", "juicing"],
+        omadBenefits: ["nitric_oxide", "folate_rich", "liver_detox"],
+        plantDiversityScore: 8.5
+    },
+    {
+        id: "RO_VEG_032",
+        name: "Ridichi negre",
+        nameRo: "Ridichi negre",
+        nameEn: "Black Radish",
+        category: "vegetables",
+        subcategory: "cruciferous",
+        seasonality: "winter",
+        source: "USDA_11429",
+        ayurvedicProperties: {
+            tastes: ["pungent", "bitter"],
+            dosha: "kapha_pacifying",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 16,
+            protein: 0.68,
+            carbs: 3.4,
+            fat: 0.1,
+            fiber: 1.6,
+            vitamin_c: 14.8,
+            potassium: 233,
+            isothiocyanates: 45,
+            glucosinolates: 120
+        },
+        cookingMethods: ["raw", "fermented", "salad", "grated"],
+        omadBenefits: ["liver_cleanse", "antimicrobial", "digestive_bitter"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_VEG_033",
+        name: "Conopidă",
+        nameRo: "Conopidă",
+        nameEn: "Cauliflower",
+        category: "vegetables",
+        subcategory: "cruciferous",
+        seasonality: "autumn_winter",
+        source: "USDA_11135",
+        ayurvedicProperties: {
+            tastes: ["sweet", "astringent"],
+            dosha: "kapha_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 25,
+            protein: 1.92,
+            carbs: 4.97,
+            fat: 0.28,
+            fiber: 2,
+            vitamin_c: 48.2,
+            vitamin_k: 15.5,
+            folate: 57,
+            choline: 44.3,
+            potassium: 299
+        },
+        cookingMethods: ["steaming", "roasting", "instant_pot", "rice_substitute"],
+        omadBenefits: ["low_carb_sub", "choline", "sulforaphane"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_VEG_034",
+        name: "Broccoli",
+        nameRo: "Broccoli",
+        nameEn: "Broccoli",
+        category: "vegetables",
+        subcategory: "cruciferous",
+        seasonality: "autumn_winter",
+        source: "USDA_11090",
+        ayurvedicProperties: {
+            tastes: ["bitter", "astringent"],
+            dosha: "kapha_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 34,
+            protein: 2.82,
+            carbs: 6.64,
+            fat: 0.37,
+            fiber: 2.6,
+            vitamin_c: 89.2,
+            vitamin_k: 101.6,
+            folate: 63,
+            sulforaphane: 73,
+            calcium: 47
+        },
+        cookingMethods: ["steaming", "instant_pot", "roasting", "stir_frying"],
+        omadBenefits: ["sulforaphane", "vitamin_k", "cancer_protective"],
+        plantDiversityScore: 9.0
+    },
+    {
+        id: "RO_VEG_035",
+        name: "Kale",
+        nameRo: "Kale",
+        nameEn: "Kale",
+        category: "vegetables",
+        subcategory: "leafy_greens",
+        seasonality: "autumn_winter",
+        source: "USDA_11233",
+        ayurvedicProperties: {
+            tastes: ["bitter", "astringent"],
+            dosha: "kapha_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 35,
+            protein: 2.92,
+            carbs: 4.42,
+            fat: 1.49,
+            fiber: 4.1,
+            vitamin_a: 15376,
+            vitamin_c: 93.4,
+            vitamin_k: 817,
+            calcium: 254,
+            iron: 1.6
+        },
+        cookingMethods: ["massaging", "steaming", "chips", "smoothie"],
+        omadBenefits: ["calcium_rich", "vitamin_k", "antioxidant_power"],
+        plantDiversityScore: 9.5
+    },
+    {
+        id: "RO_VEG_036",
+        name: "Spanac",
+        nameRo: "Spanac",
+        nameEn: "Spinach",
+        category: "vegetables",
+        subcategory: "leafy_greens",
+        seasonality: "spring_autumn",
+        source: "USDA_11457",
+        ayurvedicProperties: {
+            tastes: ["sweet", "astringent"],
+            dosha: "pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 23,
+            protein: 2.86,
+            carbs: 3.63,
+            fat: 0.39,
+            fiber: 2.2,
+            vitamin_a: 9377,
+            vitamin_k: 483,
+            folate: 194,
+            iron: 2.7,
+            magnesium: 79
+        },
+        cookingMethods: ["raw", "wilting", "steaming", "smoothie"],
+        omadBenefits: ["folate_rich", "iron_source", "nitrates"],
+        plantDiversityScore: 9.0
+    },
+    {
+        id: "RO_VEG_037",
+        name: "Salată verde",
+        nameRo: "Salată verde",
+        nameEn: "Lettuce",
+        category: "vegetables",
+        subcategory: "leafy_greens",
+        seasonality: "spring_summer",
+        source: "USDA_11252",
+        ayurvedicProperties: {
+            tastes: ["sweet", "astringent"],
+            dosha: "pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 15,
+            protein: 1.36,
+            carbs: 2.87,
+            fat: 0.15,
+            fiber: 1.3,
+            vitamin_a: 7405,
+            vitamin_k: 126.3,
+            folate: 38,
+            potassium: 194,
+            water: 94.98
+        },
+        cookingMethods: ["raw", "wilting", "wrapping"],
+        omadBenefits: ["hydrating", "low_calorie", "vitamin_k"],
+        plantDiversityScore: 6.5
+    },
+    {
+        id: "RO_VEG_038",
+        name: "Rucola",
+        nameRo: "Rucola",
+        nameEn: "Arugula",
+        category: "vegetables",
+        subcategory: "leafy_greens",
+        seasonality: "spring_autumn",
+        source: "USDA_11959",
+        ayurvedicProperties: {
+            tastes: ["pungent", "bitter"],
+            dosha: "kapha_pacifying",
+            heating: "heating"
+        },
+        nutrition: {
+            calories: 25,
+            protein: 2.58,
+            carbs: 3.65,
+            fat: 0.66,
+            fiber: 1.6,
+            vitamin_a: 2373,
+            vitamin_k: 108.6,
+            vitamin_c: 15,
+            calcium: 160,
+            nitrates: 480
+        },
+        cookingMethods: ["raw", "wilting", "pesto", "salad"],
+        omadBenefits: ["peppery_flavor", "calcium", "nitrates"],
+        plantDiversityScore: 8.5
+    },
+    {
+        id: "RO_VEG_039",
+        name: "Praz",
+        nameRo: "Praz",
+        nameEn: "Leeks",
+        category: "vegetables",
+        subcategory: "allium",
+        seasonality: "autumn_winter",
+        source: "USDA_11246",
+        ayurvedicProperties: {
+            tastes: ["sweet", "pungent"],
+            dosha: "vata_kapha_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 61,
+            protein: 1.5,
+            carbs: 14.15,
+            fat: 0.3,
+            fiber: 1.8,
+            vitamin_a: 1667,
+            vitamin_c: 12,
+            vitamin_k: 47,
+            folate: 64,
+            potassium: 180
+        },
+        cookingMethods: ["braising", "instant_pot", "soup", "roasting"],
+        omadBenefits: ["prebiotic_fiber", "mild_onion", "vitamin_k"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_VEG_040",
+        name: "Gulii",
+        nameRo: "Gulii",
+        nameEn: "Turnips",
+        category: "vegetables",
+        subcategory: "cruciferous",
+        seasonality: "autumn_winter",
+        source: "USDA_11564",
+        ayurvedicProperties: {
+            tastes: ["pungent", "bitter"],
+            dosha: "kapha_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 28,
+            protein: 0.9,
+            carbs: 6.43,
+            fat: 0.1,
+            fiber: 1.8,
+            vitamin_c: 21,
+            folate: 15,
+            potassium: 191,
+            calcium: 30,
+            glucosinolates: 95
+        },
+        cookingMethods: ["roasting", "mashing", "instant_pot", "fermented"],
+        omadBenefits: ["low_calorie", "vitamin_c", "traditional_root"],
+        plantDiversityScore: 7.5
+    },
+
+    // FRUCTE SUPLIMENTARE - ADDITIONAL FRUITS (20+ items)
+    {
+        id: "RO_FRUIT_020",
+        name: "Mere",
+        nameRo: "Mere",
+        nameEn: "Apples",
+        category: "fruits",
+        subcategory: "pome_fruit",
+        seasonality: "autumn_winter",
+        source: "USDA_09003",
+        ayurvedicProperties: {
+            tastes: ["sweet", "astringent"],
+            dosha: "vata_pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 52,
+            protein: 0.26,
+            carbs: 13.81,
+            fat: 0.17,
+            fiber: 2.4,
+            vitamin_c: 4.6,
+            potassium: 107,
+            quercetin: 15.6,
+            pectin: 1.2,
+            polyphenols: 136
+        },
+        cookingMethods: ["raw", "baking", "stewing", "juice"],
+        omadBenefits: ["pectin_fiber", "quercetin", "blood_sugar_stable"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_FRUIT_021",
+        name: "Pere",
+        nameRo: "Pere",
+        nameEn: "Pears",
+        category: "fruits",
+        subcategory: "pome_fruit",
+        seasonality: "autumn",
+        source: "USDA_09252",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 57,
+            protein: 0.36,
+            carbs: 15.23,
+            fat: 0.14,
+            fiber: 3.1,
+            vitamin_c: 4.3,
+            potassium: 116,
+            copper: 0.082,
+            vitamin_k: 4.4
+        },
+        cookingMethods: ["raw", "poaching", "baking", "preserves"],
+        omadBenefits: ["high_fiber", "copper", "gentle_digestion"],
+        plantDiversityScore: 7.5
+    },
+    {
+        id: "RO_FRUIT_022",
+        name: "Prune",
+        nameRo: "Prune",
+        nameEn: "Plums",
+        category: "fruits",
+        subcategory: "stone_fruit",
+        seasonality: "summer",
+        source: "USDA_09279",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "vata_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 46,
+            protein: 0.7,
+            carbs: 11.42,
+            fat: 0.28,
+            fiber: 1.4,
+            vitamin_c: 9.5,
+            vitamin_a: 345,
+            potassium: 157,
+            anthocyanins: 73
+        },
+        cookingMethods: ["raw", "drying", "jam", "compote"],
+        omadBenefits: ["anthocyanins", "vitamin_c", "natural_sugars"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_FRUIT_023",
+        name: "Caise",
+        nameRo: "Caise",
+        nameEn: "Apricots",
+        category: "fruits",
+        subcategory: "stone_fruit",
+        seasonality: "summer",
+        source: "USDA_09021",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "vata_pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 48,
+            protein: 1.4,
+            carbs: 11.12,
+            fat: 0.39,
+            fiber: 2,
+            vitamin_a: 1926,
+            vitamin_c: 10,
+            potassium: 259,
+            beta_carotene: 1094
+        },
+        cookingMethods: ["raw", "drying", "jam", "poaching"],
+        omadBenefits: ["beta_carotene", "potassium", "eye_health"],
+        plantDiversityScore: 8.5
+    },
+    {
+        id: "RO_FRUIT_024",
+        name: "Piersici",
+        nameRo: "Piersici",
+        nameEn: "Peaches",
+        category: "fruits",
+        subcategory: "stone_fruit",
+        seasonality: "summer",
+        source: "USDA_09236",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 39,
+            protein: 0.91,
+            carbs: 9.54,
+            fat: 0.25,
+            fiber: 1.5,
+            vitamin_c: 6.6,
+            vitamin_a: 326,
+            potassium: 190,
+            beta_carotene: 162
+        },
+        cookingMethods: ["raw", "grilling", "preserves", "smoothie"],
+        omadBenefits: ["vitamin_c", "hydrating", "natural_sweetness"],
+        plantDiversityScore: 7.5
+    },
+    {
+        id: "RO_FRUIT_025",
+        name: "Struguri",
+        nameRo: "Struguri",
+        nameEn: "Grapes",
+        category: "fruits",
+        subcategory: "berry",
+        seasonality: "autumn",
+        source: "USDA_09132",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 62,
+            protein: 0.72,
+            carbs: 16.25,
+            fat: 0.16,
+            fiber: 0.9,
+            vitamin_c: 10.8,
+            vitamin_k: 14.6,
+            potassium: 191,
+            resveratrol: 0.69
+        },
+        cookingMethods: ["raw", "juice", "wine", "raisins"],
+        omadBenefits: ["resveratrol", "antioxidants", "heart_health"],
+        plantDiversityScore: 8.5
+    },
+    {
+        id: "RO_FRUIT_026",
+        name: "Portocale",
+        nameRo: "Portocale",
+        nameEn: "Oranges",
+        category: "fruits",
+        subcategory: "citrus",
+        seasonality: "winter",
+        source: "USDA_09200",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "vata_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 47,
+            protein: 0.94,
+            carbs: 11.75,
+            fat: 0.12,
+            fiber: 2.4,
+            vitamin_c: 53.2,
+            folate: 40,
+            potassium: 181,
+            hesperidin: 87
+        },
+        cookingMethods: ["raw", "juice", "zest", "marmalade"],
+        omadBenefits: ["vitamin_c", "folate", "hesperidin"],
+        plantDiversityScore: 9.0
+    },
+    {
+        id: "RO_FRUIT_027",
+        name: "Căpșuni",
+        nameRo: "Căpșuni",
+        nameEn: "Strawberries",
+        category: "fruits",
+        subcategory: "berry",
+        seasonality: "spring_summer",
+        source: "USDA_09316",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "pitta_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 32,
+            protein: 0.67,
+            carbs: 7.68,
+            fat: 0.3,
+            fiber: 2,
+            vitamin_c: 58.8,
+            folate: 24,
+            potassium: 153,
+            anthocyanins: 35
+        },
+        cookingMethods: ["raw", "smoothie", "jam", "freeze"],
+        omadBenefits: ["vitamin_c", "anthocyanins", "low_sugar"],
+        plantDiversityScore: 9.0
+    },
+
+    // CEREALE SUPLIMENTARE - ADDITIONAL GRAINS (10+ items)
+    {
+        id: "RO_GRAIN_010",
+        name: "Orez brun",
+        nameRo: "Orez brun",
+        nameEn: "Brown Rice",
+        category: "grains",
+        subcategory: "rice",
+        seasonality: "all_year",
+        source: "USDA_20040",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 111,
+            protein: 2.6,
+            carbs: 23,
+            fat: 0.9,
+            fiber: 1.8,
+            magnesium: 43,
+            phosphorus: 83,
+            selenium: 10,
+            manganese: 1.1,
+            thiamine: 0.1
+        },
+        cookingMethods: ["boiling", "steaming", "instant_pot", "pilaf"],
+        omadBenefits: ["complex_carbs", "magnesium", "fiber"],
+        plantDiversityScore: 7.0
+    },
+    {
+        id: "RO_GRAIN_011",
+        name: "Mei",
+        nameRo: "Mei",
+        nameEn: "Millet",
+        category: "grains",
+        subcategory: "ancient_grain",
+        seasonality: "all_year",
+        source: "USDA_20031",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "kapha_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 119,
+            protein: 3.5,
+            carbs: 23,
+            fat: 1.2,
+            fiber: 1.3,
+            magnesium: 44,
+            phosphorus: 100,
+            iron: 1.1,
+            folate: 19
+        },
+        cookingMethods: ["boiling", "steaming", "porridge", "pilaf"],
+        omadBenefits: ["gluten_free", "alkalizing", "easy_digest"],
+        plantDiversityScore: 8.0
+    },
+    {
+        id: "RO_GRAIN_012",
+        name: "Amarant",
+        nameRo: "Amarant",
+        nameEn: "Amaranth",
+        category: "grains",
+        subcategory: "pseudo_cereal",
+        seasonality: "all_year",
+        source: "USDA_20001",
+        ayurvedicProperties: {
+            tastes: ["sweet"],
+            dosha: "vata_pacifying",
+            heating: "warming"
+        },
+        nutrition: {
+            calories: 103,
+            protein: 4,
+            carbs: 19,
+            fat: 1.6,
+            fiber: 2.1,
+            iron: 2.1,
+            magnesium: 65,
+            phosphorus: 148,
+            lysine: 0.75
+        },
+        cookingMethods: ["boiling", "popping", "porridge", "flour"],
+        omadBenefits: ["complete_protein", "lysine_rich", "gluten_free"],
+        plantDiversityScore: 9.0
+    },
+
+    // PRODUSE LACTATE SUPLIMENTARE - ADDITIONAL DAIRY (10+ items)
+    {
+        id: "RO_DAIRY_010",
+        name: "Iaurt grec",
+        nameRo: "Iaurt grec",
+        nameEn: "Greek Yogurt",
+        category: "dairy",
+        subcategory: "fermented_dairy",
+        seasonality: "all_year",
+        source: "USDA_01256",
+        ayurvedicProperties: {
+            tastes: ["sour", "sweet"],
+            dosha: "pitta_increasing",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 59,
+            protein: 10.19,
+            carbs: 3.6,
+            fat: 0.39,
+            fiber: 0,
+            calcium: 110,
+            phosphorus: 135,
+            vitamin_b12: 0.75,
+            probiotics: 1000000
+        },
+        cookingMethods: ["raw", "smoothie", "marinade", "sauce"],
+        omadBenefits: ["high_protein", "probiotics", "calcium"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_DAIRY_011",
+        name: "Kefir",
+        nameRo: "Kefir",
+        nameEn: "Kefir",
+        category: "dairy",
+        subcategory: "fermented_dairy",
+        seasonality: "all_year",
+        source: "USDA_01260",
+        ayurvedicProperties: {
+            tastes: ["sour"],
+            dosha: "pitta_kapha_pacifying",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 41,
+            protein: 3.79,
+            carbs: 4.48,
+            fat: 0.93,
+            fiber: 0,
+            calcium: 120,
+            magnesium: 12,
+            probiotics: 15000000,
+            vitamin_b12: 0.5
+        },
+        cookingMethods: ["raw", "smoothie", "marinade"],
+        omadBenefits: ["diverse_probiotics", "digestive_health", "b12"],
+        plantDiversityScore: 0
+    },
+    {
+        id: "RO_DAIRY_012",
+        name: "Brânză cottage",
+        nameRo: "Brânză cottage",
+        nameEn: "Cottage Cheese",
+        category: "dairy",
+        subcategory: "fresh_cheese",
+        seasonality: "all_year",
+        source: "USDA_01015",
+        ayurvedicProperties: {
+            tastes: ["sweet", "sour"],
+            dosha: "kapha_increasing",
+            heating: "cooling"
+        },
+        nutrition: {
+            calories: 98,
+            protein: 11.12,
+            carbs: 3.38,
+            fat: 4.3,
+            fiber: 0,
+            calcium: 83,
+            phosphorus: 159,
+            selenium: 20.3,
+            casein: 8.5
+        },
+        cookingMethods: ["raw", "baking", "pancakes", "salad"],
+        omadBenefits: ["casein_protein", "calcium", "slow_digesting"],
+        plantDiversityScore: 0
     }
 ];
 
