@@ -9,6 +9,7 @@
   import MealPlanner from './components/MealPlanner.svelte';
   import CodexDashboard from './components/CodexDashboard.svelte';
   import CodexRecipeUI from './components/CodexRecipeUI.svelte';
+  import SmartRecipeDisplay from './components/SmartRecipeDisplay.svelte';
   
   // Import CODEX N-OMAD v3.0 Components
   import RecipeDisplay from './codex/RecipeDisplay.svelte';
@@ -162,7 +163,16 @@
         </div>
       </div>
 
-      <RecipeSuggester />
+      <!-- Smart Recipe Generator with Real Data -->
+      <div class="recipe-sections">
+        <SmartRecipeDisplay />
+        
+        <div class="divider">
+          <span>SAU</span>
+        </div>
+        
+        <RecipeSuggester />
+      </div>
     </div>
 
   {:else if activeTab === 'biomarkers'}
@@ -983,6 +993,57 @@
     .profile-selector {
       flex-direction: column;
       gap: 8px;
+    }
+  }
+
+  /* Smart Recipe Display Styles */
+  .recipe-sections {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+  }
+
+  .divider {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    margin: 20px 0;
+  }
+
+  .divider::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 0;
+    right: 0;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, #666 20%, #666 80%, transparent 100%);
+  }
+
+  .divider span {
+    background: var(--bg, #1a1a1a);
+    padding: 8px 20px;
+    color: var(--muted, #9aa3b2);
+    font-weight: 600;
+    border-radius: 20px;
+    border: 1px solid var(--border, #404040);
+    z-index: 1;
+    position: relative;
+  }
+
+  @media (max-width: 768px) {
+    .recipe-sections {
+      gap: 20px;
+    }
+    
+    .divider {
+      margin: 10px 0;
+    }
+    
+    .divider span {
+      padding: 6px 16px;
+      font-size: 0.9rem;
     }
   }
 </style>
