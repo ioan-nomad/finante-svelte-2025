@@ -7,7 +7,7 @@
   "author": "Ioan Nomad",
   "description": "PRIVATE - Proprietary software under development",
   "scripts": {
-    "dev": "set BROWSER=none && vite --host localhost",
+    "dev": "set BROWSER=firefox && set BROWSER_ARGS=--private-window && vite --host localhost",
     "build": "vite build",
     "build:analyze": "vite build --mode analyze",
     "build:stats": "vite build && node scripts/build-stats.js",

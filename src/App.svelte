@@ -134,6 +134,11 @@
 
   // Initialize dark mode
   onMount(() => {
+    // Localhost verification logs
+    console.log('Running on:', window.location.hostname); // TREBUIE să fie "localhost"
+    console.log('Protocol:', window.location.protocol);   // TREBUIE să fie "http:"
+    console.log('No trackers:', !window.ga && !window.gtag); // TREBUIE true
+    
     // Initialize security on mount
     // Apply CSP
     CSPManager.apply();

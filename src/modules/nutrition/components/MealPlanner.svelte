@@ -14,6 +14,9 @@
   let showShoppingList = false;
   let selectedDay = null;
   
+  // Reactive statement for shopping list categories
+  $: categories = [...new Set(shoppingList.map(i => getCategoryForIngredient(i.name)))];
+  
   // Load saved meal plan
   onMount(() => {
     loadMealPlan();
@@ -376,8 +379,6 @@
         </div>
         
         <div class="shopping-categories">
-          {@const categories = [...new Set(shoppingList.map(i => getCategoryForIngredient(i.name)))]}
-          
           {#each categories as category}
             <div class="category-section">
               <h4>{category}</h4>

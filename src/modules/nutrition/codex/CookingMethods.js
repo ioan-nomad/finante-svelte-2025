@@ -838,10 +838,449 @@ export const CookingMethodIntegration = {
     }
 };
 
+// INSTANT POT LAYERS CLASS - Advanced Stratification System
+export class InstantPotLayers {
+    constructor() {
+        this.layerConfig = {
+            bottom: { name: "Aromatics & Liquid Base", priority: 1, position: "bottom" },
+            layer2: { name: "Proteins & Dense Items", priority: 2, position: "lower_middle" },
+            layer3: { name: "Hard Vegetables", priority: 3, position: "middle" },
+            layer4: { name: "Soft Vegetables", priority: 4, position: "upper_middle" },
+            top: { name: "Delicate Greens", priority: 5, position: "top" }
+        };
+
+        // Ingredient type mappings for optimal layering
+        this.ingredientTypes = {
+            aromatic: ['onions', 'garlic', 'ginger', 'shallots', 'leeks', 'celery', 'herbs_dried'],
+            protein: ['chicken', 'beef', 'pork', 'lamb', 'fish', 'lentils', 'chickpeas', 'beans', 'tofu'],
+            hard_veg: ['potatoes', 'sweet_potatoes', 'carrots', 'beets', 'parsnips', 'turnips', 'rutabaga', 'winter_squash'],
+            soft_veg: ['zucchini', 'bell_peppers', 'eggplant', 'tomatoes', 'mushrooms', 'broccoli', 'cauliflower'],
+            greens: ['spinach', 'kale', 'chard', 'arugula', 'lettuce', 'herbs_fresh', 'microgreens'],
+            liquid: ['broth', 'coconut_milk', 'water', 'wine', 'tomato_sauce']
+        };
+    }
+
+    /**
+     * Get optimal layers for given ingredients
+     * @param {Array} ingredients - Array of ingredient objects
+     * @returns {Object} Optimally stratified layers
+     */
+    getOptimalLayers(ingredients) {
+        const layers = {
+            bottom: [],
+            layer2: [],
+            layer3: [],
+            layer4: [],
+            top: [],
+            liquid: null,
+            instructions: []
+        };
+
+        // Categorize ingredients by type
+        ingredients.forEach(ingredient => {
+            const type = this.determineIngredientType(ingredient);
+            
+            switch (type) {
+                case 'aromatic':
+                    layers.bottom.push({
+                        ...ingredient,
+                        layerPosition: 'bottom',
+                        cookingOrder: 1,
+                        addWhen: 'start'
+                    });
+                    break;
+                    
+                case 'protein':
+                    layers.layer2.push({
+                        ...ingredient,
+                        layerPosition: 'layer2',
+                        cookingOrder: 2,
+                        addWhen: 'with_aromatics'
+                    });
+                    break;
+                    
+                case 'hard_veg':
+                    layers.layer3.push({
+                        ...ingredient,
+                        layerPosition: 'layer3',
+                        cookingOrder: 3,
+                        addWhen: 'with_proteins'
+                    });
+                    break;
+                    
+                case 'soft_veg':
+                    layers.layer4.push({
+                        ...ingredient,
+                        layerPosition: 'layer4',
+                        cookingOrder: 4,
+                        addWhen: 'layer_on_top'
+                    });
+                    break;
+                    
+                case 'greens':
+                    layers.top.push({
+                        ...ingredient,
+                        layerPosition: 'top',
+                        cookingOrder: 5,
+                        addWhen: 'after_cooking'
+                    });
+                    break;
+                    
+                case 'liquid':
+                    if (!layers.liquid) {
+                        layers.liquid = ingredient;
+                    }
+                    break;
+            }
+        });
+
+        // Generate layering instructions
+        layers.instructions = this.generateLayeringInstructions(layers);
+        
+        // Calculate total cooking time
+        layers.totalCookingTime = this.calculateOptimalCookingTime(layers);
+        
+        // Add important note about not stirring
+        layers.importantNote = "🚫 NU AMESTECA în timpul gatirii! Stratificarea se menține pentru reținere optimă nutrienți.";
+
+        return layers;
+    }
+
+    /**
+     * Determine ingredient type for optimal layering
+     */
+    determineIngredientType(ingredient) {
+        const name = ingredient.name?.toLowerCase() || '';
+        const category = ingredient.category?.toLowerCase() || '';
+        const subcategory = ingredient.subcategory?.toLowerCase() || '';
+
+        // Check each type category
+        for (const [type, items] of Object.entries(this.ingredientTypes)) {
+            if (items.some(item => 
+                name.includes(item) || 
+                category.includes(item) || 
+                subcategory.includes(item)
+            )) {
+                return type;
+            }
+        }
+
+        // Default classification based on category
+        if (category.includes('meat') || category.includes('fish') || category.includes('legum')) {
+            return 'protein';
+        }
+        if (category.includes('vegetable')) {
+            return ingredient.subcategory === 'root_vegetables' ? 'hard_veg' : 'soft_veg';
+        }
+        if (category.includes('leafy') || subcategory.includes('green')) {
+            return 'greens';
+        }
+
+        return 'soft_veg'; // Default fallback
+    }
+
+    /**
+     * Get optimized cooking time based on ingredient and size
+     */
+    getCookingTime(ingredient, size = 'medium') {
+        const baseIngredient = ingredient.toLowerCase().replace(/\s+/g, '_');
+        const sizeKey = `${baseIngredient}_${size}`;
+        
+        // Comprehensive cooking time database with size variants
+        const cookingTimes = {
+            // Chicken variants
+            'chicken_cubes_1cm': 6,
+            'chicken_cubes_2cm': 8,
+            'chicken_cubes_3cm': 10,
+            'chicken_breast_whole': 12,
+            'chicken_thighs_bone_in': 15,
+            'chicken_drumsticks': 15,
+            
+            // Beef variants
+            'beef_cubes_2cm': 12,
+            'beef_cubes_3cm': 15,
+            'beef_chunks_4cm': 18,
+            'beef_stew_meat': 15,
+            'beef_roast_whole': 25,
+            
+            // Pork variants
+            'pork_cubes_2cm': 10,
+            'pork_cubes_3cm': 12,
+            'pork_tenderloin_whole': 15,
+            'pork_shoulder_chunks': 18,
+            
+            // Potatoes (critical for timing)
+            'potatoes_small_whole': 8,
+            'potatoes_medium_whole': 12,
+            'potatoes_large_whole': 15,
+            'potatoes_cubes_2cm': 4,
+            'potatoes_cubes_3cm': 6,
+            'potatoes_quartered': 8,
+            
+            // Other root vegetables
+            'carrots_whole_small': 4,
+            'carrots_whole_large': 8,
+            'carrots_sliced_1cm': 2,
+            'carrots_chunks_3cm': 4,
+            
+            'sweet_potatoes_whole_small': 8,
+            'sweet_potatoes_whole_medium': 12,
+            'sweet_potatoes_cubes_3cm': 6,
+            
+            // Legumes (dry, pre-soaked)
+            'lentils_red_dry': 2,
+            'lentils_green_dry': 8,
+            'lentils_brown_dry': 10,
+            'chickpeas_soaked': 15,
+            'black_beans_soaked': 8,
+            'kidney_beans_soaked': 8,
+            'white_beans_soaked': 8,
+            
+            // Grains
+            'brown_rice_medium': 12,
+            'white_rice_medium': 4,
+            'quinoa_medium': 1,
+            'barley_pearl': 20,
+            'steel_cut_oats': 4,
+            
+            // Vegetables (quick cooking)
+            'broccoli_florets': 2,
+            'cauliflower_florets': 2,
+            'green_beans_whole': 2,
+            'zucchini_sliced': 1,
+            'bell_peppers_strips': 2,
+            'mushrooms_sliced': 3,
+            
+            // Fish (delicate timing)
+            'salmon_fillet_thick': 5,
+            'salmon_fillet_thin': 3,
+            'cod_fillet': 2,
+            'tuna_steak': 3,
+            'shrimp_large': 1,
+            'scallops': 1
+        };
+
+        // Return specific time or calculate based on base ingredient
+        if (cookingTimes[sizeKey]) {
+            return cookingTimes[sizeKey];
+        }
+
+        // Fallback to base ingredient without size
+        const baseTime = cookingTimes[baseIngredient] || this.getBaseCookingTime(ingredient);
+        
+        // Size multipliers
+        const sizeMultipliers = {
+            'tiny': 0.6,      // <1cm pieces
+            'small': 0.8,     // 1-2cm pieces  
+            'medium': 1.0,    // 2-3cm pieces (standard)
+            'large': 1.3,     // 3-4cm pieces
+            'extra_large': 1.6, // 4-5cm pieces
+            'whole': 2.0      // Whole items
+        };
+
+        const multiplier = sizeMultipliers[size] || 1.0;
+        return Math.round(baseTime * multiplier);
+    }
+
+    /**
+     * Get base cooking time for ingredient category
+     */
+    getBaseCookingTime(ingredient) {
+        const categoryTimes = {
+            // Proteins
+            'chicken': 10,
+            'beef': 15,
+            'pork': 12,
+            'lamb': 15,
+            'fish': 4,
+            'salmon': 4,
+            'cod': 3,
+            
+            // Legumes
+            'lentils': 8,
+            'chickpeas': 15,
+            'beans': 10,
+            
+            // Vegetables
+            'potatoes': 10,
+            'carrots': 4,
+            'broccoli': 2,
+            'cauliflower': 2,
+            'zucchini': 2,
+            
+            // Grains
+            'rice': 8,
+            'quinoa': 1,
+            'barley': 20
+        };
+
+        const ingredientLower = ingredient.toLowerCase();
+        for (const [key, time] of Object.entries(categoryTimes)) {
+            if (ingredientLower.includes(key)) {
+                return time;
+            }
+        }
+
+        return 8; // Default safe time
+    }
+
+    /**
+     * Calculate optimal cooking time for entire recipe
+     */
+    calculateOptimalCookingTime(layers) {
+        let maxTime = 0;
+        
+        // Check all layers except top (greens added after cooking)
+        ['bottom', 'layer2', 'layer3', 'layer4'].forEach(layerKey => {
+            const layer = layers[layerKey];
+            if (Array.isArray(layer)) {
+                layer.forEach(ingredient => {
+                    const cookingTime = this.getCookingTime(
+                        ingredient.name || ingredient.ingredient || 'unknown',
+                        ingredient.size || 'medium'
+                    );
+                    maxTime = Math.max(maxTime, cookingTime);
+                });
+            }
+        });
+
+        return Math.max(maxTime, 2); // Minimum 2 minutes
+    }
+
+    /**
+     * Generate step-by-step layering instructions
+     */
+    generateLayeringInstructions(layers) {
+        const instructions = [];
+        
+        // Step 1: Liquids and aromatics
+        if (layers.liquid) {
+            instructions.push({
+                step: 1,
+                layer: 'bottom',
+                title: '🥄 BAZA: Lichide + Aromate',
+                action: `Adaugă ${layers.liquid.amount || '1.5 căni'} ${layers.liquid.name || 'bulion'}`,
+                ingredients: layers.bottom.map(i => `${i.amount || '50g'} ${i.name}`).join(', '),
+                note: 'Aceasta este fundația care creează vaporii pentru presiune'
+            });
+        }
+
+        // Step 2: Proteins and dense items
+        if (layers.layer2.length > 0) {
+            instructions.push({
+                step: 2,
+                layer: 'layer2',
+                title: '🥩 STRATUL 2: Proteine + Dense',
+                action: 'Adaugă în lichid (NU pe fund uscat)',
+                ingredients: layers.layer2.map(i => `${i.amount || '100g'} ${i.name}`).join(', '),
+                note: 'Proteina se gătește uniform în vapori + lichid'
+            });
+        }
+
+        // Step 3: Hard vegetables
+        if (layers.layer3.length > 0) {
+            instructions.push({
+                step: 3,
+                layer: 'layer3', 
+                title: '🥕 STRATUL 3: Legume Tari',
+                action: 'Așează deasupra proteinelor',
+                ingredients: layers.layer3.map(i => `${i.amount || '100g'} ${i.name}`).join(', '),
+                note: 'Legumele rădăcină au nevoie de mai mult timp'
+            });
+        }
+
+        // Step 4: Soft vegetables
+        if (layers.layer4.length > 0) {
+            instructions.push({
+                step: 4,
+                layer: 'layer4',
+                title: '🫑 STRATUL 4: Legume Moi',
+                action: 'Stratifică pe vârf, NU amesteca',
+                ingredients: layers.layer4.map(i => `${i.amount || '80g'} ${i.name}`).join(', '),
+                note: 'Se gătesc perfect în vaporii de sus'
+            });
+        }
+
+        // Step 5: Cooking instructions
+        instructions.push({
+            step: 5,
+            layer: 'cooking',
+            title: '⚡ GĂTIRE: Presiune + Timp',
+            action: `Pressure Cook HIGH ${layers.totalCookingTime || 10} minute`,
+            ingredients: 'Toate straturile se gătesc simultan',
+            note: '🚫 NU DESCHIDE, NU AMESTECA în timpul gătitului!'
+        });
+
+        // Step 6: Finishing touches
+        if (layers.top.length > 0) {
+            instructions.push({
+                step: 6,
+                layer: 'top',
+                title: '🌿 FINALIZARE: Verdeață Proaspătă',
+                action: 'După eliberarea presiunii, amestecă ușor',
+                ingredients: layers.top.map(i => `${i.amount || '30g'} ${i.name}`).join(', '),
+                note: 'Căldura reziduală va găti perfect verdețurile delicate'
+            });
+        }
+
+        return instructions;
+    }
+
+    /**
+     * Get liquid requirements for recipe size
+     */
+    getLiquidRequirements(totalIngredients) {
+        const baseRequirement = 1.5; // cups minimum for pressure
+        const extraPerServing = 0.5;
+        const servings = Math.ceil(totalIngredients / 4); // Rough estimate
+        
+        return {
+            minimum: `${baseRequirement} căni`,
+            recommended: `${baseRequirement + (servings * extraPerServing)} căni`,
+            types: ['Bulion de oase', 'Lapte de cocos', 'Vin alb sec', 'Apă cu condimente'],
+            note: 'NU depăși 2/3 din capacitatea Instant Pot-ului'
+        };
+    }
+
+    /**
+     * Get troubleshooting tips for common issues
+     */
+    getTroubleshootingTips() {
+        return {
+            mushy_vegetables: {
+                problem: 'Legumele sunt prea moi',
+                solution: 'Reduce timpul cu 1-2 minute, folosește Quick Release',
+                prevention: 'Verifică mărimea bucăților - prea mici se gătesc prea rapid'
+            },
+            undercooked_protein: {
+                problem: 'Proteina nu e gată',
+                solution: 'Adaugă 3-5 minute extra, verifică cu termometru (74°C)',
+                prevention: 'Bucăți uniforme, nu mai mari de 4cm'
+            },
+            burnt_bottom: {
+                problem: 'Ars la fund',
+                solution: 'Deglazing cu lichid extra, curăță fundul',
+                prevention: 'Minimum 1.5 căni lichid, NU pune ingrediente direct pe fund'
+            },
+            watery_result: {
+                problem: 'Prea mult lichid',
+                solution: 'Folosește Sauté mode 5-10 minute să reducă',
+                prevention: 'Respectă ratiile lichid:ingrediente, folosește mai puțin lichid'
+            },
+            flavors_not_mixed: {
+                problem: 'Gusturile nu sunt amestecate',
+                solution: 'Amestecă DOAR după gătire, las să se odihnească 5 minute',
+                prevention: 'Condimentele în stratul de bază, nu pe vârf'
+            }
+        };
+    }
+}
+
 export default {
     COOKING_METHODS,
     INSTANT_POT_STRATIFICATION,
     CookingTimeCalculator,
     NutrientRetentionRates,
-    CookingMethodIntegration
+    CookingMethodIntegration,
+    InstantPotLayers
 };
