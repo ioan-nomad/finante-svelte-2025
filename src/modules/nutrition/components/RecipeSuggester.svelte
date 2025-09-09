@@ -3,10 +3,9 @@
   import { nutritionProfile } from '../stores/nutritionStore.js';
   import { CodexScorer } from '../codex/codexScoring.js';
   import { CODEX_INGREDIENTS } from '../codex/codexDatabase.js';
-  import RecipeEngine from '../codex/RecipeEngine.js';
+  import { recipeEngine } from '../RecipeEngine.js';
   
   const scorer = new CodexScorer();
-  const recipeEngine = new RecipeEngine();
   
   let selectedRecipe = null;
   let recipeScore = null;
@@ -177,43 +176,56 @@
 
   async function generateRealOMADRecipe() {
     isGenerating = true;
-    console.log('🚀 Generating real OMAD recipe with RecipeEngine...');
+    console.log('🚀 Generating REAL OMAD recipe with unified RecipeEngine v3.0...');
     
     try {
       const preferences = {
         vegetarian: false,
-        targetCalories: 2500,
-        antiInflammatory: true
+        targetCalories: 2400,
+        antiInflammatory: true,
+        maxIngredients: 12
       };
       
+      // Generate recipe with real pantry integration
       generatedRecipe = await recipeEngine.generateOMADRecipe(preferences);
-      console.log('✅ Generated recipe:', generatedRecipe);
+      console.log('✅ Generated recipe with pantry integration:', generatedRecipe);
       
       // Auto-select the generated recipe for display
       selectedRecipe = {
-        id: 'generated_omad',
+        id: 'generated_omad_v3',
         name: generatedRecipe.name,
-        category: 'generated',
+        category: 'generated_real',
         servings: 1,
         totalCalories: Math.round(generatedRecipe.nutrition.calories),
         ingredients: generatedRecipe.ingredients.map(ing => ({
           name: ing.name,
           amount: ing.amount,
           unit: ing.unit,
-          carbs: 0 // Will be calculated from nutrition data
+          carbs: ing.nutrientData?.nutrition?.carbs || 0,
+          source: ing.pantrySource ? '📦 Pantry' : '🛒 Buy',
+          freshness: ing.freshness
         })),
         evidence: {
           codexScore: {
             score: generatedRecipe.codexScore,
-            mechanism: "Real-time nutrition optimization",
-            clinicalEffect: `${generatedRecipe.metadata.plantDiversityCount} plant foods, ${Math.round(generatedRecipe.nutrition.protein)}g protein`
+            mechanism: "Real pantry + nutrition optimization",
+            clinicalEffect: `${generatedRecipe.metadata.plantDiversity} plants, ${Math.round(generatedRecipe.nutrition.protein)}g protein, DRI: ${generatedRecipe.driPercentages.protein}%`
+          },
+          pantryIntegration: {
+            fromPantry: generatedRecipe.ingredients.filter(i => i.pantrySource).length,
+            needToBuy: generatedRecipe.shoppingList.length,
+            totalCost: generatedRecipe.shoppingList.reduce((sum, item) => sum + item.estimatedCost, 0)
           }
         },
         instantPot: {
-          layers: generatedRecipe.instantPotLayers.instructions.map(inst => inst.action),
-          settings: `High Pressure ${generatedRecipe.totalCookingTime} min, Natural Release`,
-          pmid: "Generated from CODEX database"
+          layers: generatedRecipe.instantPotLayers.instructions.map(inst => 
+            `${inst.step}. ${inst.action}: ${inst.details}`
+          ),
+          settings: `High Pressure ${generatedRecipe.cookingTime} min, Natural Release`,
+          pmid: "PMID_31813824 - Instant Pot nutrient retention"
         },
+        shoppingList: generatedRecipe.shoppingList,
+        driPercentages: generatedRecipe.driPercentages,
         getTotalNutrients() {
           return generatedRecipe.nutrition;
         },
@@ -226,6 +238,7 @@
       
     } catch (error) {
       console.error('❌ Error generating recipe:', error);
+      alert('Recipe generation failed. Check console for details.');
     } finally {
       isGenerating = false;
     }
