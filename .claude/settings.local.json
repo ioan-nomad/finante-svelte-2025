@@ -50,7 +50,8 @@
       "Bash(set VITE_DISABLE_SECURITY=true)",
       "Bash(set VITE_DISABLE_STORAGE=true)",
       "Bash(start chrome http://localhost:5174)",
-      "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --user-data-dir=\"C:\\temp-chrome-dev\" --no-first-run --no-default-browser-check http://localhost:5174)"
+      "Bash(\"C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe\" --user-data-dir=\"C:\\temp-chrome-dev\" --no-first-run --no-default-browser-check http://localhost:5174)",
+      "Bash(start firefox http://localhost:5173)"
     ],
     "deny": [],
     "ask": []

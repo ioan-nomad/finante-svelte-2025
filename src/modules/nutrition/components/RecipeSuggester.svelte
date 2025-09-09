@@ -3,13 +3,16 @@
   import { nutritionProfile } from '../stores/nutritionStore.js';
   import { CodexScorer } from '../codex/codexScoring.js';
   import { CODEX_INGREDIENTS } from '../codex/codexDatabase.js';
-  // import CODEX_PRINCIPLES from '../codex/codexCore.js'; // Not available in codexCore.js
+  import RecipeEngine from '../codex/RecipeEngine.js';
   
   const scorer = new CodexScorer();
+  const recipeEngine = new RecipeEngine();
   
   let selectedRecipe = null;
   let recipeScore = null;
   let showScientificDetails = false;
+  let generatedRecipe = null;
+  let isGenerating = false;
   
   // Evidence-based recipes with CODEX scoring
   const codexRecipes = [
@@ -171,6 +174,62 @@
   function getIngredientInfo(name) {
     return CODEX_INGREDIENTS[name.toLowerCase().replace(' ', '')] || null;
   }
+
+  async function generateRealOMADRecipe() {
+    isGenerating = true;
+    console.log('🚀 Generating real OMAD recipe with RecipeEngine...');
+    
+    try {
+      const preferences = {
+        vegetarian: false,
+        targetCalories: 2500,
+        antiInflammatory: true
+      };
+      
+      generatedRecipe = await recipeEngine.generateOMADRecipe(preferences);
+      console.log('✅ Generated recipe:', generatedRecipe);
+      
+      // Auto-select the generated recipe for display
+      selectedRecipe = {
+        id: 'generated_omad',
+        name: generatedRecipe.name,
+        category: 'generated',
+        servings: 1,
+        totalCalories: Math.round(generatedRecipe.nutrition.calories),
+        ingredients: generatedRecipe.ingredients.map(ing => ({
+          name: ing.name,
+          amount: ing.amount,
+          unit: ing.unit,
+          carbs: 0 // Will be calculated from nutrition data
+        })),
+        evidence: {
+          codexScore: {
+            score: generatedRecipe.codexScore,
+            mechanism: "Real-time nutrition optimization",
+            clinicalEffect: `${generatedRecipe.metadata.plantDiversityCount} plant foods, ${Math.round(generatedRecipe.nutrition.protein)}g protein`
+          }
+        },
+        instantPot: {
+          layers: generatedRecipe.instantPotLayers.instructions.map(inst => inst.action),
+          settings: `High Pressure ${generatedRecipe.totalCookingTime} min, Natural Release`,
+          pmid: "Generated from CODEX database"
+        },
+        getTotalNutrients() {
+          return generatedRecipe.nutrition;
+        },
+        getTotalCalories() {
+          return Math.round(generatedRecipe.nutrition.calories);
+        }
+      };
+      
+      scoreRecipe(selectedRecipe);
+      
+    } catch (error) {
+      console.error('❌ Error generating recipe:', error);
+    } finally {
+      isGenerating = false;
+    }
+  }
 </script>
 
 <div class="recipe-suggester">
@@ -178,9 +237,22 @@
     <h2>🧬 CODEX Recipe System v2.0</h2>
     <p class="subtitle">Evidence-Based Nutritional Engineering</p>
     <div class="principles">
-      <span class="principle">Longevity: IGF-1 &lt; 100 ng/mL</span>
-      <span class="principle">Inflammation: hs-CRP &lt; 1.0 mg/L</span>
-      <span class="principle">Metabolic: HbA1c &lt; 5.5%</span>
+      <span class="principle">Longevity: IGF-1 below 100 ng/mL</span>
+      <span class="principle">Inflammation: hs-CRP below 1.0 mg/L</span>
+      <span class="principle">Metabolic: HbA1c below 5.5%</span>
+    </div>
+    <div class="generate-section">
+      <button 
+        class="generate-btn" 
+        on:click={generateRealOMADRecipe}
+        disabled={isGenerating}
+      >
+        {#if isGenerating}
+          🔄 Generating...
+        {:else}
+          ⚡ Generate Real OMAD Recipe
+        {/if}
+      </button>
     </div>
   </div>
 
@@ -368,6 +440,35 @@
     padding: 5px 15px;
     border-radius: 20px;
     font-size: 13px;
+  }
+
+  .generate-section {
+    margin-top: 20px;
+    text-align: center;
+  }
+
+  .generate-btn {
+    background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+    color: white;
+    border: none;
+    padding: 12px 30px;
+    border-radius: 25px;
+    font-size: 16px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(16, 185, 129, 0.3);
+  }
+
+  .generate-btn:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(16, 185, 129, 0.4);
+  }
+
+  .generate-btn:disabled {
+    opacity: 0.7;
+    cursor: not-allowed;
+    transform: none;
   }
 
   .recipes-grid {
