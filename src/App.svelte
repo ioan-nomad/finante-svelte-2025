@@ -1,5 +1,11 @@
 <!-- src/App.svelte -->
 <script>
+  // Test de încărcare
+  console.log('✅ App.svelte loaded successfully');
+  window.addEventListener('error', (e) => {
+    console.error('❌ Global error:', e.error);
+  });
+
   import { onMount } from 'svelte';
   import { fade, fly, slide } from 'svelte/transition';
   import { quintOut } from 'svelte/easing';
@@ -22,6 +28,15 @@
   // Toast notifications
   import Toast from './components/Toast.svelte';
   
+  // System Testing Component
+  import SystemTester from './components/SystemTester.svelte';
+  
+  // PDF Learning Testing Component
+  import TestPDFLearning from './components/TestPDFLearning.svelte';
+  
+  // ML Engine Testing Component
+  import TestML from './components/TestML.svelte';
+  
   // Finance store
   import { accounts, transactions, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
   
@@ -43,34 +58,34 @@
   let showReceiptParser = false;
   let isDarkMode = false;
 
-  // Define all tabs with module awareness
-  const allTabs = [
-    // Finance tabs
-    { id: 'dashboard', label: 'Dashboard', icon: '📊', module: 'finance' },
-    { id: 'conturi', label: 'Conturi', icon: '🏦', module: 'finance' },
-    { id: 'tranzactii', label: 'Tranzacții', icon: '💸', module: 'finance' },
-    { id: 'budgeturi', label: 'Bugete', icon: '📈', module: 'finance' },
-    { id: 'obiective', label: 'Obiective', icon: '🎯', module: 'finance' },
-    { id: 'reconciliere', label: 'Reconciliere', icon: '✅', module: 'finance' },
-    { id: 'recurring', label: 'Recurente', icon: '🔄', module: 'finance' },
+  // Define main tabs for 2x5 grid (10 most important)
+  const mainTabs = [
+    // Top row - Core Finance
+    { id: 'dashboard', label: 'Dashboard', icon: '📊', module: 'finance', row: 1 },
+    { id: 'conturi', label: 'Conturi', icon: '🏦', module: 'finance', row: 1 },
+    { id: 'tranzactii', label: 'Tranzacții', icon: '💸', module: 'finance', row: 1 },
+    { id: 'budgeturi', label: 'Bugete', icon: '📈', module: 'finance', row: 1 },
+    { id: 'obiective', label: 'Obiective', icon: '🎯', module: 'finance', row: 1 },
     
-    // Pantry tabs
-    { id: 'grocery', label: 'Pantry', icon: '🛒', module: 'pantry' },
-    { id: 'shopping', label: 'Shopping', icon: '📝', module: 'pantry' },
-    
-    // Nutrition tabs
-    { id: 'nutrition', label: 'Nutriție', icon: '🍽️', module: 'nutrition' },
+    // Bottom row - Extended Features
+    { id: 'reconciliere', label: 'Reconciliere', icon: '✅', module: 'finance', row: 2 },
+    { id: 'recurring', label: 'Recurente', icon: '🔄', module: 'finance', row: 2 },
+    { id: 'grocery', label: 'Pantry', icon: '🛒', module: 'pantry', row: 2 },
+    { id: 'shopping', label: 'Shopping', icon: '📝', module: 'pantry', row: 2 },
+    { id: 'nutrition', label: 'Nutriție', icon: '🍽️', module: 'nutrition', row: 2 }
+  ];
+
+  // Secondary tabs (accessible via dropdown or separate section)
+  const secondaryTabs = [
     { id: 'recipes', label: 'Rețete', icon: '👨‍🍳', module: 'nutrition' },
     { id: 'meals', label: 'Meal Plan', icon: '📅', module: 'nutrition' },
-    
-    // Shared tabs
     { id: 'import', label: 'Import', icon: '📥', module: 'shared' },
     { id: 'export', label: 'Export', icon: '📤', module: 'shared' },
     { id: 'rapoarte', label: 'Rapoarte', icon: '📑', module: 'finance' }
   ];
 
-  // Filter tabs based on active modules
-  $: availableTabs = allTabs.filter(tab => {
+  // Filter main tabs based on active modules
+  $: availableMainTabs = mainTabs.filter(tab => {
     if (tab.module === 'shared') return true;
     if (tab.module === 'finance') return APP_CONFIG.modules.finance;
     if (tab.module === 'pantry') return APP_CONFIG.modules.pantry;
@@ -78,10 +93,22 @@
     return false;
   });
 
+  // Filter secondary tabs based on active modules
+  $: availableSecondaryTabs = secondaryTabs.filter(tab => {
+    if (tab.module === 'shared') return true;
+    if (tab.module === 'finance') return APP_CONFIG.modules.finance;
+    if (tab.module === 'pantry') return APP_CONFIG.modules.pantry;
+    if (tab.module === 'nutrition') return APP_CONFIG.modules.nutrition;
+    return false;
+  });
+
+  // Combined tabs for navigation logic
+  $: allAvailableTabs = [...availableMainTabs, ...availableSecondaryTabs];
+
   // Tab switching with animation direction
   function switchTab(newTab) {
-    const currentIndex = availableTabs.findIndex(t => t.id === activeTab);
-    const newIndex = availableTabs.findIndex(t => t.id === newTab);
+    const currentIndex = allAvailableTabs.findIndex(t => t.id === activeTab);
+    const newIndex = allAvailableTabs.findIndex(t => t.id === newTab);
     direction = newIndex > currentIndex ? 1 : -1;
     previousTab = activeTab;
     activeTab = newTab;
@@ -217,21 +244,46 @@
     {isDarkMode ? '☀️' : '🌙'}
   </button>
 
-  <div class="tabs">
-    {#each availableTabs as tab}
+  <!-- System Testing Component -->
+  <SystemTester />
+  
+  <!-- PDF Learning Testing Component -->
+  <TestPDFLearning />
+  
+  <!-- ML Engine Testing Component -->
+  <TestML />
+
+  <!-- Main Navigation Grid 2x5 -->
+  <nav class="main-navigation">
+    {#each availableMainTabs as tab}
       <button 
-        class="tab {activeTab === tab.id ? 'active' : ''}"
+        class="tab-button {activeTab === tab.id ? 'active' : ''}"
         on:click={() => switchTab(tab.id)}
         type="button"
+        data-row={tab.row}
       >
         <span class="tab-icon">{tab.icon}</span>
         <span class="tab-label">{tab.label}</span>
-        {#if activeTab === tab.id}
-          <span class="tab-indicator" transition:slide={{ duration: 300, easing: quintOut }}></span>
-        {/if}
       </button>
     {/each}
-  </div>
+  </nav>
+
+  <!-- Secondary Navigation (Show if needed) -->
+  {#if availableSecondaryTabs.length > 0}
+    <div class="secondary-navigation">
+      <div class="secondary-label">Acțiuni avansate:</div>
+      {#each availableSecondaryTabs as tab}
+        <button 
+          class="secondary-tab {activeTab === tab.id ? 'active' : ''}"
+          on:click={() => switchTab(tab.id)}
+          type="button"
+        >
+          <span class="secondary-icon">{tab.icon}</span>
+          <span class="secondary-text">{tab.label}</span>
+        </button>
+      {/each}
+    </div>
+  {/if}
 
   <!-- Content wrapper -->
   <div class="content-wrapper">
@@ -337,14 +389,13 @@
 </div>
 
 <style>
-  /* Google Fonts */
-  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@300;400;500;600;700&display=swap');
+  /* Using system fonts for better performance and privacy */
 
   /* CSS Variables for modern animations and effects */
   :root {
-    --font-primary: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-    --font-secondary: 'Space Grotesk', 'Inter', sans-serif;
-    --font-monospace: 'SF Mono', 'Monaco', 'Inconsolata', monospace;
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-secondary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+    --font-monospace: 'SF Mono', Monaco, Inconsolata, 'Liberation Mono', 'Courier New', monospace;
     
     /* Animation variables */
     --transition-fast: 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
@@ -518,97 +569,172 @@
     white-space: nowrap;
   }
 
-  /* Tabs styling */
-  .tabs {
-    display: flex;
-    gap: 8px;
-    padding: 12px;
-    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
-    border-radius: var(--radius-xl);
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-md);
-    overflow-x: auto;
-    scrollbar-width: thin;
-    scrollbar-color: rgba(102, 126, 234, 0.3) transparent;
-    animation: slideInUp 1s var(--transition-normal);
-  }
-
-  .tabs::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .tabs::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .tabs::-webkit-scrollbar-thumb {
+  /* Modern Grid Navigation - 2x5 Layout */
+  .main-navigation {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 10px;
+    padding: 16px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 3px;
+    border-radius: 20px;
+    margin: 16px 0;
+    box-shadow: var(--shadow-xl);
+    animation: slideInUp 0.8s var(--transition-normal);
   }
 
-  .tabs::-webkit-scrollbar-thumb:hover {
-    background: #764ba2;
-  }
-
-  .tab {
-    position: relative;
-    padding: 12px 20px;
-    background: white;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    font-size: 14px;
-    font-weight: 500;
-    color: #666;
+  .tab-button {
     display: flex;
-    flex: 0 0 auto; /* Prevent shrinking */
-    min-width: fit-content;
-    white-space: nowrap; /* Prevent text wrapping */
     align-items: center;
-    gap: 8px;
-    transition: all var(--transition-normal);
-    box-shadow: var(--shadow-sm);
+    justify-content: center;
+    flex-direction: column;
+    gap: 6px;
+    padding: 12px 8px;
+    background: rgba(255, 255, 255, 0.15);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 16px;
+    color: white;
+    font-weight: 500;
+    font-size: 13px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    min-height: 70px;
+    position: relative;
+    overflow: hidden;
     font-family: var(--font-primary);
   }
 
-  .tab:hover:not(.active) {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    background: linear-gradient(135deg, #ffffff 0%, #f8f9ff 100%);
-    animation: buttonPulse 1.5s infinite;
+  .tab-button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.6s;
   }
 
-  .tab.active {
-    background: var(--gradient-primary);
-    color: white;
-    box-shadow: var(--shadow-lg);
+  .tab-button:hover::before {
+    left: 100%;
+  }
+
+  .tab-button:hover {
+    background: rgba(255, 255, 255, 0.25);
+    transform: translateY(-3px) scale(1.02);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
+    border-color: rgba(255, 255, 255, 0.4);
+  }
+
+  .tab-button.active {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
     transform: scale(1.05);
-    animation: float 3s ease-in-out infinite;
+    font-weight: 600;
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  .tab-button.active::before {
+    display: none;
   }
 
   .tab-icon {
-    font-size: 18px;
-    transition: transform var(--transition-normal);
+    font-size: 24px;
+    transition: transform 0.3s ease;
+    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
   }
 
-  .tab:hover .tab-icon {
-    transform: rotate(10deg) scale(1.1);
+  .tab-button:hover .tab-icon {
+    transform: rotate(5deg) scale(1.1);
   }
 
-  .tab.active .tab-icon {
-    animation: pulse 2s infinite;
+  .tab-button.active .tab-icon {
+    transform: scale(1.15);
+    animation: bounce 1s ease-in-out;
   }
 
-  .tab-indicator {
-    position: absolute;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
+  .tab-label {
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.2;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  @keyframes bounce {
+    0%, 20%, 53%, 80%, 100% {
+      transform: scale(1.15) translateY(0);
+    }
+    40%, 43% {
+      transform: scale(1.2) translateY(-8px);
+    }
+    70% {
+      transform: scale(1.18) translateY(-4px);
+    }
+  }
+
+  /* Secondary Navigation */
+  .secondary-navigation {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    padding: 12px 16px;
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    border-radius: 12px;
+    margin: 10px 0;
+    box-shadow: var(--shadow-sm);
+  }
+
+  .secondary-label {
+    font-size: 12px;
+    font-weight: 600;
+    color: #666;
+    margin-right: 8px;
+    font-family: var(--font-secondary);
+  }
+
+  .secondary-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 12px;
     background: white;
-    border-radius: var(--radius-sm) var(--radius-sm) 0 0;
-    box-shadow: 0 -2px 4px rgba(255, 255, 255, 0.3);
+    border: 1px solid #e0e0e0;
+    border-radius: 20px;
+    color: #666;
+    font-size: 12px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: var(--font-primary);
   }
+
+  .secondary-tab:hover {
+    background: #667eea;
+    color: white;
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .secondary-tab.active {
+    background: #f5576c;
+    color: white;
+    border-color: #f5576c;
+    box-shadow: var(--shadow-md);
+  }
+
+  .secondary-icon {
+    font-size: 14px;
+  }
+
+  .secondary-text {
+    white-space: nowrap;
+  }
+
 
   .content-wrapper {
     position: relative;
@@ -759,42 +885,49 @@
     color: var(--text-primary);
   }
 
-  /* Responsive design */
+  /* Responsive design for Grid Navigation */
   @media (max-width: 768px) {
     .container {
-      padding: 10px;
+      padding: 8px;
       border-radius: 0;
     }
     
-    .tabs {
+    /* Switch to 3x4 grid on mobile */
+    .main-navigation {
+      grid-template-columns: repeat(3, 1fr);
+      grid-template-rows: repeat(4, 1fr);
+      gap: 8px;
+      padding: 12px;
+      margin: 8px 0;
+    }
+    
+    .tab-button {
+      min-height: 60px;
+      padding: 8px 6px;
       gap: 4px;
-      padding: 8px;
-      overflow-x: auto;
-      scrollbar-width: none;
-    }
-    
-    .tabs::-webkit-scrollbar {
-      display: none;
-    }
-    
-    .tab {
-      padding: 10px 14px;
-      font-size: 13px;
-      min-width: 60px;
-      flex-shrink: 0;
     }
     
     .tab-icon {
-      font-size: 16px;
+      font-size: 20px;
     }
     
     .tab-label {
-      display: none;
+      font-size: 10px;
     }
     
-    .tab.active .tab-label {
-      display: inline;
-      margin-left: 4px;
+    /* Simplify secondary navigation on mobile */
+    .secondary-navigation {
+      padding: 8px 12px;
+      margin: 6px 0;
+    }
+    
+    .secondary-tab {
+      padding: 4px 8px;
+      font-size: 11px;
+    }
+    
+    .secondary-icon {
+      font-size: 12px;
     }
     
     .balance-display {
