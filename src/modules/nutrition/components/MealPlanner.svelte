@@ -194,6 +194,129 @@
     a.download = `meal-plan-${currentWeek[0].toISOString().split('T')[0]}.json`;
     a.click();
   }
+
+  function exportShoppingList() {
+    console.log('📋 Exporting shopping list...');
+    
+    if (!shoppingList || shoppingList.length === 0) {
+      alert('Nu există ingrediente în lista de cumpărături');
+      return;
+    }
+
+    // Colectează toate ingredients din planned meals
+    const collectedIngredients = new Map();
+    
+    // Group ingredients by category
+    Object.values(mealPlan).forEach(meal => {
+      if (meal && meal.recipe && meal.recipe.ingredients) {
+        meal.recipe.ingredients.forEach(ingredient => {
+          const key = ingredient.name.toLowerCase();
+          const category = getCategoryForIngredient(ingredient.name);
+          
+          if (collectedIngredients.has(key)) {
+            const existing = collectedIngredients.get(key);
+            existing.totalAmount += ingredient.amount || 0;
+          } else {
+            collectedIngredients.set(key, {
+              name: ingredient.name,
+              totalAmount: ingredient.amount || 0,
+              unit: ingredient.unit || 'g',
+              category: category,
+              meals: [meal.recipe.name || 'Unknown meal']
+            });
+          }
+        });
+      }
+    });
+
+    // Format for export
+    const exportData = {
+      week: `Săptămâna ${currentWeek[0].toLocaleDateString('ro-RO')} - ${currentWeek[6].toLocaleDateString('ro-RO')}`,
+      totalItems: collectedIngredients.size,
+      categorizedList: {},
+      generatedAt: new Date().toISOString(),
+      estimatedCost: 0
+    };
+
+    // Group by categories
+    const categories = [...new Set([...collectedIngredients.values()].map(i => i.category))];
+    
+    categories.forEach(category => {
+      exportData.categorizedList[category] = [];
+      
+      [...collectedIngredients.values()]
+        .filter(item => item.category === category)
+        .sort((a, b) => a.name.localeCompare(b.name))
+        .forEach(item => {
+          // Estimate cost (basic Romanian prices)
+          const estimatedCostPerKg = {
+            'Proteine': 30, 'Lactate': 8, 'Legume': 6, 'Fructe': 10,
+            'Cereale': 5, 'Condimente': 20, 'Altele': 8
+          };
+          const cost = (item.totalAmount / 1000) * (estimatedCostPerKg[category] || 8);
+          exportData.estimatedCost += cost;
+          
+          exportData.categorizedList[category].push({
+            nume: item.name,
+            cantitate: `${Math.round(item.totalAmount * 10) / 10}${item.unit}`,
+            costEstimat: `${Math.round(cost * 100) / 100} RON`,
+            folosit_in: item.meals.join(', ')
+          });
+        });
+    });
+
+    exportData.estimatedCost = `${Math.round(exportData.estimatedCost * 100) / 100} RON`;
+
+    // Export as both JSON and text
+    const jsonBlob = new Blob([JSON.stringify(exportData, null, 2)], 
+      { type: 'application/json' });
+    
+    // Create readable text version
+    const textContent = [
+      `LISTĂ CUMPĂRĂTURI - ${exportData.week}`,
+      `Generat: ${new Date().toLocaleString('ro-RO')}`,
+      `Total articole: ${exportData.totalItems}`,
+      `Cost estimat: ${exportData.estimatedCost}`,
+      '',
+      '═══════════════════════════════════════',
+      ''
+    ];
+
+    Object.entries(exportData.categorizedList).forEach(([category, items]) => {
+      if (items.length > 0) {
+        textContent.push(`📦 ${category.toUpperCase()}`);
+        textContent.push('─'.repeat(30));
+        items.forEach(item => {
+          textContent.push(`• ${item.nume} - ${item.cantitate} (${item.costEstimat})`);
+        });
+        textContent.push('');
+      }
+    });
+
+    const textBlob = new Blob([textContent.join('\n')], 
+      { type: 'text/plain; charset=utf-8' });
+
+    // Download JSON file
+    const jsonUrl = URL.createObjectURL(jsonBlob);
+    const jsonLink = document.createElement('a');
+    jsonLink.href = jsonUrl;
+    jsonLink.download = `shopping-list-${currentWeek[0].toISOString().split('T')[0]}.json`;
+    jsonLink.click();
+    
+    // Download text file
+    setTimeout(() => {
+      const textUrl = URL.createObjectURL(textBlob);
+      const textLink = document.createElement('a');
+      textLink.href = textUrl;
+      textLink.download = `shopping-list-${currentWeek[0].toISOString().split('T')[0]}.txt`;
+      textLink.click();
+      URL.revokeObjectURL(textUrl);
+    }, 100);
+    
+    URL.revokeObjectURL(jsonUrl);
+    
+    console.log('✅ Shopping list exported successfully!');
+  }
   
   function nextWeek() {
     const nextMonday = new Date(currentWeek[0]);

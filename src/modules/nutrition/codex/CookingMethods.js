@@ -411,7 +411,15 @@ export class CookingMethodIntegration {
 // Export singleton instance
 export const cookingMethodIntegration = new CookingMethodIntegration();
 
+// Legacy InstantPotLayers export for backward compatibility
+export class InstantPotLayers extends CookingMethodIntegration {
+  constructor() {
+    super();
+  }
+}
+
 export default {
   CookingMethodIntegration,
-  cookingMethodIntegration
+  cookingMethodIntegration,
+  InstantPotLayers
 };

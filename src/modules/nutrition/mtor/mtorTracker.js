@@ -479,6 +479,87 @@ mtorCycleState.subscribe(() => saveMtorData());
 // Initialize on load
 if (typeof window !== 'undefined') {
   loadMtorData();
+  
+  // Start mTOR automation with auto-reset
+  startMTORAUtomation();
+}
+
+// mTOR Automation System
+function startMTORAUtomation() {
+  console.log('🔄 Starting mTOR automation system...');
+  
+  // Auto-reset cycle every 14 days
+  setInterval(() => {
+    const state = get(mtorCycleState);
+    const currentDay = calculateCurrentCycleDay(state);
+    
+    if (currentDay >= 14) {
+      console.log('🔄 Auto-resetting mTOR cycle after 14 days');
+      resetCycle();
+      notifyPhaseChange('Cycle Reset', 'Starting new 14-day mTOR cycle');
+    }
+  }, 86400000); // Check daily (24 hours)
+  
+  // Auto-advance day at midnight
+  setInterval(() => {
+    const now = new Date();
+    if (now.getHours() === 0 && now.getMinutes() === 0) {
+      console.log('🌅 Auto-advancing mTOR day at midnight');
+      advanceToNextDay();
+    }
+  }, 60000); // Check every minute
+  
+  console.log('✅ mTOR automation started');
+}
+
+function resetCycle() {
+  try {
+    startNewCycle();
+    console.log('✅ mTOR cycle reset successfully');
+  } catch (error) {
+    console.error('❌ Error resetting mTOR cycle:', error);
+  }
+}
+
+function notifyPhaseChange(title, message) {
+  console.log(`🔔 ${title}: ${message}`);
+  
+  // Browser notification if permitted
+  if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+    new Notification(`CODEX N-OMAD - ${title}`, {
+      body: message,
+      icon: '/favicon.ico',
+      badge: '/favicon.ico'
+    });
+  }
+  
+  // Store notification for UI display
+  try {
+    const notifications = JSON.parse(localStorage.getItem('codex_notifications') || '[]');
+    notifications.unshift({
+      id: Date.now(),
+      title: title,
+      message: message,
+      timestamp: new Date().toISOString(),
+      read: false
+    });
+    
+    // Keep only last 50 notifications
+    if (notifications.length > 50) {
+      notifications.splice(50);
+    }
+    
+    localStorage.setItem('codex_notifications', JSON.stringify(notifications));
+  } catch (error) {
+    console.warn('Could not save notification to localStorage:', error);
+  }
+}
+
+function calculateDaysSinceStart(state) {
+  const startDate = new Date(state.cycleStart);
+  const currentDate = new Date();
+  const daysDifference = Math.floor((currentDate - startDate) / (1000 * 60 * 60 * 24));
+  return daysDifference + 1;
 }
 
 export default {

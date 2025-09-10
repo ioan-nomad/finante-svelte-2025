@@ -26,9 +26,11 @@
   },
   "dependencies": {
     "chart.js": "^4.5.0",
+    "dexie": "^3.2.7",
     "html2canvas": "^1.4.1",
     "jspdf": "^2.5.2",
     "jspdf-autotable": "^5.0.2",
+    "lz-string": "^1.5.0",
     "pdfjs-dist": "^5.4.54",
     "xlsx": "^0.18.5"
   }

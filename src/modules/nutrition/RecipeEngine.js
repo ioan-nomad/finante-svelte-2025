@@ -35,8 +35,8 @@ export class RecipeEngine {
     console.log('🚀 Generating OMAD recipe for:', this.currentProfile, 'phase:', this.currentPhase);
     
     try {
-      // 1. Get current pantry inventory
-      const pantryData = get(groceryInventory);
+      // 1. Get current pantry inventory with defensive checks
+      const pantryData = get(groceryInventory) || { inventory: {} };
       const availableIngredients = this.getAvailableIngredients(pantryData);
       console.log('📦 Available ingredients:', availableIngredients.length);
 
@@ -113,22 +113,24 @@ export class RecipeEngine {
   getAvailableIngredients(pantryData) {
     const available = [];
     
-    if (pantryData && pantryData.inventory) {
-      for (const [category, items] of Object.entries(pantryData.inventory)) {
-        for (const [itemName, itemData] of Object.entries(items)) {
-          if (itemData.quantity > 0) {
-            // Find nutrition data for this ingredient
-            const nutrientData = this.findNutrientData(itemName);
-            
-            available.push({
-              name: itemName,
-              category: category,
-              available: itemData.quantity,
-              unit: itemData.unit || 'g',
-              freshness: this.calculateFreshness(itemData.expiryDate),
-              nutrientData: nutrientData,
-              pantrySource: true
-            });
+    if (pantryData?.inventory && typeof pantryData.inventory === 'object') {
+      for (const [category, items] of Object.entries(pantryData.inventory || {})) {
+        if (items && typeof items === 'object') {
+          for (const [itemName, itemData] of Object.entries(items)) {
+            if (itemData && itemData.quantity > 0) {
+              // Find nutrition data for this ingredient
+              const nutrientData = this.findNutrientData(itemName);
+              
+              available.push({
+                name: itemName,
+                category: category,
+                available: itemData.quantity,
+                unit: itemData.unit || 'g',
+                freshness: this.calculateFreshness(itemData.expiryDate),
+                nutrientData: nutrientData,
+                pantrySource: true
+              });
+            }
           }
         }
       }

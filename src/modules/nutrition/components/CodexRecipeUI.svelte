@@ -1,6 +1,6 @@
 <script>
   import { onMount } from 'svelte';
-  import codexEngine from '../codex/codexEngine.js';
+  import { RecipeEngine } from '../RecipeEngine.js';
   
   // Component state
   let recipe = null;

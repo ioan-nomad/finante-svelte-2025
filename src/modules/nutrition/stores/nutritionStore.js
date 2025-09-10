@@ -1,7 +1,7 @@
 // modules/nutrition/stores/nutritionStore.js
 import { writable, derived, get } from 'svelte/store';
 import { nid, today } from '../../../shared/stores/sharedStore.js';
-import { codexEngine } from '../codex/codexEngine.js';
+import { RecipeEngine } from '../RecipeEngine.js';
 import { currentRecommendations, cycleProgress } from '../mtor/mtorTracker.js';
 import { currentWeekProgress, antiInflammatoryScore, logPlantConsumption } from '../plants/plantDiversityTracker.js';
 let ecosystemStore = null;

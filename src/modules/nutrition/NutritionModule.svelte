@@ -16,7 +16,7 @@
   import { ProfileEngine, CodexIntegration, NutrientDatabase } from './codex/CodexCore.js';
   import { initializeNutrientDatabase } from './codex/database/nutrients.js';
   import { CookingMethodIntegration } from './codex/CookingMethods.js';
-  import RecipeEngine from './codex/RecipeEngine.js';
+  import { RecipeEngine } from './RecipeEngine.js';
   
   // Import nutrition stores  
   import { 
