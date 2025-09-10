@@ -60,174 +60,285 @@
   
   async function handleFileSelect(event) {
     const file = event.target.files[0];
-    if (!file || file.type !== 'application/pdf') {
-      alert('Te rog selectează un fișier PDF valid');
+    if (!file) return;
+    
+    // Verifică tipul - acceptă și text/plain pentru teste
+    if (file.type !== 'application/pdf' && !file.name.endsWith('.pdf')) {
+      alert('Te rog selectează un fișier PDF');
       return;
     }
     
     isProcessing = true;
-    console.log('📄 Processing PDF:', file.name, file.size, 'bytes');
+    console.log('📄 Processing:', file.name, file.size, 'bytes', 'Type:', file.type);
     
     try {
-      // IMPORTANT: Creează o copie a ArrayBuffer pentru a evita detached error
-      const arrayBuffer = await file.arrayBuffer();
-      const uint8Array = new Uint8Array(arrayBuffer);
-      console.log('✅ Data loaded:', uint8Array.length, 'bytes');
+      // STRATEGIA 1: Încearcă cu pdf.js versiune simplă
+      let pdfText = '';
+      let pdfProcessed = false;
       
-      // Folosește uint8Array în loc de arrayBuffer direct
-      let pdf;
       try {
-        const loadingTask = pdfjsLib.getDocument({
-          data: uint8Array,
-          cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
-          cMapPacked: true,
-          standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/'
-        });
+        console.log('🔧 Strategy 1: Simple pdf.js...');
+        const arrayBuffer = await file.arrayBuffer();
+        const uint8Array = new Uint8Array(arrayBuffer);
         
-        pdf = await loadingTask.promise;
-        console.log('✅ PDF loaded with options, pages:', pdf.numPages);
+        // Cea mai simplă formă posibilă
+        const loadingTask = pdfjsLib.getDocument(uint8Array);
+        loadingTask.onProgress = function(progress) {
+          console.log(`Loading: ${progress.loaded}/${progress.total}`);
+        };
         
-      } catch (pdfError) {
-        console.error('⚠️ PDF with options failed, trying simple method:', pdfError);
+        const pdf = await loadingTask.promise;
+        console.log('✅ PDF opened, pages:', pdf.numPages);
         
-        // Re-citește fișierul pentru fallback
-        const freshArrayBuffer = await file.arrayBuffer();
-        const freshUint8Array = new Uint8Array(freshArrayBuffer);
-        
-        const simpleLoadTask = pdfjsLib.getDocument(freshUint8Array);
-        pdf = await simpleLoadTask.promise;
-        console.log('✅ PDF loaded with simple method, pages:', pdf.numPages);
-      }
-      
-      // Extrage text din toate paginile
-      let allText = '';
-      for (let i = 1; i <= pdf.numPages; i++) {
-        console.log(`📖 Processing page ${i}/${pdf.numPages}`);
-        const page = await pdf.getPage(i);
-        const textContent = await page.getTextContent();
-        const pageText = textContent.items.map(item => item.str).join(' ');
-        allText += pageText + '\n';
-      }
-      
-      console.log('📝 Total text extracted:', allText.length, 'characters');
-      console.log('📝 Preview:', allText.substring(0, 200) + '...');
-      
-      // Procesează cu ML Engine dacă e disponibil
-      if (mlReady && mlEngine) {
-        console.log('🤖 Processing with ML Engine...');
-        processingMethod = 'ml';
-        
-        try {
-          const mlResult = await mlEngine.processPDF(allText);
-          console.log('✅ ML Result:', mlResult);
-          
-          if (mlResult && mlResult.transactions && mlResult.transactions.length > 0) {
-            extractedData = mlResult.transactions.map(tx => ({
-              data: tx.date || tx.data || 'N/A',
-              suma: tx.amount || tx.suma || 0,
-              descriere: tx.description || tx.descriere || tx.merchant || 'Unknown',
-              tip: tx.type || tx.tip || (tx.amount < 0 ? 'expense' : 'income'),
-              categorie: tx.category || tx.categorie || 'Altele',
-              confidence: tx.confidence || 0.5,
-              mlProcessed: true
-            }));
-            
-            enhancedTransactions = extractedData.map((tx, index) => ({
-              enhancedTransaction: tx,
-              originalText: allText,
-              confidence: tx.confidence || mlResult.confidence || 0.8,
-              isEnhanced: true,
-              merchantData: mlResult.merchantData?.[index],
-              improvements: mlResult.improvements?.[index] || [],
-              index
-            }));
-            
-            mlConfidence = mlResult.confidence || 0;
-            console.log(`✅ ML extracted ${extractedData.length} transactions`);
-            
-            if (mlResult.bankDetected || mlResult.bankDetection?.bank) {
-              console.log(`🏦 Bancă detectată: ${mlResult.bankDetected || mlResult.bankDetection?.bank}`);
-            }
-            
-            // Advanced ML results pentru UI
-            learningResults = {
-              detectedBank: mlResult.bankDetection?.bank || mlResult.bankDetected || detectBank(allText),
-              bankConfidence: mlResult.bankDetection?.confidence || 0,
-              detectionMethod: mlResult.bankDetection?.method || 'pattern',
-              totalTransactions: extractedData.length,
-              enhancedTransactions: mlResult.metrics?.mlEnhancedCount || extractedData.length,
-              averageConfidence: mlResult.metrics?.averageConfidence || mlResult.confidence || 0.8,
-              processingTime: mlResult.processingTime || 0,
-              signature: mlResult.signature?.hash || 'no_signature',
-              patternsUsed: mlResult.pattern?.patterns || [],
-              mlEngineUsed: true,
-              ocrUsed: mlResult.metrics?.ocrUsed || false,
-              neuralNetworksApplied: mlResult.metrics?.neuralNetworksApplied || false
-            };
-          } else {
-            throw new Error('ML nu a returnat tranzacții');
+        // Extrage text
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+          try {
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map(item => item.str)
+              .join(' ');
+            pdfText += pageText + '\n';
+            console.log(`✅ Page ${pageNum}: ${pageText.length} chars`);
+          } catch (pageError) {
+            console.error(`❌ Page ${pageNum} error:`, pageError);
           }
-          
-        } catch (mlError) {
-          console.error('ML processing failed, falling back to simple parser:', mlError);
-          processingMethod = 'simple';
-          const simpleTransactions = parseTransactions(allText);
-          extractedData = simpleTransactions;
-          enhancedTransactions = extractedData.map((tx, index) => ({
-            enhancedTransaction: tx,
-            originalText: allText,
-            confidence: 0.6,
-            isEnhanced: false,
-            improvements: [],
-            index
-          }));
-          console.log(`📝 Simple parser extracted ${extractedData.length} transactions`);
         }
         
-      } else {
-        console.log('📝 ML not ready, using simple parser...');
+        pdfProcessed = true;
+        console.log('✅ PDF text extracted:', pdfText.length, 'chars');
+        
+      } catch (pdfError) {
+        console.error('❌ PDF.js failed:', pdfError);
+        console.log('🔧 Strategy 2: Try as text file...');
+        
+        // STRATEGIA 2: Poate e de fapt un text file numit .pdf
+        try {
+          pdfText = await file.text();
+          if (pdfText && pdfText.length > 0) {
+            console.log('✅ Read as text:', pdfText.length, 'chars');
+            pdfProcessed = true;
+          }
+        } catch (textError) {
+          console.error('❌ Text read failed:', textError);
+        }
+      }
+      
+      // STRATEGIA 3: OCR dacă nu avem text
+      if (!pdfProcessed || pdfText.length < 50) {
+        console.log('🔧 Strategy 3: Attempting OCR...');
+        
+        if (window.mlEngine && window.mlEngine.ocrEngine) {
+          try {
+            const arrayBuffer = await file.arrayBuffer();
+            const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
+            const url = URL.createObjectURL(blob);
+            
+            // Convertește PDF în imagine pentru OCR
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Aici ar trebui să convertim PDF în imagine
+            // Dar pentru moment, informăm utilizatorul
+            console.log('⚠️ OCR pentru PDF nu e implementat complet');
+            
+          } catch (ocrError) {
+            console.error('❌ OCR failed:', ocrError);
+          }
+        }
+      }
+      
+      // Verifică dacă avem text extras
+      if (!pdfText || pdfText.trim().length === 0) {
+        throw new Error('Nu am putut extrage text din PDF');
+      }
+      
+      console.log('📝 Text preview:', pdfText.substring(0, 500));
+      
+      // PROCESARE TEXT
+      let transactions = [];
+      
+      // Încearcă ML Engine dacă e disponibil
+      if (mlReady && mlEngine && mlEngine.processPDF) {
+        console.log('🤖 Using ML Engine...');
+        try {
+          const mlResult = await mlEngine.processPDF(pdfText);
+          console.log('ML Result:', mlResult);
+          
+          if (mlResult && mlResult.transactions && mlResult.transactions.length > 0) {
+            transactions = mlResult.transactions.map(tx => ({
+              data: tx.date || formatDateSafe(tx.date),
+              suma: parseFloat(tx.amount) || 0,
+              descriere: tx.description || tx.merchant || 'Tranzacție',
+              tip: tx.type || (tx.amount < 0 ? 'expense' : 'income'),
+              categorie: tx.category || 'Altele',
+              confidence: tx.confidence || 0.7,
+              mlProcessed: true
+            }));
+            mlConfidence = mlResult.confidence || 0.7;
+            processingMethod = 'ml';
+          }
+        } catch (mlError) {
+          console.error('ML failed:', mlError);
+        }
+      }
+      
+      // Fallback la parser manual
+      if (transactions.length === 0) {
+        console.log('📝 Using manual parser...');
+        transactions = parseTransactionsAdvanced(pdfText);
         processingMethod = 'simple';
-        const simpleTransactions = parseTransactions(allText);
-        extractedData = simpleTransactions;
-        enhancedTransactions = extractedData.map((tx, index) => ({
+      }
+      
+      // Validare finală
+      if (transactions.length === 0) {
+        // Încearcă să detecteze măcar ceva
+        const hasNumbers = /\d+[,.]?\d{2}/.test(pdfText);
+        const hasDates = /\d{2}[-./]\d{2}[-./]\d{4}/.test(pdfText);
+        
+        if (hasNumbers && hasDates) {
+          alert('Am găsit date și sume în PDF dar nu pot identifica tranzacții clare. Verifică formatul.');
+        } else if (pdfText.length < 100) {
+          alert('PDF-ul pare gol sau are foarte puțin text.');
+        } else {
+          alert('Nu pot identifica tranzacții în acest format de PDF. Încearcă un alt extras.');
+        }
+        
+        console.log('📊 Debug info:', {
+          textLength: pdfText.length,
+          hasNumbers: hasNumbers,
+          hasDates: hasDates,
+          sample: pdfText.substring(0, 200)
+        });
+      } else {
+        extractedData = transactions;
+        enhancedTransactions = transactions.map((tx, index) => ({
           enhancedTransaction: tx,
-          originalText: allText,
-          confidence: 0.6,
-          isEnhanced: false,
+          originalText: pdfText,
+          confidence: tx.confidence || 0.6,
+          isEnhanced: tx.mlProcessed || false,
           improvements: [],
           index
         }));
-        console.log(`📝 Simple parser extracted ${extractedData.length} transactions`);
-      }
-      
-      if (extractedData.length === 0) {
-        alert('Nu am găsit tranzacții în PDF. Verifică dacă PDF-ul conține text (nu imagini).');
-      } else {
-        console.log('✅ Ready for preview:', extractedData.length, 'transactions');
         previewMode = true;
+        console.log(`✅ Extracted ${transactions.length} transactions`);
       }
       
     } catch (error) {
-      console.error('❌ Eroare procesare PDF:', error);
-      console.error('Error details:', {
-        name: error.name,
-        message: error.message,
-        stack: error.stack
-      });
+      console.error('❌ Total failure:', error);
       
-      // User-friendly messages
-      if (error.name === 'InvalidPDFException') {
-        alert('Fișierul nu pare să fie un PDF valid.');
-      } else if (error.name === 'PasswordException') {
+      // Mesaje specifice
+      if (error.message.includes('Invalid PDF')) {
+        alert('PDF-ul pare corupt. Încearcă să-l descarci din nou de la bancă.');
+      } else if (error.message.includes('Password')) {
         alert('PDF-ul este protejat cu parolă.');
-      } else if (error.message.includes('detached')) {
-        alert('Eroare internă. Te rog încearcă din nou.');
       } else {
-        alert('Eroare la procesarea PDF: ' + error.message);
+        alert(`Eroare: ${error.message}\n\nÎncearcă un alt PDF sau contactează suportul.`);
       }
     }
     
     isProcessing = false;
+  }
+  
+  // Parser avansat pentru orice format
+  function parseTransactionsAdvanced(text) {
+    console.log('🔍 Advanced parser analyzing text...');
+    const transactions = [];
+    const lines = text.split(/\r?\n/);
+    
+    // Pattern-uri multiple pentru flexibilitate maximă
+    const patterns = [
+      // Format: DD.MM.YYYY descriere sumă
+      {
+        regex: /(\d{2}[.-]\d{2}[.-]\d{4})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/,
+        dateIndex: 1,
+        descIndex: 2,
+        amountIndex: 3
+      },
+      // Format: YYYY-MM-DD descriere sumă
+      {
+        regex: /(\d{4}[.-]\d{2}[.-]\d{2})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/,
+        dateIndex: 1,
+        descIndex: 2,
+        amountIndex: 3
+      },
+      // Format: descriere DD/MM/YYYY sumă
+      {
+        regex: /(.+?)\s+(\d{2}[/.-]\d{2}[/.-]\d{4})\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/,
+        dateIndex: 2,
+        descIndex: 1,
+        amountIndex: 3
+      }
+    ];
+    
+    for (const line of lines) {
+      if (line.trim().length < 10) continue;
+      
+      for (const pattern of patterns) {
+        const match = line.match(pattern.regex);
+        if (match) {
+          try {
+            const dateStr = match[pattern.dateIndex];
+            const description = match[pattern.descIndex].trim();
+            const amountStr = match[pattern.amountIndex];
+            
+            // Parsează data
+            const date = formatDateSafe(dateStr);
+            
+            // Parsează suma
+            const amount = parseFloat(
+              amountStr
+                .replace(/\s/g, '')
+                .replace(/\./g, '')
+                .replace(',', '.')
+            );
+            
+            if (!isNaN(amount) && amount !== 0) {
+              transactions.push({
+                data: date,
+                suma: Math.abs(amount),
+                descriere: description || 'Tranzacție',
+                tip: amountStr.includes('-') ? 'expense' : 'income',
+                categorie: detectCategory(description),
+                confidence: 0.8
+              });
+              console.log('✅ Found transaction:', date, amount, description);
+              break; // Nu mai căuta alte pattern-uri pentru această linie
+            }
+          } catch (e) {
+            console.error('Parse error for line:', line, e);
+          }
+        }
+      }
+    }
+    
+    console.log(`✅ Advanced parser found ${transactions.length} transactions`);
+    return transactions;
+  }
+  
+  // Helper pentru formatare date
+  function formatDateSafe(dateStr) {
+    if (!dateStr) return new Date().toISOString().split('T')[0];
+    
+    // Încearcă diferite formate
+    const patterns = [
+      { regex: /(\d{2})[.-](\d{2})[.-](\d{4})/, format: 'dd-mm-yyyy' },
+      { regex: /(\d{4})[.-](\d{2})[.-](\d{2})/, format: 'yyyy-mm-dd' },
+      { regex: /(\d{2})[/](\d{2})[/](\d{4})/, format: 'dd/mm/yyyy' }
+    ];
+    
+    for (const pattern of patterns) {
+      const match = dateStr.match(pattern.regex);
+      if (match) {
+        if (pattern.format === 'yyyy-mm-dd') {
+          return `${match[1]}-${match[2]}-${match[3]}`;
+        } else {
+          return `${match[3]}-${match[2]}-${match[1]}`;
+        }
+      }
+    }
+    
+    return new Date().toISOString().split('T')[0];
   }
   
   function parseTransactions(text) {
