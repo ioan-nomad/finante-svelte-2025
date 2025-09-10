@@ -921,5 +921,4 @@
     align-items: center;
     gap: 15px;
   }
-}
 </style>

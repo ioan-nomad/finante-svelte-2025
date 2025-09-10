@@ -79,7 +79,7 @@ export class PatternRecognitionEngine {
           /SMART\s+MOBILE/i
         ],
         fieldPatterns: {
-          date: /\d{2}\/\d{2}\/\d{4}/g,
+          date: new RegExp('\\d{2}\\/\\d{2}\\/\\d{4}', 'g'),
           amount: /[+-]\s*\d+\.\d{2}/g,
           description: /CUMPARARE\s+.{5,}|RETRAGERE\s+.{5,}/gi
         },
