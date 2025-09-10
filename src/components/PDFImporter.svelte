@@ -69,29 +69,34 @@
     console.log('📄 Processing PDF:', file.name, file.size, 'bytes');
     
     try {
-      // Verifică că fișierul se citește corect
+      // IMPORTANT: Creează o copie a ArrayBuffer pentru a evita detached error
       const arrayBuffer = await file.arrayBuffer();
-      console.log('✅ ArrayBuffer loaded:', arrayBuffer.byteLength, 'bytes');
+      const uint8Array = new Uint8Array(arrayBuffer);
+      console.log('✅ Data loaded:', uint8Array.length, 'bytes');
       
-      // Încearcă să creezi document PDF cu error handling detaliat
+      // Folosește uint8Array în loc de arrayBuffer direct
       let pdf;
       try {
         const loadingTask = pdfjsLib.getDocument({
-          data: arrayBuffer,
+          data: uint8Array,
           cMapUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/cmaps/',
           cMapPacked: true,
           standardFontDataUrl: 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/standard_fonts/'
         });
         
         pdf = await loadingTask.promise;
-        console.log('✅ PDF loaded, pages:', pdf.numPages);
+        console.log('✅ PDF loaded with options, pages:', pdf.numPages);
         
       } catch (pdfError) {
-        console.error('❌ PDF.js error:', pdfError);
+        console.error('⚠️ PDF with options failed, trying simple method:', pdfError);
         
-        // Fallback la metodă simplă
-        const simpleLoadTask = pdfjsLib.getDocument(arrayBuffer);
+        // Re-citește fișierul pentru fallback
+        const freshArrayBuffer = await file.arrayBuffer();
+        const freshUint8Array = new Uint8Array(freshArrayBuffer);
+        
+        const simpleLoadTask = pdfjsLib.getDocument(freshUint8Array);
         pdf = await simpleLoadTask.promise;
+        console.log('✅ PDF loaded with simple method, pages:', pdf.numPages);
       }
       
       // Extrage text din toate paginile
@@ -105,6 +110,7 @@
       }
       
       console.log('📝 Total text extracted:', allText.length, 'characters');
+      console.log('📝 Preview:', allText.substring(0, 200) + '...');
       
       // Procesează cu ML Engine dacă e disponibil
       if (mlReady && mlEngine) {
@@ -115,27 +121,42 @@
           const mlResult = await mlEngine.processPDF(allText);
           console.log('✅ ML Result:', mlResult);
           
-          if (mlResult && mlResult.transactions) {
-            extractedData = mlResult.transactions;
-            enhancedTransactions = mlResult.transactions.map((tx, index) => ({
+          if (mlResult && mlResult.transactions && mlResult.transactions.length > 0) {
+            extractedData = mlResult.transactions.map(tx => ({
+              data: tx.date || tx.data || 'N/A',
+              suma: tx.amount || tx.suma || 0,
+              descriere: tx.description || tx.descriere || tx.merchant || 'Unknown',
+              tip: tx.type || tx.tip || (tx.amount < 0 ? 'expense' : 'income'),
+              categorie: tx.category || tx.categorie || 'Altele',
+              confidence: tx.confidence || 0.5,
+              mlProcessed: true
+            }));
+            
+            enhancedTransactions = extractedData.map((tx, index) => ({
               enhancedTransaction: tx,
               originalText: allText,
-              confidence: mlResult.confidence || 0.8,
+              confidence: tx.confidence || mlResult.confidence || 0.8,
               isEnhanced: true,
               merchantData: mlResult.merchantData?.[index],
               improvements: mlResult.improvements?.[index] || [],
               index
             }));
+            
             mlConfidence = mlResult.confidence || 0;
+            console.log(`✅ ML extracted ${extractedData.length} transactions`);
+            
+            if (mlResult.bankDetected || mlResult.bankDetection?.bank) {
+              console.log(`🏦 Bancă detectată: ${mlResult.bankDetected || mlResult.bankDetection?.bank}`);
+            }
             
             // Advanced ML results pentru UI
             learningResults = {
-              detectedBank: mlResult.bankDetection?.bank || detectBank(allText),
+              detectedBank: mlResult.bankDetection?.bank || mlResult.bankDetected || detectBank(allText),
               bankConfidence: mlResult.bankDetection?.confidence || 0,
               detectionMethod: mlResult.bankDetection?.method || 'pattern',
-              totalTransactions: mlResult.transactions?.length || 0,
-              enhancedTransactions: mlResult.metrics?.mlEnhancedCount || mlResult.transactions.length,
-              averageConfidence: mlResult.metrics?.averageConfidence || mlResult.confidence || 0,
+              totalTransactions: extractedData.length,
+              enhancedTransactions: mlResult.metrics?.mlEnhancedCount || extractedData.length,
+              averageConfidence: mlResult.metrics?.averageConfidence || mlResult.confidence || 0.8,
               processingTime: mlResult.processingTime || 0,
               signature: mlResult.signature?.hash || 'no_signature',
               patternsUsed: mlResult.pattern?.patterns || [],
@@ -148,9 +169,10 @@
           }
           
         } catch (mlError) {
-          console.error('ML processing failed:', mlError);
+          console.error('ML processing failed, falling back to simple parser:', mlError);
           processingMethod = 'simple';
-          extractedData = parseTransactions(allText);
+          const simpleTransactions = parseTransactions(allText);
+          extractedData = simpleTransactions;
           enhancedTransactions = extractedData.map((tx, index) => ({
             enhancedTransaction: tx,
             originalText: allText,
@@ -159,12 +181,14 @@
             improvements: [],
             index
           }));
+          console.log(`📝 Simple parser extracted ${extractedData.length} transactions`);
         }
         
       } else {
-        console.log('📝 Processing with simple parser...');
+        console.log('📝 ML not ready, using simple parser...');
         processingMethod = 'simple';
-        extractedData = parseTransactions(allText);
+        const simpleTransactions = parseTransactions(allText);
+        extractedData = simpleTransactions;
         enhancedTransactions = extractedData.map((tx, index) => ({
           enhancedTransaction: tx,
           originalText: allText,
@@ -173,97 +197,103 @@
           improvements: [],
           index
         }));
+        console.log(`📝 Simple parser extracted ${extractedData.length} transactions`);
       }
       
-      console.log('✅ Extracted transactions:', extractedData.length);
-      previewMode = true;
+      if (extractedData.length === 0) {
+        alert('Nu am găsit tranzacții în PDF. Verifică dacă PDF-ul conține text (nu imagini).');
+      } else {
+        console.log('✅ Ready for preview:', extractedData.length, 'transactions');
+        previewMode = true;
+      }
       
     } catch (error) {
       console.error('❌ Eroare procesare PDF:', error);
+      console.error('Error details:', {
+        name: error.name,
+        message: error.message,
+        stack: error.stack
+      });
       
-      // Debugging info
-      console.error('Error name:', error.name);
-      console.error('Error message:', error.message);
-      console.error('Error stack:', error.stack);
-      
-      // User-friendly message
-      let errorMessage = 'Eroare la procesarea PDF-ului';
-      if (error.name === 'UnknownErrorException') {
-        errorMessage = 'PDF corupt sau nesuportat. Încercați un alt fișier PDF.';
-      } else if (error.name === 'InvalidPDFException') {
-        errorMessage = 'Fișierul nu este un PDF valid.';
-      } else if (error.name === 'MissingPDFException') {
-        errorMessage = 'PDF-ul pare să fie gol sau corupt.';
+      // User-friendly messages
+      if (error.name === 'InvalidPDFException') {
+        alert('Fișierul nu pare să fie un PDF valid.');
       } else if (error.name === 'PasswordException') {
-        errorMessage = 'PDF-ul este protejat cu parolă. Încercați un fișier neprotejat.';
-      } else if (error.message) {
-        errorMessage = `Eroare: ${error.message}`;
+        alert('PDF-ul este protejat cu parolă.');
+      } else if (error.message.includes('detached')) {
+        alert('Eroare internă. Te rog încearcă din nou.');
+      } else {
+        alert('Eroare la procesarea PDF: ' + error.message);
       }
-      
-      alert(errorMessage);
-      console.log('💡 Tip eroare:', error.name);
-      console.log('💡 Worker path:', pdfjsLib.GlobalWorkerOptions.workerSrc);
     }
     
     isProcessing = false;
   }
   
   function parseTransactions(text) {
-    console.log('📝 Parsing transactions from text...');
+    console.log('📝 Simple parser analyzing text...');
     const transactions = [];
     const lines = text.split('\n');
     
-    // Pattern-uri pentru diferite bănci
-    const patterns = [
-      /(\d{2}[.-]\d{2}[.-]\d{4})\s+(.+?)\s+([+-]?\d+[.,]\d{2})/g,
-      /(\d{4}-\d{2}-\d{2})\s+(.+?)\s+([+-]?\d+[.,]\d{2})/g
+    // Pattern-uri pentru diferite formate de date și sume
+    const datePatterns = [
+      /(\d{2})[.-](\d{2})[.-](\d{4})/,  // DD-MM-YYYY
+      /(\d{4})[.-](\d{2})[.-](\d{2})/   // YYYY-MM-DD
     ];
     
-    lines.forEach(line => {
-      patterns.forEach(pattern => {
-        const matches = line.matchAll(pattern);
-        for (const match of matches) {
-          const [, date, description, amount] = match;
-          transactions.push({
-            data: formatDate(date),
-            descriere: description.trim(),
-            suma: parseFloat(amount.replace(',', '.')),
-            tip: amount.startsWith('-') ? 'expense' : 'income',
-            categorie: detectCategory(description)
-          });
-        }
-      });
-    });
+    const amountPattern = /([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/;
     
-    // Fallback pentru pattern-uri vechi dacă nu s-a găsit nimic
-    if (transactions.length === 0) {
-      console.log('⚠️ Using fallback parsing patterns...');
-      const dateRegex = /(\d{2}[\.\/-]\d{2}[\.\/-]\d{4})/g;
-      const amountRegex = /([\d,]+\.\d{2})/g;
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
       
-      lines.forEach(line => {
-        const dateMatch = line.match(dateRegex);
-        const amountMatch = line.match(amountRegex);
-        
-        if (dateMatch && amountMatch) {
-          const date = dateMatch[1].replace(/[\.\/-]/g, '-');
-          const amount = parseFloat(amountMatch[1].replace(',', ''));
-          
-          const isExpense = line.includes('Plata') || line.includes('Cumparare') || 
-                           line.includes('Retragere') || line.includes('Comision');
-          
-          transactions.push({
-            data: formatDate(date),
-            suma: amount,
-            descriere: extractDescription(line),
-            tip: isExpense ? 'expense' : 'income',
-            categorie: detectCategory(line)
-          });
+      // Caută dată
+      let dateMatch = null;
+      let dateFormat = null;
+      for (const pattern of datePatterns) {
+        const match = line.match(pattern);
+        if (match) {
+          dateMatch = match;
+          dateFormat = pattern;
+          break;
         }
-      });
+      }
+      
+      // Caută sumă
+      const amountMatch = line.match(amountPattern);
+      
+      if (dateMatch && amountMatch) {
+        let date;
+        if (dateFormat.source.includes('(\\d{4})')) {
+          // YYYY-MM-DD
+          date = `${dateMatch[1]}-${dateMatch[2]}-${dateMatch[3]}`;
+        } else {
+          // DD-MM-YYYY
+          date = `${dateMatch[3]}-${dateMatch[2]}-${dateMatch[1]}`;
+        }
+        
+        const amountStr = amountMatch[1]
+          .replace(/\./g, '')    // Remove thousand separator
+          .replace(',', '.');    // Convert decimal separator
+        
+        const amount = parseFloat(amountStr);
+        
+        // Extrage descrierea (tot ce e între dată și sumă)
+        const dateIndex = line.indexOf(dateMatch[0]);
+        const amountIndex = line.indexOf(amountMatch[0]);
+        const description = line.substring(dateIndex + dateMatch[0].length, amountIndex).trim();
+        
+        transactions.push({
+          data: date,
+          suma: Math.abs(amount),
+          descriere: description || 'Tranzacție',
+          tip: amount < 0 ? 'expense' : 'income',
+          categorie: detectCategory(description),
+          confidence: 0.6
+        });
+      }
     }
     
-    console.log(`✅ Parsed ${transactions.length} transactions`);
+    console.log(`✅ Simple parser found ${transactions.length} transactions`);
     return transactions;
   }
   
@@ -285,18 +315,28 @@
   }
   
   function detectCategory(description) {
+    if (!description) return 'Altele';
+    
+    const desc = description.toUpperCase();
+    
     const categories = {
-      'Alimente': /Lidl|Kaufland|Carrefour|Auchan|Mega|Profi/i,
-      'Transport': /OMV|Petrom|Rompetrol|MOL|Lukoil|Benzin/i,
-      'Utilități': /Enel|EON|Electrica|Engie|Digi|RDS|RCS/i,
-      'Sănătate': /Farmaci|Catena|Sensiblu|Help|Dr\./i,
-      'Entertainment': /Cinema|Netflix|Spotify|Steam|HBO/i,
-      'ATM Cash': /ATM|Retragere|Cash/i
+      'Alimente': ['LIDL', 'KAUFLAND', 'CARREFOUR', 'MEGA', 'PROFI', 'PENNY'],
+      'Transport': ['OMV', 'PETROM', 'MOL', 'UBER', 'BOLT', 'STB'],
+      'Utilități': ['ENEL', 'EON', 'ELECTRICA', 'DIGI', 'VODAFONE', 'ORANGE'],
+      'Restaurant': ['GLOVO', 'TAZZ', 'RESTAURANT', 'PIZZA'],
+      'ATM': ['ATM', 'RETRAGERE', 'CASH'],
+      'Transfer': ['TRANSFER', 'VIRAMENT'],
+      'Online': ['PAYPAL', 'AMAZON', 'EMAG']
     };
     
-    for (const [category, regex] of Object.entries(categories)) {
-      if (regex.test(description)) return category;
+    for (const [category, keywords] of Object.entries(categories)) {
+      for (const keyword of keywords) {
+        if (desc.includes(keyword)) {
+          return category;
+        }
+      }
     }
+    
     return 'Altele';
   }
   
