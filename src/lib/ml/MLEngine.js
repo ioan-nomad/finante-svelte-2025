@@ -141,11 +141,16 @@ export class MLEngine {
     }
 
     try {
-      console.log('📦 Brain.js: Loading singleton instance...');
-      const brainModule = await import('brain.js');
-      brainInstance = brainModule.default || brainModule;
-      console.log('✅ Brain.js singleton loaded');
-      return brainInstance;
+      // TEMPORAR DEZACTIVAT - brain.js poate cauza probleme de build
+      console.warn('⚠️ Brain.js temporarily disabled - preventing build issues');
+      return null;
+      
+      // REACTIVEAZĂ CÂND BRAIN.JS E STABIL:
+      // console.log('📦 Brain.js: Loading singleton instance...');
+      // const brainModule = await import('brain.js');
+      // brainInstance = brainModule.default || brainModule;
+      // console.log('✅ Brain.js singleton loaded');
+      // return brainInstance;
     } catch (error) {
       console.warn('⚠️ Brain.js loading failed:', error);
       return null;

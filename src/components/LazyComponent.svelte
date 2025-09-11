@@ -3,7 +3,7 @@
   import { onMount, createEventDispatcher } from 'svelte';
   import { lazyLoadWithCache } from '../lib/lazyLoader.js';
 
-  export let componentName;
+  export let componentName = 'Dashboard'; // Default fallback
   export let props = {};
   
   let component = null;
@@ -13,13 +13,19 @@
   const dispatch = createEventDispatcher();
 
   onMount(async () => {
+    if (!componentName) {
+      error = 'Component name not provided';
+      loading = false;
+      return;
+    }
+    
     try {
       loading = true;
       error = null;
       component = await lazyLoadWithCache(componentName);
       loading = false;
     } catch (err) {
-      error = err.message;
+      error = err.message || 'Unknown error occurred';
       loading = false;
       console.error(`Failed to load ${componentName}:`, err);
     }
@@ -34,13 +40,13 @@
 {#if loading}
   <div class="lazy-loading">
     <div class="spinner"></div>
-    <p>Loading {componentName}...</p>
+    <p>Se încarcă {componentName || 'componenta'}...</p>
   </div>
 {:else if error}
   <div class="lazy-error">
-    <h3>⚠️ Error Loading Component</h3>
-    <p>Failed to load {componentName}: {error}</p>
-    <button on:click={() => window.location.reload()}>Refresh Page</button>
+    <h3>⚠️ Eroare la încărcarea componentei</h3>
+    <p>Nu s-a putut încărca {componentName || 'componenta'}: {error}</p>
+    <button on:click={() => window.location.reload()}>Reîmprospătează pagina</button>
   </div>
 {:else if component}
   <svelte:component 
