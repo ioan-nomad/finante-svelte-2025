@@ -158,8 +158,22 @@
       // PROCESARE TEXT
       let transactions = [];
       
-      // Încearcă ML Engine dacă e disponibil
-      if (mlReady && mlEngine && mlEngine.processPDF) {
+      // Detectează banca și folosește parser-ul specific
+      console.log('🔍 Detecting bank from PDF text...');
+      detectedBank = detectBank(pdfText);
+      console.log('🏦 Detected bank:', detectedBank);
+      
+      // Verifică dacă e Banca Transilvania
+      if (pdfText.includes('BANCA TRANSILVANIA') || pdfText.includes('BT24')) {
+        console.log('🏦 Using Banca Transilvania specific parser...');
+        console.log('📋 BT Detection - Text contains BANCA TRANSILVANIA or BT24');
+        transactions = parseBTStatement(pdfText);
+        processingMethod = 'bt-specific';
+        detectedBank = 'BT';
+        console.log(`✅ BT Parser result: ${transactions.length} transactions found`);
+      }
+      // Încearcă ML Engine dacă e disponibil și nu am găsit BT
+      else if (mlReady && mlEngine && mlEngine.processPDF) {
         console.log('🤖 Using ML Engine...');
         try {
           const mlResult = await mlEngine.processPDF(pdfText);
@@ -183,11 +197,11 @@
         }
       }
       
-      // Fallback la parser manual
+      // Fallback la parser manual avansat
       if (transactions.length === 0) {
-        console.log('📝 Using manual parser...');
+        console.log('📝 Using advanced manual parser...');
         transactions = parseTransactionsAdvanced(pdfText);
-        processingMethod = 'simple';
+        processingMethod = 'advanced';
       }
       
       // Validare finală
@@ -246,9 +260,26 @@
     const transactions = [];
     const lines = text.split(/\r?\n/);
     
-    // Pattern-uri multiple pentru flexibilitate maximă
+    // Pattern-uri multiple pentru flexibilitate maximă, inclusiv BT
     const patterns = [
-      // Format: DD.MM.YYYY descriere sumă
+      // Format BT: DD.MM.YYYY DD.MM.YYYY Descriere -suma sau +suma
+      {
+        regex: /(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(.+?)\s+(-?\d+(?:\.\d{3})*,\d{2})\s+(-?\d+(?:\.\d{3})*,\d{2})?/,
+        dateIndex: 1,
+        descIndex: 3,
+        amountIndex: 4,
+        creditIndex: 5,
+        isBT: true
+      },
+      // Format BT alternativ: DD.MM.YYYY Descriere suma
+      {
+        regex: /(\d{2}\.\d{2}\.\d{4})\s+(.+?)\s+(-?\d+(?:\.\d{3})*,\d{2})/,
+        dateIndex: 1,
+        descIndex: 2,
+        amountIndex: 3,
+        isBT: true
+      },
+      // Format: DD.MM.YYYY descriere sumă (puncte ca separatori)
       {
         regex: /(\d{2}[.-]\d{2}[.-]\d{4})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/,
         dateIndex: 1,
@@ -281,26 +312,42 @@
             const dateStr = match[pattern.dateIndex];
             const description = match[pattern.descIndex].trim();
             const amountStr = match[pattern.amountIndex];
+            const creditStr = pattern.creditIndex ? match[pattern.creditIndex] : null;
             
-            // Parsează data
-            const date = formatDateSafe(dateStr);
+            // Parsează data (BT folosește DD.MM.YYYY)
+            const date = pattern.isBT ? formatBTDate(dateStr) : formatDateSafe(dateStr);
             
-            // Parsează suma
-            const amount = parseFloat(
-              amountStr
-                .replace(/\s/g, '')
-                .replace(/\./g, '')
-                .replace(',', '.')
-            );
+            // Parsează suma - suport pentru virgulă românească
+            let amount = 0;
+            let type = 'expense';
+            
+            if (pattern.isBT && creditStr && creditStr !== '0,00') {
+              // BT format - credit column
+              amount = parseFloat(creditStr.replace('.', '').replace(',', '.'));
+              type = 'income';
+            } else if (pattern.isBT && amountStr && amountStr !== '0,00') {
+              // BT format - debit column
+              amount = Math.abs(parseFloat(amountStr.replace('.', '').replace(',', '.')));
+              type = 'expense';
+            } else {
+              // Format standard
+              amount = parseFloat(
+                amountStr
+                  .replace(/\s/g, '')
+                  .replace(/\./g, '')
+                  .replace(',', '.')
+              );
+              type = amountStr.includes('-') ? 'expense' : 'income';
+            }
             
             if (!isNaN(amount) && amount !== 0) {
               transactions.push({
                 data: date,
                 suma: Math.abs(amount),
-                descriere: description || 'Tranzacție',
-                tip: amountStr.includes('-') ? 'expense' : 'income',
-                categorie: detectCategory(description),
-                confidence: 0.8
+                descriere: pattern.isBT ? cleanBTDescription(description) : description || 'Tranzacție',
+                tip: type,
+                categorie: pattern.isBT ? detectBTCategory(description) : detectCategory(description),
+                confidence: pattern.isBT ? 0.9 : 0.8
               });
               console.log('✅ Found transaction:', date, amount, description);
               break; // Nu mai căuta alte pattern-uri pentru această linie
@@ -445,6 +492,111 @@
         if (desc.includes(keyword)) {
           return category;
         }
+      }
+    }
+    
+    return 'Altele';
+  }
+
+  // Parser SPECIFIC pentru Banca Transilvania
+  function parseBTStatement(text) {
+    console.log('🏦 Parsing Banca Transilvania format...');
+    console.log('📝 Text length:', text.length, 'characters');
+    const transactions = [];
+    
+    // BT folosește format specific:
+    // Data tranzactie | Data procesare | Descriere | Debit | Credit | Sold
+    
+    const lines = text.split('\n');
+    let inTransactionSection = false;
+    
+    for (let line of lines) {
+      // Skip headers și linii goale
+      if (line.includes('Data tranzactie') || 
+          line.includes('Extras de cont') ||
+          line.trim().length < 10) continue;
+      
+      // Pattern specific BT
+      // Format: DD.MM.YYYY DD.MM.YYYY Descriere -suma sau +suma
+      const btPattern = /(\d{2}\.\d{2}\.\d{4})\s+(\d{2}\.\d{2}\.\d{4})\s+(.+?)\s+(-?\d+(?:\.\d{3})*,\d{2})\s+(-?\d+(?:\.\d{3})*,\d{2})?/;
+      
+      // Pattern alternativ pentru BT
+      const btPattern2 = /(\d{2}\.\d{2}\.\d{4})\s+(.+?)\s+(-?\d+(?:\.\d{3})*,\d{2})/;
+      
+      let match = line.match(btPattern);
+      if (!match) match = line.match(btPattern2);
+      
+      if (match) {
+        const date = match[1];
+        const description = match[2] || match[3];
+        const debit = match[4] || match[3];
+        const credit = match[5];
+        
+        // Determină suma și tipul
+        let amount = 0;
+        let type = 'expense';
+        
+        if (credit && credit !== '0,00') {
+          amount = parseFloat(credit.replace('.', '').replace(',', '.'));
+          type = 'income';
+        } else if (debit && debit !== '0,00') {
+          amount = Math.abs(parseFloat(debit.replace('.', '').replace(',', '.')));
+          type = 'expense';
+        }
+        
+        if (amount > 0) {
+          const transaction = {
+            data: formatBTDate(date),
+            suma: amount,
+            descriere: cleanBTDescription(description),
+            tip: type,
+            categorie: detectBTCategory(description),
+            confidence: 0.9
+          };
+          transactions.push(transaction);
+          console.log('💰 BT Transaction found:', transaction.data, transaction.suma, transaction.descriere);
+        }
+      }
+    }
+    
+    console.log(`🎯 BT Parser completed: ${transactions.length} transactions processed`);
+    return transactions;
+  }
+
+  function formatBTDate(dateStr) {
+    // Convertește DD.MM.YYYY în YYYY-MM-DD
+    const parts = dateStr.split('.');
+    return `${parts[2]}-${parts[1]}-${parts[0]}`;
+  }
+
+  function cleanBTDescription(desc) {
+    // Curăță descrierile specifice BT
+    return desc
+      .replace(/\s+/g, ' ')
+      .replace(/POS\s+/i, '')
+      .replace(/Nr\.\s*card:\s*\*+\d+/i, '')
+      .trim();
+  }
+
+  function detectBTCategory(description) {
+    const desc = description.toUpperCase();
+    
+    // Categorii specifice pentru România
+    const categories = {
+      'Alimente': ['LIDL', 'KAUFLAND', 'CARREFOUR', 'MEGA IMAGE', 'PROFI', 'PENNY', 'AUCHAN'],
+      'Combustibil': ['OMV', 'PETROM', 'MOL', 'LUKOIL', 'ROMPETROL', 'SOCAR'],
+      'Restaurant': ['GLOVO', 'TAZZ', 'BOLT FOOD', 'RESTAURANT', 'PIZZA', 'KFC', 'MCDONALD'],
+      'Utilități': ['ELECTRICA', 'EON', 'ENEL', 'ENGIE', 'DIGI', 'VODAFONE', 'ORANGE', 'TELEKOM'],
+      'Transport': ['UBER', 'BOLT', 'STB', 'RATB', 'METROREX'],
+      'Shopping': ['EMAG', 'ALTEX', 'FLANCO', 'H&M', 'ZARA', 'DECATHLON'],
+      'Sănătate': ['CATENA', 'SENSIBLU', 'DONA', 'HELP NET', 'FARMACIA'],
+      'Transfer': ['TRANSFER', 'DEPUNERE', 'RETRAGERE', 'VIRAMENT'],
+      'ATM': ['ATM', 'CASH', 'BANCOMAT']
+    };
+    
+    for (const [category, keywords] of Object.entries(categories)) {
+      for (const keyword of keywords) {
+        if (desc.includes(keyword)) return category;
       }
     }
     

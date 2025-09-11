@@ -1,5 +1,5 @@
 # CONTEXT.txt - N-OMAD Suite Enterprise Application
-# Ultima actualizare: 4 Septembrie 2024, 14:30
+# Ultima actualizare: 11 Septembrie 2025, 18:45
 
 ## 🎯 IDENTIFICARE PROIECT
 GitHub: https://github.com/ioan-nomad/finante-svelte-2025
@@ -9,7 +9,7 @@ Stack: Svelte 4.2.0 + Vite + localStorage (encrypted)
 Arhitectură: 3 module independente (Finance, Pantry, Nutrition)
 Copyright: © 2024 Ioan Nomad - All Rights Reserved (PROPRIETARY)
 
-## ✅ STATUS ACTUAL - 4 SEPTEMBRIE 2024
+## ✅ STATUS ACTUAL - 11 SEPTEMBRIE 2025
 
 ### 🏆 REALIZĂRI MAJORE:
 1. **Arhitectură Modulară Completă** - 3 module independente funcționale
@@ -21,6 +21,8 @@ Copyright: © 2024 Ioan Nomad - All Rights Reserved (PROPRIETARY)
 7. **Smart Pantry AI** - Learning patterns pentru 7+ magazine
 8. **Dark Mode Persistent** - Cu animații fluide
 9. **PWA Full Support** - Offline ready, instalabil
+10. **🏦 ML Engine v4.0** - TensorFlow.js + OCR + Pattern Recognition complet
+11. **📄 PDF Importer Enhanced** - Parser pentru Banca Transilvania + fallback universal
 
 ### 📊 METRICI PERFORMANȚĂ:
 - Load time: <800ms
@@ -89,7 +91,9 @@ src/
 │   └── utils/
 │       └── performance.js (debounce, throttle, memoize)
 ├── modules/
-│   ├── finance/ (complet funcțional)
+│   ├── finance/ 
+│   │   └── components/
+│   │       └── PDFImporter.svelte (ACTUALIZAT cu parser BT)
 │   ├── pantry/ (Smart AI learning)
 │   └── nutrition/ 
 │       ├── codex/ (CODEX v2.0 core - 9 fișiere)
@@ -110,35 +114,41 @@ src/
 
 ## 🚀 URMĂTORII PAȘI POSIBILI
 
-### OPȚIUNE 1: Mai multe rețete CODEX
+### OPȚIUNE 1: 🏦 Extindere Support Bănci
+- ✅ Banca Transilvania (COMPLET)
+- BCR parser implementation  
+- ING Bank parser
+- Raiffeisen Bank parser
+- UniCredit Bank parser
+- Pattern recognition automat pentru bănci noi
+
+### OPȚIUNE 2: 📊 ML Engine Improvements
+- ✅ TensorFlow.js integration (COMPLET)
+- ✅ OCR Engine (COMPLET) 
+- ✅ Pattern Recognition (COMPLET)
+- Learning din feedback utilizator
+- Auto-categorization îmbunătățită
+- Merchant recognition advanced
+
+### OPȚIUNE 3: 🔄 PDF Processing Enhanced
+- ✅ Multi-strategy PDF parsing (COMPLET)
+- ✅ Error handling robust (COMPLET)
+- Batch processing pentru multiple PDFs
+- Preview înainte de import
+- Undo/Redo pentru imports
+- Export processed data
+
+### OPȚIUNE 4: Mai multe rețete CODEX
 - 10-15 rețete noi cu scoring complet
 - Rețete românești adaptate CODEX
 - Seasonal recipes pentru iarnă
 - Budget-optimized versions
 
-### OPȚIUNE 2: Export & Rapoarte  
-- Export PDF pentru meal plans
-- Raport nutrițional lunar
-- Grafice progres biomarkeri
-- Print-friendly shopping lists
-
-### OPȚIUNE 3: Testing Suite
+### OPȚIUNE 5: Testing Suite
 - Vitest pentru unit tests
 - Playwright pentru E2E
 - Coverage >90%
 - CI/CD cu GitHub Actions
-
-### OPȚIUNE 4: Migrare Tauri
-- Aplicație desktop nativă
-- SQLite pentru date mari
-- 10MB exe, 50MB RAM
-- Auto-update system
-
-### OPȚIUNE 5: Polish & UX
-- Animații mai fluide
-- Tutorial interactiv
-- Keyboard shortcuts
-- Voice commands (experimental)
 
 ## 💡 FILOZOFIE DEZVOLTARE
 
@@ -226,5 +236,26 @@ Fiecare linie de cod e scrisă cu grijă pentru utilizator.
 
 Target: Aplicație mai sigură decât banking apps, mai rapidă decât native apps, mai științifică decât health apps comerciale.
 
-ULTIMA ACTUALIZARE: 4 Septembrie 2024, 14:30
-VERSIUNE: 0.1.0-dev (PRIVATE DEVELOPMENT)
+ULTIMA ACTUALIZARE: 11 Septembrie 2025, 18:45
+VERSIUNE: 0.2.0-dev (PRIVATE DEVELOPMENT)
+
+## 🔄 CHANGELOG RECENT
+
+### v0.2.0 - 11 Septembrie 2025
+**🏦 BANCA TRANSILVANIA SUPPORT**
+- ✅ Parser specific BT implementat în PDFImporter.svelte
+- ✅ Detectare automată format BT vs generic
+- ✅ Suport virgulă românească (1.234,56 RON)
+- ✅ Categorii extinse pentru România (LIDL, KAUFLAND, OMV, etc.)
+- ✅ Debugging complet cu console.log
+- ✅ Fallback la ML Engine și parser advanced
+- ✅ Confidence scoring 0.9 pentru BT transactions
+- ✅ Date formatting DD.MM.YYYY → YYYY-MM-DD
+- ✅ Clean descriptions (remove POS, card numbers)
+
+**📊 TECHNICAL IMPROVEMENTS**
+- Pattern recognition pentru format: DD.MM.YYYY DD.MM.YYYY Descriere Debit Credit Sold
+- Pattern alternativ: DD.MM.YYYY Descriere Suma
+- Integrare seamless cu ML Engine existent
+- Păstrat toate funcționalitățile existente
+- Zero breaking changes
