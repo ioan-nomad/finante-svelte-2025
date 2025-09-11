@@ -28,8 +28,23 @@ export const accounts = writable([
 // Transactions store
 export const transactions = writable([]);
 
-// Helper function to calculate total balance
+// CRITICAL FIX: Derived store pentru total balance
+export const totalBalance = derived(
+  accounts, 
+  $accounts => $accounts.reduce((total, account) => {
+    if (account.currency === 'RON') {
+      return total + (account.balance || 0);
+    }
+    // Convert other currencies if needed
+    return total + (account.balance || 0);
+  }, 0)
+);
+
+// Helper function to calculate total balance (kept for compatibility)
 export function calculateTotalBalance(accountsList) {
+  if (!accountsList) {
+    return get(totalBalance);
+  }
   return accountsList.reduce((total, account) => {
     if (account.currency === 'RON') {
       return total + (account.balance || 0);

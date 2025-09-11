@@ -38,7 +38,7 @@
   import TestML from './components/TestML.svelte';
   
   // Finance store
-  import { accounts, transactions, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
+  import { accounts, transactions, totalBalance, calculateTotalBalance } from './modules/finance/stores/financeStore.js';
   
   // Config
   import { APP_CONFIG } from './shared/config.js';
@@ -220,7 +220,7 @@
             {new Intl.NumberFormat('ro-RO', { 
               style: 'currency', 
               currency: 'RON' 
-            }).format($calculateTotalBalance())}
+            }).format($totalBalance)}
           </span>
         </div>
         
@@ -318,7 +318,7 @@
                     style: 'currency', 
                     currency: 'RON',
                     maximumFractionDigits: 0 
-                  }).format($calculateTotalBalance())}</span>
+                  }).format($totalBalance)}</span>
                 </div>
               </div>
             </LazyComponent>
@@ -898,5 +898,162 @@
     background: var(--color-primary);
     color: white;
     border-color: var(--color-primary);
+  }
+
+  /* ===============================================
+     DARK MODE ENHANCED FIXES
+     =============================================== */
+  
+  /* Global Dark Mode Body */
+  :global(body.dark-mode) {
+    background: #1a1a1a !important;
+    color: #e0e0e0 !important;
+  }
+
+  /* Dark Mode Tab Buttons */
+  :global(.dark-mode .tab-button) {
+    background: #2a2a2a !important;
+    color: #e0e0e0 !important;
+    border-color: #404040 !important;
+  }
+
+  :global(.dark-mode .tab-button:hover) {
+    background: #363636 !important;
+    border-color: #505050 !important;
+  }
+
+  :global(.dark-mode .tab-button.active) {
+    background: var(--color-primary) !important;
+    color: white !important;
+  }
+
+  /* Dark Mode Cards */
+  :global(.dark-mode .card) {
+    background: #252525 !important;
+    border-color: #404040 !important;
+    color: #e0e0e0 !important;
+  }
+
+  /* Dark Mode Form Controls */
+  :global(.dark-mode input) {
+    background: #2a2a2a !important;
+    border-color: #404040 !important;
+    color: #e0e0e0 !important;
+  }
+
+  :global(.dark-mode select) {
+    background: #2a2a2a !important;
+    border-color: #404040 !important;
+    color: #e0e0e0 !important;
+  }
+
+  :global(.dark-mode textarea) {
+    background: #2a2a2a !important;
+    border-color: #404040 !important;
+    color: #e0e0e0 !important;
+  }
+
+  /* Dark Mode Buttons */
+  :global(.dark-mode .btn) {
+    background: #363636 !important;
+    border-color: #505050 !important;
+    color: #e0e0e0 !important;
+  }
+
+  :global(.dark-mode .btn:hover) {
+    background: #404040 !important;
+  }
+
+  /* ===============================================
+     LAYOUT ENHANCED FIXES  
+     =============================================== */
+
+  /* Enhanced Header Right - Vertical Layout */
+  .header-right {
+    position: fixed !important;
+    top: 20px !important;
+    right: 20px !important;
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 10px !important;
+    z-index: 1000 !important;
+    align-items: flex-end !important;
+  }
+
+  /* System Test Controls - Vertical Stack */
+  .system-test-controls {
+    display: flex !important;
+    flex-direction: column !important;
+    gap: 8px !important;
+    align-items: stretch !important;
+  }
+
+  .system-test-controls .btn {
+    width: 160px !important;
+    min-height: 36px !important;
+    font-size: 11px !important;
+    padding: 6px 8px !important;
+    white-space: nowrap !important;
+    text-align: center !important;
+  }
+
+  /* Enhanced ML Test Card - Bottom Right */
+  :global(.ml-test-card) {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    max-width: 320px !important;
+    max-height: 240px !important;
+    z-index: 100 !important;
+    border-radius: 12px !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.3) !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    overflow: hidden !important;
+  }
+
+  /* Dark Mode ML Card */
+  :global(.dark-mode .ml-test-card) {
+    background: #252525 !important;
+    border-color: #404040 !important;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.6) !important;
+  }
+
+  /* ===============================================
+     RESPONSIVE ENHANCEMENTS
+     =============================================== */
+
+  @media (max-width: 768px) {
+    .header-right {
+      position: relative !important;
+      top: auto !important;
+      right: auto !important;
+      flex-direction: row !important;
+      gap: 8px !important;
+      justify-content: flex-end !important;
+      padding: 12px !important;
+      z-index: 900 !important;
+    }
+
+    .system-test-controls {
+      flex-direction: row !important;
+      gap: 4px !important;
+    }
+
+    .system-test-controls .btn {
+      width: auto !important;
+      min-width: 100px !important;
+      font-size: 10px !important;
+      padding: 4px 6px !important;
+    }
+
+    :global(.ml-test-card) {
+      position: relative !important;
+      bottom: auto !important;
+      right: auto !important;
+      max-width: 100% !important;
+      max-height: 150px !important;
+      margin: 10px !important;
+    }
   }
 </style>

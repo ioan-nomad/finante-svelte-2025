@@ -9,6 +9,7 @@ export default defineConfig({
     assetsDir: 'assets',
     sourcemap: false,
     rollupOptions: {
+      external: ['dompurify', 'canvg'],
       output: {
         manualChunks: {
           'vendor-svelte': ['svelte'],
