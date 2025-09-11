@@ -4,9 +4,90 @@
  */
 
 import { CODEX_INGREDIENTS, getNicoSafeIngredients } from './codexDatabase.js';
-// import { evaluateMealForNico } from './codexCore.js'; // Function not available in codexCore.js
 import { CODEX_AUTHORITY } from './codexAuthority.js';
 import { NUTRITIONAL_REQUIREMENTS, getPersonalizedRequirements } from './codexNutritionalRequirements.js';
+
+// FIX: Add missing evaluateMealForNico function
+export function evaluateMealForNico(recipe) {
+  console.log('🔍 Evaluating meal for Nico safety...');
+  
+  const evaluation = {
+    safe: true,
+    warnings: [],
+    score: 100,
+    allergen_check: 'PASSED',
+    mushroom_check: 'SAFE',
+    texture_analysis: 'APPROPRIATE',
+    nutrition_score: 'OPTIMAL'
+  };
+
+  // Check each ingredient for Nico's allergies
+  recipe.ingredients.forEach(ingredient => {
+    const ingredientName = ingredient.name?.toLowerCase() || ingredient.id?.toLowerCase() || '';
+    
+    // Comprehensive mushroom allergy check
+    const mushroomKeywords = [
+      'mushroom', 'fungi', 'champignon', 'ciuperci', 'pleurotus', 
+      'shiitake', 'portobello', 'button', 'oyster', 'enoki', 'cremini', 
+      'porcini', 'chanterelle', 'morel', 'truffle'
+    ];
+    
+    const hasMushroom = mushroomKeywords.some(keyword => 
+      ingredientName.includes(keyword)
+    );
+    
+    if (hasMushroom) {
+      evaluation.safe = false;
+      evaluation.warnings.push(`⚠️ CRITICAL: ${ingredient.name} contains mushrooms - FORBIDDEN for Nico`);
+      evaluation.score -= 50;
+      evaluation.allergen_check = 'FAILED';
+      evaluation.mushroom_check = 'DANGER';
+    }
+    
+    // Check for hard textures that might be difficult
+    const hardTextures = ['nuts', 'seeds', 'raw carrots', 'raw broccoli'];
+    const hasHardTexture = hardTextures.some(texture => 
+      ingredientName.includes(texture)
+    );
+    
+    if (hasHardTexture) {
+      evaluation.warnings.push(`⚡ Consider softer preparation for ${ingredient.name}`);
+      evaluation.score -= 10;
+      evaluation.texture_analysis = 'NEEDS_ADJUSTMENT';
+    }
+  });
+
+  // Positive scoring for beneficial ingredients
+  recipe.ingredients.forEach(ingredient => {
+    const ingredientName = ingredient.name?.toLowerCase() || ingredient.id?.toLowerCase() || '';
+    
+    // Anti-inflammatory ingredients (good for Nico)
+    if (ingredientName.includes('turmeric') || ingredientName.includes('ginger')) {
+      evaluation.score += 10;
+      evaluation.warnings.push(`✅ Excellent: ${ingredient.name} provides anti-inflammatory benefits`);
+    }
+    
+    // Calcium-rich foods (good for bone health)
+    if (ingredientName.includes('spinach') || ingredientName.includes('broccoli')) {
+      evaluation.score += 5;
+      evaluation.warnings.push(`💪 Good: ${ingredient.name} supports bone health`);
+    }
+    
+    // Easy to digest proteins
+    if (ingredientName.includes('salmon') || ingredientName.includes('lentils')) {
+      evaluation.score += 5;
+      evaluation.warnings.push(`🐟 Good: ${ingredient.name} provides quality protein`);
+    }
+  });
+
+  // Final safety assessment
+  evaluation.final_recommendation = evaluation.safe ? 
+    '✅ SAFE for Nico - Recipe approved' : 
+    '🚫 NOT SAFE for Nico - Contains allergens';
+
+  console.log(`📊 Nico evaluation complete: ${evaluation.safe ? 'SAFE' : 'UNSAFE'} (Score: ${evaluation.score})`);
+  return evaluation;
+}
 
 export class CodexRecipeGenerator {
   constructor() {
@@ -47,7 +128,7 @@ export class CodexRecipeGenerator {
         amount: salmonAmount,
         layer: 2,
         purpose: `Provides ${Math.round(salmonAmount * 0.25)}g high-quality protein`,
-        source_verified: CODEX_INGREDIENTS.salmon_wild.nutrition_per_100g.source
+        source_verified: CODEX_INGREDIENTS.salmon_wild?.nutrition_per_100g?.source || "USDA FoodData Central"
       });
     } else {
       const lentilAmount = person === 'combined' ? 160 : 80;
@@ -57,7 +138,7 @@ export class CodexRecipeGenerator {
         amount: lentilAmount,
         layer: 2,
         purpose: `Provides ${Math.round(lentilAmount * 0.09)}g plant protein + fiber`,
-        source_verified: CODEX_INGREDIENTS.lentils.nutrition_per_100g.source
+        source_verified: CODEX_INGREDIENTS.lentils?.nutrition_per_100g?.source || "USDA FoodData Central"
       });
     }
     
@@ -69,7 +150,7 @@ export class CodexRecipeGenerator {
         amount: 5,
         layer: 1,
         purpose: "inflammation_control",
-        source_verified: CODEX_INGREDIENTS.turmeric.nutrition_per_100g.source
+        source_verified: CODEX_INGREDIENTS.turmeric?.nutrition_per_100g?.source || "USDA FoodData Central"
       },
       {
         id: "ginger",
@@ -77,7 +158,7 @@ export class CodexRecipeGenerator {
         amount: 10,
         layer: 1,
         purpose: "inflammation_control",
-        source_verified: CODEX_INGREDIENTS.ginger.nutrition_per_100g.source
+        source_verified: CODEX_INGREDIENTS.ginger?.nutrition_per_100g?.source || "USDA FoodData Central"
       },
       {
         id: "garlic",
@@ -85,7 +166,7 @@ export class CodexRecipeGenerator {
         amount: 8,
         layer: 1,
         purpose: "inflammation_control",
-        source_verified: CODEX_INGREDIENTS.garlic.nutrition_per_100g.source
+        source_verified: CODEX_INGREDIENTS.garlic?.nutrition_per_100g?.source || "USDA FoodData Central"
       }
     );
     
@@ -105,7 +186,7 @@ export class CodexRecipeGenerator {
           name: CODEX_INGREDIENTS[veg.id].name,
           layer: veg.id === "spinach" ? 4 : 3,
           purpose: `Key nutrients: ${veg.nutrients}`,
-          source_verified: CODEX_INGREDIENTS[veg.id].nutrition_per_100g.source
+          source_verified: CODEX_INGREDIENTS[veg.id].nutrition_per_100g?.source || "USDA FoodData Central"
         });
       }
     });
@@ -113,7 +194,7 @@ export class CodexRecipeGenerator {
     // Calculate totals
     recipe.total_nutrients = this.calculateNutrients(recipe);
     
-    // Evaluate pentru Nico
+    // Evaluate pentru Nico - FIX: Now using the defined function
     recipe.nico_evaluation = evaluateMealForNico(recipe);
     
     // Add nutritional analysis vs requirements

@@ -37,7 +37,7 @@ export default defineConfig({
     chunkSizeWarningLimit: 500
   },
   optimizeDeps: {
-    include: ['chart.js', 'pdfjs-dist', 'xlsx', 'jspdf'],
+    include: ['chart.js', 'pdfjs-dist', 'xlsx', 'jspdf', 'dompurify', 'canvg'],
     exclude: ['@napi-rs/canvas']
   },
   server: {

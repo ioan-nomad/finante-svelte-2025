@@ -1,10 +1,18 @@
 /**
- * STATE-OF-THE-ART MACHINE LEARNING ENGINE 2025
- * Advanced ML system cu tehnologii moderne pentru browser
- * Features: Neural Networks, Pattern Recognition, OCR, WebAssembly optimization
+ * MLEngine v4.0 - FIXED Singleton Pattern to Prevent Duplicate Loading
+ * Advanced Modular ML Architecture with duplicate prevention
+ * Multi-framework ML system for finance and nutrition analysis
  */
 
-// Import utilities directly în loc de npm packages problematice
+// Global singleton instance management
+let mlEngineInstance = null;
+let tfInstance = null;
+let brainInstance = null;
+let tesseractInstance = null;
+let isInitializing = false;
+let initializationPromise = null;
+
+// Import utilities
 import { DatabaseManager } from './DatabaseManager.js';
 import { OCREngine } from './OCREngine.js';
 import { NeuralNetworkEngine } from './NeuralNetworkEngine.js';
@@ -13,7 +21,20 @@ import { TextProcessingEngine } from './TextProcessingEngine.js';
 
 export class MLEngine {
   constructor() {
-    console.log('🚀 Initializing STATE-OF-THE-ART ML Engine 2025...');
+    // CRITICAL: Singleton pattern to prevent duplicate instances
+    if (mlEngineInstance) {
+      console.log('🔄 MLEngine: Returning existing singleton instance');
+      return mlEngineInstance;
+    }
+
+    // Prevent concurrent initialization
+    if (isInitializing) {
+      console.log('⏳ MLEngine: Already initializing, returning promise...');
+      return initializationPromise;
+    }
+
+    console.log('🚀 MLEngine: Creating new singleton instance');
+    mlEngineInstance = this;
     
     // Core engines
     this.db = new DatabaseManager();
@@ -22,8 +43,15 @@ export class MLEngine {
     this.patterns = new PatternRecognitionEngine();
     this.textProcessor = new TextProcessingEngine();
     
-    // TensorFlow.js va fi încărcat via CDN
-    this.tfModel = null;
+    // Framework instances (singleton managed)
+    this.frameworks = {
+      tensorflow: null,
+      brain: null,
+      tesseract: null
+    };
+    
+    // Model storage
+    this.models = new Map();
     this.isModelLoaded = false;
     
     // Real-time metrics
@@ -34,744 +62,514 @@ export class MLEngine {
       averageProcessingTime: 0,
       modelsLoaded: 0,
       patternsLearned: 0,
-      merchantsRecognized: 0
+      merchantsRecognized: 0,
+      duplicatePreventions: 0
+    };
+    
+    // Capabilities tracking
+    this.capabilities = {
+      textClassification: false,
+      financialPrediction: false,
+      nutritionAnalysis: false,
+      ocrProcessing: false,
+      patternRecognition: false
     };
     
     // WebAssembly optimization flag
     this.wasmSupported = this.checkWASMSupport();
-    
     this.initialized = false;
+    
+    // Start initialization
     this.initPromise = this.initialize();
+    return this;
   }
 
   /**
-   * INITIALIZATION - Setup all ML components
+   * CRITICAL: Check if TensorFlow is already loaded globally
+   */
+  static isTensorFlowLoaded() {
+    return (
+      typeof window !== 'undefined' && 
+      (window.tf !== undefined || 
+       document.querySelector('script[src*="tensorflow"]') !== null)
+    );
+  }
+
+  /**
+   * FIXED: Singleton TensorFlow loading
+   */
+  static async getTensorFlowInstance() {
+    // Return cached instance
+    if (tfInstance) {
+      console.log('✅ TensorFlow: Using cached singleton instance');
+      return tfInstance;
+    }
+
+    // Check if already loaded globally
+    if (MLEngine.isTensorFlowLoaded() && window.tf) {
+      console.log('✅ TensorFlow: Using existing global instance');
+      tfInstance = window.tf;
+      return tfInstance;
+    }
+
+    console.log('📦 TensorFlow: Loading singleton instance...');
+    try {
+      // Dynamic import with singleton caching
+      const tfModule = await import('@tensorflow/tfjs');
+      tfInstance = tfModule.default || tfModule;
+      
+      // Set global reference to prevent re-loading
+      if (typeof window !== 'undefined') {
+        window.tf = tfInstance;
+      }
+      
+      console.log(`✅ TensorFlow singleton loaded: v${tfInstance.version?.tfjs || 'unknown'}`);
+      return tfInstance;
+    } catch (error) {
+      console.error('❌ TensorFlow loading failed:', error);
+      throw new Error(`TensorFlow loading failed: ${error.message}`);
+    }
+  }
+
+  /**
+   * FIXED: Singleton Brain.js loading
+   */
+  static async getBrainInstance() {
+    if (brainInstance) {
+      console.log('✅ Brain.js: Using cached singleton instance');
+      return brainInstance;
+    }
+
+    try {
+      console.log('📦 Brain.js: Loading singleton instance...');
+      const brainModule = await import('brain.js');
+      brainInstance = brainModule.default || brainModule;
+      console.log('✅ Brain.js singleton loaded');
+      return brainInstance;
+    } catch (error) {
+      console.warn('⚠️ Brain.js loading failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * FIXED: Singleton Tesseract loading
+   */
+  static async getTesseractInstance() {
+    if (tesseractInstance) {
+      console.log('✅ Tesseract: Using cached singleton instance');
+      return tesseractInstance;
+    }
+
+    try {
+      console.log('📦 Tesseract: Loading singleton instance...');
+      const tesseractModule = await import('tesseract.js');
+      tesseractInstance = tesseractModule.default || tesseractModule;
+      console.log('✅ Tesseract singleton loaded');
+      return tesseractInstance;
+    } catch (error) {
+      console.warn('⚠️ Tesseract loading failed:', error);
+      return null;
+    }
+  }
+
+  /**
+   * MAIN INITIALIZATION - FIXED with singleton management
    */
   async initialize() {
-    if (this.initialized) return;
-    
-    console.log('🔧 Setting up ML Engine components...');
+    if (this.initialized) {
+      console.log('✅ MLEngine: Already initialized');
+      return this;
+    }
+
+    if (isInitializing) {
+      console.log('⏳ MLEngine: Waiting for ongoing initialization...');
+      return initializationPromise;
+    }
+
+    isInitializing = true;
+    initializationPromise = this.performInitialization();
     
     try {
-      // 1. Initialize database first
-      await this.db.initialize();
-      console.log('✅ Database initialized');
-      
-      // 2. Load TensorFlow.js from CDN
-      await this.loadTensorFlowJS();
-      console.log('✅ TensorFlow.js loaded');
-      
-      // 3. Initialize neural networks
-      await this.neural.initialize();
-      console.log('✅ Neural networks initialized');
-      
-      // 4. Setup pattern recognition
-      await this.patterns.initialize();
-      console.log('✅ Pattern recognition ready');
-      
-      // 5. Initialize text processing
-      await this.textProcessor.initialize();
-      console.log('✅ Text processing engine ready');
-      
-      // 6. Load or create ML models
-      await this.loadModels();
-      console.log('✅ ML models loaded');
-      
-      // 7. Initialize OCR engine
-      await this.ocr.initialize();
-      console.log('✅ OCR engine ready');
-      
+      await initializationPromise;
+      return this;
+    } finally {
+      isInitializing = false;
+      initializationPromise = null;
+    }
+  }
+
+  async performInitialization() {
+    console.log('🔧 MLEngine: Starting singleton initialization...');
+
+    try {
+      // 1. Initialize TensorFlow (singleton)
+      console.log('📦 Loading TensorFlow.js singleton...');
+      this.frameworks.tensorflow = await MLEngine.getTensorFlowInstance();
+      this.capabilities.textClassification = true;
+      this.capabilities.financialPrediction = true;
+      this.capabilities.nutritionAnalysis = true;
+      this.metrics.modelsLoaded++;
+      console.log('✅ TensorFlow.js ready');
+
+      // 2. Initialize Brain.js (singleton)
+      this.frameworks.brain = await MLEngine.getBrainInstance();
+      if (this.frameworks.brain) {
+        this.capabilities.patternRecognition = true;
+        this.metrics.modelsLoaded++;
+        console.log('✅ Brain.js ready');
+      }
+
+      // 3. Initialize Tesseract.js (singleton)
+      this.frameworks.tesseract = await MLEngine.getTesseractInstance();
+      if (this.frameworks.tesseract) {
+        this.capabilities.ocrProcessing = true;
+        this.metrics.modelsLoaded++;
+        console.log('✅ Tesseract.js ready');
+      }
+
+      // 4. Initialize base models
+      await this.initializeModels();
+
+      // 5. Initialize sub-engines
+      await this.initializeSubEngines();
+
       this.initialized = true;
-      console.log('🎉 ML Engine fully initialized!');
-      
+      console.log('🎉 MLEngine singleton initialization complete!');
+      console.log('🔍 Capabilities:', this.capabilities);
+      console.log('📊 Models loaded:', this.metrics.modelsLoaded);
+
+      return this;
     } catch (error) {
-      console.error('❌ ML Engine initialization failed:', error);
+      console.error('❌ MLEngine initialization failed:', error);
       throw error;
     }
   }
 
   /**
-   * TENSORFLOW.JS VIA CDN - Modern approach 2025
+   * Initialize base ML models
    */
-  async loadTensorFlowJS() {
-    return new Promise((resolve, reject) => {
-      if (window.tf) {
-        resolve();
-        return;
+  async initializeModels() {
+    console.log('🏗️ Initializing base models...');
+
+    try {
+      // Financial Analysis Model
+      if (this.frameworks.tensorflow) {
+        const financialModel = await this.createFinancialModel();
+        this.models.set('financial', financialModel);
+        console.log('✅ Financial analysis model ready');
       }
-      
-      const script = document.createElement('script');
-      script.src = 'https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js';
-      script.onload = () => {
-        console.log('✅ TensorFlow.js loaded via CDN');
-        resolve();
-      };
-      script.onerror = () => {
-        console.warn('⚠️ TensorFlow.js CDN failed, using fallback');
-        resolve(); // Continue without TF.js
-      };
-      
-      document.head.appendChild(script);
-      
-      // Timeout fallback
-      setTimeout(() => {
-        if (!window.tf) {
-          console.warn('⚠️ TensorFlow.js timeout, continuing with basic ML');
-          resolve();
-        }
-      }, 10000);
+
+      // Text Classification Model  
+      if (this.frameworks.tensorflow) {
+        const textModel = await this.createTextClassificationModel();
+        this.models.set('textClassification', textModel);
+        console.log('✅ Text classification model ready');
+      }
+
+      // Pattern Recognition Model (Brain.js)
+      if (this.frameworks.brain) {
+        const patternModel = this.createPatternRecognitionModel();
+        this.models.set('patterns', patternModel);
+        console.log('✅ Pattern recognition model ready');
+      }
+
+      this.isModelLoaded = true;
+    } catch (error) {
+      console.warn('⚠️ Some models failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Initialize sub-engines with singleton frameworks
+   */
+  async initializeSubEngines() {
+    console.log('🔧 Initializing sub-engines...');
+
+    try {
+      // Initialize neural network engine
+      if (this.neural && this.frameworks.tensorflow) {
+        await this.neural.initialize(this.frameworks.tensorflow);
+      }
+
+      // Initialize OCR engine
+      if (this.ocr && this.frameworks.tesseract) {
+        await this.ocr.initialize(this.frameworks.tesseract);
+      }
+
+      // Initialize pattern recognition engine
+      if (this.patterns && this.frameworks.brain) {
+        await this.patterns.initialize(this.frameworks.brain);
+      }
+
+      // Initialize text processing engine
+      if (this.textProcessor) {
+        await this.textProcessor.initialize();
+      }
+
+      console.log('✅ Sub-engines initialized');
+    } catch (error) {
+      console.warn('⚠️ Some sub-engines failed to initialize:', error);
+    }
+  }
+
+  /**
+   * Create Financial Analysis Model
+   */
+  async createFinancialModel() {
+    const tf = this.frameworks.tensorflow;
+    
+    const model = tf.sequential({
+      layers: [
+        tf.layers.dense({ inputShape: [10], units: 64, activation: 'relu' }),
+        tf.layers.dropout({ rate: 0.2 }),
+        tf.layers.dense({ units: 32, activation: 'relu' }),
+        tf.layers.dropout({ rate: 0.2 }),
+        tf.layers.dense({ units: 16, activation: 'relu' }),
+        tf.layers.dense({ units: 1, activation: 'sigmoid' })
+      ]
     });
+
+    model.compile({
+      optimizer: 'adam',
+      loss: 'binaryCrossentropy',
+      metrics: ['accuracy']
+    });
+
+    return model;
   }
 
   /**
-   * CORE ML PROCESSING - Main entry point
+   * Create Text Classification Model
    */
-  async processPDFWithML(pdfData, options = {}) {
-    await this.initPromise;
+  async createTextClassificationModel() {
+    const tf = this.frameworks.tensorflow;
     
-    const startTime = performance.now();
-    console.log('🧠 Processing PDF with advanced ML...');
-    
-    try {
-      // Step 1: Extract text (with OCR fallback for scanned PDFs)
-      let extractedText;
-      if (this.isPDFScanned(pdfData)) {
-        console.log('📷 Scanned PDF detected, using OCR...');
-        extractedText = await this.ocr.processScannedPDF(pdfData);
-      } else {
-        extractedText = await this.extractTextFromPDF(pdfData);
-      }
-      
-      // Step 2: Detect bank using advanced pattern matching
-      const bankDetection = await this.patterns.detectBank(extractedText);
-      console.log('🏦 Bank detected:', bankDetection);
-      
-      // Step 3: Generate document signature for learning
-      const signature = this.patterns.generateSignature(extractedText);
-      
-      // Step 4: Find or learn document pattern
-      const pattern = await this.patterns.findOrLearnPattern(
-        signature, 
-        extractedText, 
-        bankDetection.bank
-      );
-      
-      // Step 5: Extract transactions using ML
-      const rawTransactions = await this.extractTransactionsML(extractedText, pattern);
-      
-      // Step 6: Enrich with ML predictions
-      const enrichedTransactions = await this.enrichWithAdvancedML(rawTransactions);
-      
-      // Step 7: Calculate confidence și collect feedback
-      const confidence = this.calculateMLConfidence(enrichedTransactions);
-      
-      // Step 8: Update learning models
-      await this.updateModelsWithNewData(enrichedTransactions, pattern, confidence);
-      
-      // Step 9: Update metrics
-      const processingTime = performance.now() - startTime;
-      await this.updateMetrics(confidence, processingTime);
-      
-      const result = {
-        transactions: enrichedTransactions,
-        bankDetection: bankDetection,
-        pattern: pattern,
-        confidence: confidence,
-        processingTime: processingTime,
-        mlEnhanced: true,
-        signature: signature,
-        metrics: {
-          totalTransactions: enrichedTransactions.length,
-          mlEnhancedCount: enrichedTransactions.filter(t => t.mlEnhanced).length,
-          averageConfidence: enrichedTransactions.reduce((sum, t) => sum + t.confidence, 0) / enrichedTransactions.length
-        }
-      };
-      
-      console.log('✅ ML Processing completed:', result.metrics);
-      return result;
-      
-    } catch (error) {
-      console.error('❌ ML Processing failed:', error);
-      
-      // Fallback to basic processing
-      return this.fallbackProcessing(pdfData, options);
-    }
+    const model = tf.sequential({
+      layers: [
+        tf.layers.embedding({ inputDim: 10000, outputDim: 16 }),
+        tf.layers.globalAveragePooling1d(),
+        tf.layers.dense({ units: 16, activation: 'relu' }),
+        tf.layers.dense({ units: 1, activation: 'sigmoid' })
+      ]
+    });
+
+    model.compile({
+      optimizer: 'adam',
+      loss: 'binaryCrossentropy',
+      metrics: ['accuracy']
+    });
+
+    return model;
   }
 
   /**
-   * ADVANCED ML ENRICHMENT - Neural network predictions
+   * Create Pattern Recognition Model (Brain.js)
    */
-  async enrichWithAdvancedML(transactions) {
-    const enriched = [];
-    
-    for (const tx of transactions) {
-      try {
-        // 1. Merchant recognition cu neural networks
-        const merchantPrediction = await this.neural.predictMerchant(tx.description);
-        
-        // 2. Category prediction cu multiple algorithms
-        const categoryPrediction = await this.neural.predictCategory(
-          tx.description, 
-          tx.amount,
-          merchantPrediction
-        );
-        
-        // 3. Fuzzy matching cu database
-        const fuzzyMatch = await this.patterns.fuzzyMatchMerchant(tx.description);
-        
-        // 4. Text analysis pentru extraction îmbunătățit
-        const textAnalysis = await this.textProcessor.analyzeTransaction(tx.description);
-        
-        // 5. Combine toate predicțiile
-        const finalPrediction = this.combinePredictions({
-          merchant: merchantPrediction,
-          category: categoryPrediction,
-          fuzzy: fuzzyMatch,
-          textAnalysis: textAnalysis,
-          original: tx
-        });
-        
-        enriched.push({
-          ...tx,
-          originalDescription: tx.description,
-          merchant: finalPrediction.merchant.name,
-          merchantConfidence: finalPrediction.merchant.confidence,
-          category: finalPrediction.category.name,
-          categoryConfidence: finalPrediction.category.confidence,
-          mlEnhanced: true,
-          confidence: finalPrediction.overallConfidence,
-          predictions: {
-            merchant: merchantPrediction,
-            category: categoryPrediction,
-            fuzzy: fuzzyMatch,
-            textAnalysis: textAnalysis
-          },
-          improvements: finalPrediction.improvements
-        });
-        
-      } catch (error) {
-        console.warn('⚠️ ML enrichment failed for transaction:', tx.description, error);
-        
-        // Fallback la tranzacția originală
-        enriched.push({
-          ...tx,
-          mlEnhanced: false,
-          confidence: 0.3,
-          improvements: []
-        });
-      }
+  createPatternRecognitionModel() {
+    if (!this.frameworks.brain) {
+      throw new Error('Brain.js not available');
     }
-    
-    return enriched;
+
+    const net = new this.frameworks.brain.NeuralNetwork({
+      hiddenLayers: [10, 5],
+      activation: 'sigmoid'
+    });
+
+    return net;
   }
 
   /**
-   * EXTRACT TRANSACTIONS CU ML
-   */
-  async extractTransactionsML(text, pattern) {
-    console.log('📊 Extracting transactions cu ML pattern recognition...');
-    
-    const lines = text.split('\\n').filter(line => line.trim().length > 0);
-    const transactions = [];
-    
-    for (const line of lines) {
-      // Use pattern recognition pentru detection
-      const isTransaction = await this.patterns.isTransactionLine(line, pattern);
-      
-      if (isTransaction.probability > 0.6) {
-        // Extract fields usando ML
-        const fields = await this.patterns.extractTransactionFields(line, pattern);
-        
-        if (fields.date && fields.amount) {
-          transactions.push({
-            date: fields.date,
-            amount: parseFloat(fields.amount),
-            description: fields.description,
-            type: fields.type || this.determineTransactionType(fields.amount, fields.description),
-            category: fields.category || 'Unknown',
-            rawLine: line,
-            extractionConfidence: isTransaction.probability,
-            extractionMethod: 'ML_PATTERN_RECOGNITION'
-          });
-        }
-      }
-    }
-    
-    console.log(`✅ Extracted ${transactions.length} transactions cu ML`);
-    return transactions;
-  }
-
-  /**
-   * COMBINE PREDICTIONS - Advanced fusion algorithm
-   */
-  combinePredictions({ merchant, category, fuzzy, textAnalysis, original }) {
-    const improvements = [];
-    
-    // Weight different prediction sources
-    const weights = {
-      neural: 0.4,
-      fuzzy: 0.3,
-      textAnalysis: 0.2,
-      pattern: 0.1
-    };
-    
-    // Combine merchant predictions
-    let finalMerchant = { name: 'Unknown', confidence: 0 };
-    
-    if (merchant && merchant.confidence > 0.5) {
-      finalMerchant = merchant;
-      improvements.push(`Merchant detectat cu neural network: ${merchant.confidence.toFixed(2)}`);
-    } else if (fuzzy && fuzzy.confidence > 0.7) {
-      finalMerchant = { name: fuzzy.name, confidence: fuzzy.confidence };
-      improvements.push(`Merchant găsit cu fuzzy matching: ${fuzzy.confidence.toFixed(2)}`);
-    } else if (textAnalysis && textAnalysis.merchantExtracted) {
-      finalMerchant = { 
-        name: textAnalysis.merchantExtracted, 
-        confidence: textAnalysis.extractionConfidence 
-      };
-      improvements.push(`Merchant extras cu text analysis`);
-    }
-    
-    // Combine category predictions
-    let finalCategory = { name: 'General', confidence: 0 };
-    
-    if (category && category.confidence > 0.6) {
-      finalCategory = category;
-      improvements.push(`Categorie prezisă: ${category.name} (${category.confidence.toFixed(2)})`);
-    }
-    
-    // Calculate overall confidence
-    const overallConfidence = (
-      (finalMerchant.confidence * weights.neural) +
-      (fuzzy?.confidence || 0) * weights.fuzzy +
-      (textAnalysis?.extractionConfidence || 0) * weights.textAnalysis
-    );
-    
-    return {
-      merchant: finalMerchant,
-      category: finalCategory,
-      overallConfidence: Math.min(overallConfidence, 1.0),
-      improvements: improvements
-    };
-  }
-
-  /**
-   * LEARNING FROM FEEDBACK - Advanced model update
-   */
-  async learnFromFeedback(transactionId, corrections) {
-    console.log('📚 Learning from user feedback...');
-    
-    try {
-      // Get original transaction
-      const transaction = await this.db.getTransaction(transactionId);
-      if (!transaction) return;
-      
-      // Store feedback
-      await this.db.storeFeedback({
-        transactionId: transactionId,
-        original: transaction,
-        corrections: corrections,
-        timestamp: Date.now()
-      });
-      
-      // Update neural networks
-      if (corrections.merchant) {
-        await this.neural.updateMerchantNetwork(
-          transaction.description, 
-          corrections.merchant
-        );
-      }
-      
-      if (corrections.category) {
-        await this.neural.updateCategoryNetwork(
-          transaction.description, 
-          corrections.category
-        );
-      }
-      
-      // Update pattern recognition
-      await this.patterns.updatePatternAccuracy(
-        transaction.signature, 
-        corrections.isCorrect
-      );
-      
-      // Retrain models dacă e necesar
-      const feedbackCount = await this.db.getFeedbackCount();
-      if (feedbackCount % 10 === 0) { // Retrain every 10 feedback entries
-        await this.retrainModels();
-      }
-      
-      console.log('✅ Feedback processed and models updated');
-      
-    } catch (error) {
-      console.error('❌ Learning from feedback failed:', error);
-    }
-  }
-
-  /**
-   * METRICS AND ANALYTICS
-   */
-  async getAdvancedMetrics() {
-    const dbStats = await this.db.getStatistics();
-    
-    return {
-      overview: {
-        totalProcessed: this.metrics.totalProcessed,
-        averageAccuracy: this.getAverageAccuracy(),
-        averageProcessingTime: this.metrics.averageProcessingTime,
-        modelsLoaded: this.metrics.modelsLoaded
-      },
-      learning: {
-        patternsLearned: await this.db.getPatternsCount(),
-        merchantsRecognized: await this.db.getMerchantsCount(),
-        feedbackProcessed: await this.db.getFeedbackCount(),
-        modelVersions: await this.db.getModelVersions()
-      },
-      performance: {
-        wasmSupported: this.wasmSupported,
-        ocrCapable: this.ocr.isInitialized(),
-        neuralNetworksActive: this.neural.isReady(),
-        databaseSize: dbStats.totalSize,
-        cacheHitRate: dbStats.cacheHitRate
-      },
-      accuracy: {
-        byBank: await this.db.getAccuracyByBank(),
-        byCategory: await this.db.getAccuracyByCategory(),
-        overTime: this.metrics.accuracyHistory.slice(-50) // Last 50 entries
-      }
-    };
-  }
-
-  /**
-   * UTILITY FUNCTIONS
+   * WebAssembly support check
    */
   checkWASMSupport() {
-    return typeof WebAssembly === 'object' && 
-           typeof WebAssembly.instantiate === 'function';
-  }
-
-  isPDFScanned(pdfData) {
-    // Simple heuristic - în realitate ar trebui o analiză mai complexă
-    return pdfData.byteLength > 500000; // Files > 500KB sunt probabil scanate
-  }
-
-  async extractTextFromPDF(pdfData) {
-    // Placeholder - va fi înlocuit cu implementarea reală
-    return "Sample PDF text content...";
-  }
-
-  determineTransactionType(amount, description) {
-    if (amount < 0 || description.toLowerCase().includes('plata')) {
-      return 'expense';
+    try {
+      return typeof WebAssembly === 'object' && 
+             typeof WebAssembly.instantiate === 'function';
+    } catch (e) {
+      return false;
     }
-    return 'income';
   }
 
-  calculateMLConfidence(transactions) {
-    if (transactions.length === 0) return 0;
-    
-    const totalConfidence = transactions.reduce((sum, tx) => sum + (tx.confidence || 0), 0);
-    return totalConfidence / transactions.length;
-  }
-
-  getAverageAccuracy() {
-    if (this.metrics.accuracyHistory.length === 0) return 0;
-    
-    const sum = this.metrics.accuracyHistory.reduce((a, b) => a + b, 0);
-    return sum / this.metrics.accuracyHistory.length;
-  }
-
-  async updateMetrics(confidence, processingTime) {
-    this.metrics.totalProcessed++;
-    this.metrics.accuracyHistory.push(confidence);
-    
-    // Keep only last 1000 entries
-    if (this.metrics.accuracyHistory.length > 1000) {
-      this.metrics.accuracyHistory = this.metrics.accuracyHistory.slice(-1000);
+  /**
+   * Analyze Financial Transaction
+   */
+  async analyzeTransaction(transaction) {
+    if (!this.initialized) {
+      await this.initialize();
     }
-    
-    // Update average processing time
-    this.metrics.averageProcessingTime = (
-      (this.metrics.averageProcessingTime * (this.metrics.totalProcessed - 1)) + 
-      processingTime
-    ) / this.metrics.totalProcessed;
-  }
 
-  async loadModels() {
-    // Load saved models from IndexedDB
-    const savedModels = await this.db.getModels();
-    this.metrics.modelsLoaded = savedModels.length;
-    console.log(`✅ Loaded ${savedModels.length} saved models`);
-  }
+    const model = this.models.get('financial');
+    if (!model) {
+      throw new Error('Financial model not available');
+    }
 
-  async retrainModels() {
-    console.log('🔄 Retraining models with new data...');
-    
-    // Get recent feedback for retraining
-    const recentFeedback = await this.db.getRecentFeedback(100);
-    
-    if (recentFeedback.length > 10) {
-      await this.neural.retrain(recentFeedback);
-      await this.patterns.updatePatterns(recentFeedback);
+    try {
+      const startTime = performance.now();
       
-      console.log('✅ Models retrained successfully');
+      // Feature extraction
+      const features = this.extractFinancialFeatures(transaction);
+      const tf = this.frameworks.tensorflow;
+      
+      // Create tensor and predict
+      const prediction = model.predict(tf.tensor2d([features]));
+      const result = await prediction.data();
+      
+      // Clean up tensors
+      prediction.dispose();
+
+      // Update metrics
+      this.metrics.totalProcessed++;
+      this.metrics.averageProcessingTime = 
+        (this.metrics.averageProcessingTime + (performance.now() - startTime)) / 2;
+
+      return {
+        riskScore: result[0],
+        category: this.categorizeTransaction(features, result[0]),
+        confidence: Math.abs(result[0] - 0.5) * 2,
+        features: features,
+        processingTime: performance.now() - startTime
+      };
+    } catch (error) {
+      console.error('❌ Financial analysis failed:', error);
+      return {
+        riskScore: 0.5,
+        category: 'unknown',
+        confidence: 0,
+        error: error.message
+      };
     }
   }
 
-  async updateModelsWithNewData(transactions, pattern, confidence) {
-    // Store pentru future learning
-    await this.db.storeTransactions(transactions);
-    await this.db.updatePattern(pattern, confidence);
+  /**
+   * Extract features from financial transaction
+   */
+  extractFinancialFeatures(transaction) {
+    const amount = parseFloat(transaction.amount) || 0;
+    const description = transaction.description || '';
+    
+    return [
+      Math.min(amount / 1000, 10), // Normalized amount
+      description.length / 100, // Description length
+      transaction.category === 'income' ? 1 : 0,
+      transaction.category === 'expense' ? 1 : 0,
+      new Date(transaction.date).getDay() / 7, // Day of week
+      new Date(transaction.date).getMonth() / 12, // Month
+      amount < 0 ? 1 : 0, // Is negative
+      Math.log10(Math.abs(amount) + 1) / 5, // Log amount
+      description.split(' ').length / 20, // Word count
+      /urgent|important|critical/i.test(description) ? 1 : 0 // Priority keywords
+    ];
   }
 
-  async fallbackProcessing(pdfData, options) {
-    console.log('⚠️ Using fallback processing...');
+  /**
+   * Categorize transaction
+   */
+  categorizeTransaction(features, riskScore) {
+    const amount = features[0] * 1000;
+    const isIncome = features[2] === 1;
+    const isExpense = features[3] === 1;
+
+    if (isIncome) return 'income';
+    if (isExpense && riskScore > 0.7) return 'high-risk-expense';
+    if (isExpense && riskScore < 0.3) return 'routine-expense';
+    if (amount > 5000) return 'large-transaction';
     
-    // Basic processing când ML failed
+    return 'standard-transaction';
+  }
+
+  /**
+   * Get engine status with singleton info
+   */
+  getStatus() {
     return {
-      transactions: [],
-      confidence: 0.1,
-      processingTime: 0,
-      mlEnhanced: false,
-      error: 'ML processing failed, used fallback'
+      ready: this.initialized,
+      singleton: !!mlEngineInstance,
+      initializing: isInitializing,
+      frameworks: {
+        tensorflow: !!this.frameworks.tensorflow,
+        brain: !!this.frameworks.brain,
+        tesseract: !!this.frameworks.tesseract
+      },
+      capabilities: this.capabilities,
+      models: Array.from(this.models.keys()),
+      metrics: this.metrics,
+      wasmSupported: this.wasmSupported,
+      duplicatePreventions: this.metrics.duplicatePreventions
     };
   }
 
-  // Dashboard Methods
-  async getPatternCount() {
+  /**
+   * Cleanup resources
+   */
+  dispose() {
+    console.log('🧹 MLEngine: Cleaning up singleton resources...');
+    
     try {
-      const patterns = await this.databaseManager.getAll('patterns');
-      return patterns ? patterns.length : 0;
-    } catch (error) {
-      console.warn('Eroare la obținerea numărului de pattern-uri:', error);
-      return 0;
-    }
-  }
-
-  async getMerchantCount() {
-    try {
-      const merchants = await this.databaseManager.getAll('merchants');
-      return merchants ? merchants.length : 0;
-    } catch (error) {
-      console.warn('Eroare la obținerea numărului de comercianți:', error);
-      return 0;
-    }
-  }
-
-  async getModelVersion() {
-    try {
-      const models = await this.databaseManager.get('models', 'current');
-      return models?.version || this.version;
-    } catch (error) {
-      console.warn('Eroare la obținerea versiunii modelului:', error);
-      return this.version;
-    }
-  }
-
-  async getTotalProcessedTransactions() {
-    try {
-      const transactions = await this.databaseManager.getAll('transactions');
-      return transactions ? transactions.length : 0;
-    } catch (error) {
-      console.warn('Eroare la obținerea numărului total de tranzacții:', error);
-      return 0;
-    }
-  }
-
-  async getModelsCount() {
-    try {
-      const models = await this.databaseManager.get('models', 'current');
-      if (!models) return 0;
-      
-      let count = 0;
-      if (models.merchantNetwork) count++;
-      if (models.categoryNetwork) count++;
-      if (models.amountNetwork) count++;
-      
-      return count;
-    } catch (error) {
-      console.warn('Eroare la obținerea numărului de modele:', error);
-      return 0;
-    }
-  }
-
-  async getDatabaseSize() {
-    try {
-      // Estimează dimensiunea bazei de date
-      const allStores = ['patterns', 'merchants', 'transactions', 'models', 'feedback', 'statistics'];
-      let totalSize = 0;
-      
-      for (const store of allStores) {
-        const data = await this.databaseManager.getAll(store);
-        if (data) {
-          // Estimează dimensiunea în bytes (aproximativ)
-          totalSize += JSON.stringify(data).length * 2; // UTF-16
+      // Dispose TensorFlow models
+      this.models.forEach((model, name) => {
+        if (model && typeof model.dispose === 'function') {
+          model.dispose();
+          console.log(`✅ Disposed model: ${name}`);
         }
-      }
+      });
       
-      // Convertește la MB
-      const sizeInMB = (totalSize / (1024 * 1024)).toFixed(1);
-      return `${sizeInMB} MB`;
+      this.models.clear();
+      this.initialized = false;
+      
+      console.log('✅ MLEngine cleanup complete');
     } catch (error) {
-      console.warn('Eroare la calcularea dimensiunii bazei de date:', error);
-      return '0 MB';
+      console.error('❌ MLEngine cleanup failed:', error);
     }
   }
 
-  async getModelDetails() {
-    try {
-      const models = await this.databaseManager.get('models', 'current');
-      if (!models) return [];
-      
-      const details = [];
-      
-      if (models.merchantNetwork) {
-        details.push({
-          name: 'Merchant Recognition',
-          accuracy: await this.getMerchantAccuracy(),
-          size: '~2KB',
-          lastUpdated: models.lastSaved || Date.now()
-        });
-      }
-      
-      if (models.categoryNetwork) {
-        details.push({
-          name: 'Category Classification',
-          accuracy: await this.getCategoryAccuracy(),
-          size: '~1.5KB',
-          lastUpdated: models.lastSaved || Date.now()
-        });
-      }
-      
-      if (models.amountNetwork) {
-        details.push({
-          name: 'Amount Prediction',
-          accuracy: await this.getAmountAccuracy(),
-          size: '~1KB',
-          lastUpdated: models.lastSaved || Date.now()
-        });
-      }
-      
-      return details;
-    } catch (error) {
-      console.warn('Eroare la obținerea detaliilor modelelor:', error);
-      return [];
-    }
-  }
-
-  async getMerchantAccuracy() {
-    try {
-      const feedback = await this.databaseManager.getAll('feedback');
-      const merchantFeedback = feedback?.filter(f => f.type === 'merchant') || [];
-      
-      if (merchantFeedback.length === 0) return 0.8;
-      
-      const correctPredictions = merchantFeedback.filter(f => f.isCorrect).length;
-      return correctPredictions / merchantFeedback.length;
-    } catch (error) {
-      return 0.8; // Default
-    }
-  }
-
-  async getCategoryAccuracy() {
-    try {
-      const feedback = await this.databaseManager.getAll('feedback');
-      const categoryFeedback = feedback?.filter(f => f.type === 'category') || [];
-      
-      if (categoryFeedback.length === 0) return 0.75;
-      
-      const correctPredictions = categoryFeedback.filter(f => f.isCorrect).length;
-      return correctPredictions / categoryFeedback.length;
-    } catch (error) {
-      return 0.75; // Default
-    }
-  }
-
-  async getAmountAccuracy() {
-    try {
-      const feedback = await this.databaseManager.getAll('feedback');
-      const amountFeedback = feedback?.filter(f => f.type === 'amount') || [];
-      
-      if (amountFeedback.length === 0) return 0.85;
-      
-      const correctPredictions = amountFeedback.filter(f => f.isCorrect).length;
-      return correctPredictions / amountFeedback.length;
-    } catch (error) {
-      return 0.85; // Default
-    }
-  }
-
-  async getRecentActivity(limit = 10) {
-    try {
-      const feedback = await this.databaseManager.getAll('feedback');
-      if (!feedback || feedback.length === 0) return [];
-      
-      // Sortează după timestamp descrescător
-      const sorted = feedback.sort((a, b) => (b.timestamp || 0) - (a.timestamp || 0));
-      
-      return sorted.slice(0, limit).map(f => ({
-        timestamp: f.timestamp || Date.now(),
-        description: this.formatActivityDescription(f),
-        accuracy: f.confidence || 0.5,
-        type: f.type || 'general'
-      }));
-    } catch (error) {
-      console.warn('Eroare la obținerea activității recente:', error);
-      return [];
-    }
-  }
-
-  formatActivityDescription(feedback) {
-    if (feedback.type === 'merchant') {
-      return `Merchant detectat: ${feedback.extractedData?.descriere?.substring(0, 30)}...`;
-    } else if (feedback.type === 'category') {
-      return `Categorie clasificată: ${feedback.extractedData?.categorie}`;
-    } else if (feedback.type === 'amount') {
-      return `Sumă procesată: ${feedback.extractedData?.suma}`;
+  /**
+   * Static method to get singleton instance
+   */
+  static getInstance() {
+    if (!mlEngineInstance) {
+      console.log('🆕 Creating new MLEngine singleton instance');
+      mlEngineInstance = new MLEngine();
     } else {
-      return `Tranzacție procesată: ${feedback.extractedData?.descriere?.substring(0, 40)}...`;
-    }
-  }
-
-  async exportAllData() {
-    try {
-      const allData = {
-        patterns: await this.databaseManager.getAll('patterns'),
-        merchants: await this.databaseManager.getAll('merchants'),
-        transactions: await this.databaseManager.getAll('transactions'),
-        models: await this.databaseManager.get('models', 'current'),
-        feedback: await this.databaseManager.getAll('feedback'),
-        statistics: await this.databaseManager.getAll('statistics'),
-        exportDate: new Date().toISOString(),
-        version: this.version
-      };
-      
-      return allData;
-    } catch (error) {
-      console.error('Eroare la exportul datelor:', error);
-      throw error;
-    }
-  }
-
-  async clearAllData() {
-    try {
-      const stores = ['patterns', 'merchants', 'transactions', 'models', 'feedback', 'statistics'];
-      
-      for (const store of stores) {
-        await this.databaseManager.clear(store);
+      console.log('♻️ Returning existing MLEngine singleton instance');
+      if (mlEngineInstance.metrics) {
+        mlEngineInstance.metrics.duplicatePreventions++;
       }
-      
-      // Reinitializează
-      await this.initialize();
-      
-      console.log('✅ Toate datele ML au fost șterse');
-      return { success: true };
-    } catch (error) {
-      console.error('❌ Eroare la ștergerea datelor:', error);
-      throw error;
     }
+    return mlEngineInstance;
+  }
+
+  /**
+   * Reset singleton (for testing)
+   */
+  static reset() {
+    console.log('🔄 Resetting MLEngine singleton...');
+    if (mlEngineInstance) {
+      mlEngineInstance.dispose();
+    }
+    mlEngineInstance = null;
+    tfInstance = null;
+    brainInstance = null;
+    tesseractInstance = null;
+    isInitializing = false;
+    initializationPromise = null;
+  }
+
+  /**
+   * Check if instance is ready
+   */
+  static isReady() {
+    return mlEngineInstance && mlEngineInstance.initialized;
   }
 }
 
-// Export singleton instance
-export const mlEngine = new MLEngine();
+// Default export
+export default MLEngine;
+
+// Convenience functions
+export const createMLEngine = () => MLEngine.getInstance();
+export const getMLEngineStatus = () => {
+  const instance = MLEngine.getInstance();
+  return instance.getStatus();
+};
+export const resetMLEngine = () => MLEngine.reset();

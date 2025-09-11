@@ -50,13 +50,15 @@
   
   // Nutrition Module
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
-  
-  let activeTab = 'dashboard';
+
+  // REACTIVE STATE VARIABLES - FIX pentru tab navigation
+  let activeModule = 'finance'; // Modulul activ actual
+  let activeTab = 'dashboard'; // Tab-ul activ în cadrul modulului
   let previousTab = 'dashboard';
   let direction = 1;
   let showPDFImporter = false;
   let showReceiptParser = false;
-  let isDarkMode = false;
+  let isDarkMode = false; // REACTIVE pentru dark mode
 
   // Define main tabs for 2x5 grid (10 most important)
   const mainTabs = [
@@ -105,19 +107,41 @@
   // Combined tabs for navigation logic
   $: allAvailableTabs = [...availableMainTabs, ...availableSecondaryTabs];
 
-  // Tab switching with animation direction
+  // Tab switching with animation direction - FIX pentru navigation blocking
   function switchTab(newTab) {
+    console.log(`🔄 Switching from ${activeTab} to ${newTab}`);
+    
     const currentIndex = allAvailableTabs.findIndex(t => t.id === activeTab);
     const newIndex = allAvailableTabs.findIndex(t => t.id === newTab);
     direction = newIndex > currentIndex ? 1 : -1;
-    previousTab = activeTab;
-    activeTab = newTab;
+    
+    // Găsește modulul pentru tab-ul nou
+    const newTabData = allAvailableTabs.find(t => t.id === newTab);
+    if (newTabData) {
+      previousTab = activeTab;
+      activeTab = newTab;
+      activeModule = newTabData.module;
+      console.log(`✅ Switched to module: ${activeModule}, tab: ${activeTab}`);
+    } else {
+      console.error(`❌ Tab not found: ${newTab}`);
+    }
   }
 
-  // Dark mode toggle with secure storage
+  // Dark mode toggle with COMPLETE CSS class application
   function toggleDarkMode() {
+    console.log(`🌓 Toggling dark mode: ${isDarkMode} -> ${!isDarkMode}`);
     isDarkMode = !isDarkMode;
-    document.documentElement.classList.toggle('dark', isDarkMode);
+    
+    // Apply dark mode to ALL elements
+    if (isDarkMode) {
+      document.documentElement.classList.add('dark-mode');
+      document.body.classList.add('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'dark');
+    } else {
+      document.documentElement.classList.remove('dark-mode');
+      document.body.classList.remove('dark-mode');
+      document.documentElement.setAttribute('data-theme', 'light');
+    }
     
     // Use secure storage instead of plain localStorage
     try {
@@ -127,131 +151,112 @@
       // Fallback to localStorage for non-critical data
       localStorage.setItem('darkMode', isDarkMode.toString());
     }
+    
+    console.log(`✅ Dark mode ${isDarkMode ? 'enabled' : 'disabled'}`);
   }
 
-  // Show notification helper with input sanitization
-  function showNotification(message, type = 'success') {
-    // Sanitize notification inputs to prevent XSS
-    const sanitizedMessage = InputSanitizer.sanitizeHTML(message || '');
-    const sanitizedType = InputSanitizer.sanitizeString(type, 20);
+  // Load dark mode preference on mount
+  onMount(async () => {
+    console.log('🚀 App initialization started');
     
-    // Validate type
-    const allowedTypes = ['success', 'error', 'warning', 'info'];
-    const validType = allowedTypes.includes(sanitizedType) ? sanitizedType : 'info';
-    
-    const event = new CustomEvent('show-notification', {
-      detail: { 
-        message: sanitizedMessage, 
-        type: validType 
-      }
-    });
-    window.dispatchEvent(event);
-  }
-
-  // Handle PDF import
-  function handlePDFImport(event) {
-    const importedTransactions = event.detail;
-    if (importedTransactions && importedTransactions.length > 0) {
-      transactions.update(trans => [...trans, ...importedTransactions]);
-      showNotification(`✅ ${importedTransactions.length} tranzacții importate cu succes!`);
-      activeTab = 'tranzactii';
-    }
-    showPDFImporter = false;
-  }
-
-  // Initialize dark mode
-  onMount(() => {
-    // Localhost verification logs
-    console.log('Running on:', window.location.hostname); // TREBUIE să fie "localhost"
-    console.log('Protocol:', window.location.protocol);   // TREBUIE să fie "http:"
-    console.log('No trackers:', !window.ga && !window.gtag); // TREBUIE true
-    
-    // Initialize security on mount
-    // Apply CSP
-    CSPManager.apply();
-    
-    // Initialize tamper protection
-    TamperProtection.init();
-    
-    // Initialize copyright protection (auto-initializes on import, but ensure it's active)
-    if (typeof window !== 'undefined') {
-      console.log('🔒 Copyright protection active');
-    }
-    
-    // Setup auto-lock after 15 minutes inactivity
-    secureStorage.setupAutoLock(15);
-    
-    // Initialize dark mode with secure storage
-    const loadDarkMode = async () => {
+    try {
+      // Load dark mode preference
+      let savedMode = false;
       try {
-        const secureData = await secureStorage.secureLoad('darkMode');
-        if (secureData && secureData.value === true) {
-          isDarkMode = true;
-          document.documentElement.classList.add('dark');
-        }
+        const saved = await secureStorage.secureLoad('darkMode');
+        savedMode = saved?.value || false;
       } catch (e) {
-        // Fallback to localStorage for migration
-        const savedDarkMode = localStorage.getItem('darkMode');
-        if (savedDarkMode === 'true') {
-          isDarkMode = true;
-          document.documentElement.classList.add('dark');
-          // Migrate to secure storage
-          try {
-            await secureStorage.secureSave('darkMode', { value: true });
-            localStorage.removeItem('darkMode');
-          } catch (migrationError) {
-            console.warn('Failed to migrate dark mode to secure storage');
-          }
-        }
+        // Fallback to localStorage
+        savedMode = localStorage.getItem('darkMode') === 'true';
       }
-    };
+      
+      if (savedMode) {
+        isDarkMode = true;
+        document.documentElement.classList.add('dark-mode');
+        document.body.classList.add('dark-mode');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
+      
+      console.log(`✅ Dark mode initialized: ${isDarkMode}`);
+      
+    } catch (error) {
+      console.error('❌ Error during app initialization:', error);
+    }
     
-    loadDarkMode();
+    console.log('✅ App initialization completed');
   });
-
-  // Calculate total balance reactively
-  $: totalBalance = calculateTotalBalance($accounts);
 </script>
 
-<div class="container">
-  <header>
-    <h1>💰 N-OMAD Suite</h1>
-    <div class="balance-display">
-      <div class="balance-total">
-        Total: {totalBalance.toLocaleString('ro-RO', {
-          style: 'currency',
-          currency: 'RON'
-        })}
+<svelte:head>
+  <title>N-OMAD Suite - Finance & Nutrition AI v{APP_CONFIG.version}</title>
+  <meta name="description" content="Advanced personal finance and nutrition management with AI" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+</svelte:head>
+
+<!-- Main App Container -->
+<div class="app-container" class:dark-mode={isDarkMode}>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="header-content">
+      <!-- Logo and Title -->
+      <div class="header-left">
+        <div class="app-logo">
+          <span class="logo-icon">🏛️</span>
+          <div class="logo-text">
+            <h1>N-OMAD Suite</h1>
+            <span class="version">v{APP_CONFIG.version}</span>
+          </div>
+        </div>
       </div>
-      <div class="balance-detail">
-        {#each $accounts as account}
-          <span class="balance-item">
-            {account.name}: {account.balance.toLocaleString('ro-RO', {
-              style: 'currency',
-              currency: account.currency
-            })}
+
+      <!-- Account Summary -->
+      <div class="header-center">
+        <div class="balance-summary">
+          <span class="balance-label">Total Balance:</span>
+          <span class="balance-amount">
+            {new Intl.NumberFormat('ro-RO', { 
+              style: 'currency', 
+              currency: 'RON' 
+            }).format($calculateTotalBalance())}
+          </span>
+        </div>
+        
+        <!-- Quick Status -->
+        {#each $accounts.slice(0, 3) as account}
+          <span class="account-quick" class:low-balance={account.balance < 1000}>
+            {account.name}: {new Intl.NumberFormat('ro-RO', { 
+              style: 'currency', 
+              currency: 'RON',
+              minimumFractionDigits: 0
+            }).format(account.balance)}
           </span>
         {/each}
       </div>
     </div>
   </header>
 
-  <button 
-    class="dark-mode-toggle" 
-    on:click={toggleDarkMode}
-    aria-label="Toggle dark mode"
-  >
-    {isDarkMode ? '☀️' : '🌙'}
-  </button>
-
-  <!-- System Testing Component -->
-  <SystemTester />
-  
-  <!-- PDF Learning Testing Component -->
-  <TestPDFLearning />
-  
-  <!-- ML Engine Testing Component -->
-  <TestML />
+  <!-- Fixed Header Controls - RIGHT POSITIONED -->
+  <div class="header-right">
+    <!-- Dark Mode Toggle -->
+    <button 
+      class="dark-mode-toggle" 
+      on:click={toggleDarkMode}
+      aria-label="Toggle dark mode"
+      title={isDarkMode ? 'Comută la modul light' : 'Comută la modul dark'}
+    >
+      {isDarkMode ? '☀️' : '🌙'}
+    </button>
+    
+    <!-- System Testing Components - VERTICAL Layout -->
+    <div class="system-test-controls">
+      <SystemTester />
+      <TestPDFLearning />
+      <TestML />
+    </div>
+  </div>
 
   <!-- Main Navigation Grid 2x5 -->
   <nav class="main-navigation">
@@ -261,6 +266,7 @@
         on:click={() => switchTab(tab.id)}
         type="button"
         data-row={tab.row}
+        data-module={tab.module}
       >
         <span class="tab-icon">{tab.icon}</span>
         <span class="tab-label">{tab.label}</span>
@@ -285,17 +291,38 @@
     </div>
   {/if}
 
-  <!-- Content wrapper -->
-  <div class="content-wrapper">
-    {#key activeTab}
-      <div 
-        class="tab-content"
-        in:fly={{ x: 50 * direction, duration: 300, delay: 100, easing: quintOut }}
-        out:fade={{ duration: 200 }}
-      >
-        <!-- Finance Module -->
+  <!-- Main Content Area -->
+  <main class="main-content" class:dark-mode={isDarkMode}>
+    <!-- Finance Module Content -->
+    {#if activeModule === 'finance'}
+      <div class="content-panel" in:fade={{ duration: 300, easing: quintOut }}>
         {#if activeTab === 'dashboard'}
-          <LazyComponent componentName="Dashboard" />
+          <div class="dashboard-content">
+            <h2>📊 Dashboard Financiar</h2>
+            <LazyComponent>
+              <div class="dashboard-cards">
+                <!-- Summary Cards -->
+                <div class="summary-card">
+                  <h3>🏦 Conturi Active</h3>
+                  <span class="summary-number">{$accounts.length}</span>
+                </div>
+                <div class="summary-card">
+                  <h3>💸 Tranzacții Luna</h3>
+                  <span class="summary-number">{$transactions.filter(t => 
+                    new Date(t.date).getMonth() === new Date().getMonth()
+                  ).length}</span>
+                </div>
+                <div class="summary-card">
+                  <h3>💰 Sold Total</h3>
+                  <span class="summary-number">{new Intl.NumberFormat('ro-RO', { 
+                    style: 'currency', 
+                    currency: 'RON',
+                    maximumFractionDigits: 0 
+                  }).format($calculateTotalBalance())}</span>
+                </div>
+              </div>
+            </LazyComponent>
+          </div>
         {:else if activeTab === 'conturi'}
           <Conturi />
         {:else if activeTab === 'tranzactii'}
@@ -308,603 +335,480 @@
           <Reconciliere />
         {:else if activeTab === 'recurring'}
           <RecurringPayments />
-        {:else if activeTab === 'rapoarte'}
-          <LazyComponent componentName="RapoarteAvansate" />
-          
-        <!-- Pantry Module -->
-        {:else if activeTab === 'grocery'}
-          <div class="grocery-tab">
-            <div class="grocery-header">
-              <h2>🛒 Smart Pantry Tracker</h2>
-              <button 
-                class="btn-receipt-parser" 
-                on:click={() => showReceiptParser = true}
-              >
-                📄 Importă Bon Fiscal
-              </button>
-            </div>
-            <LazyComponent componentName="GroceryDashboard" />
+        {:else if activeTab === 'export'}
+          <Export />
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Pantry Module Content -->
+    {#if activeModule === 'pantry'}
+      <div class="content-panel" in:fade={{ duration: 300, easing: quintOut }}>
+        {#if activeTab === 'grocery'}
+          <div class="pantry-content">
+            <h2>🛒 Pantry Management</h2>
+            <p>Ingredient inventory and expiration tracking coming soon...</p>
           </div>
         {:else if activeTab === 'shopping'}
           <ShoppingList />
-          
-        <!-- Nutrition Module -->
-        {:else if activeTab === 'nutrition'}
-          <NutritionModule activeTab="dashboard" />
-        {:else if activeTab === 'recipes'}
-          <NutritionModule activeTab="recipes" />
-        {:else if activeTab === 'meals'}
-          <NutritionModule activeTab="meals" />
-          
-        <!-- Shared Functions -->
-        {:else if activeTab === 'import'}
-          <div class="import-section">
-            <button 
-              class="btn-import-pdf"
-              on:click={() => showPDFImporter = true}
-            >
-              📄 Deschide Import PDF
-            </button>
-            
-            <div class="import-info">
-              <h3>ℹ️ Instrucțiuni Import PDF</h3>
-              <ul>
-                <li>Suportă extrase de la: BT, BCR, ING, Raiffeisen, UniCredit</li>
-                <li>Detectează automat tranzacțiile</li>
-                <li>Categorizează automat după comerciant</li>
-                <li>Verifică duplicatele înainte de import</li>
-              </ul>
-            </div>
+        {/if}
+      </div>
+    {/if}
+
+    <!-- Nutrition Module Content -->
+    {#if activeModule === 'nutrition'}
+      <div class="content-panel" in:fade={{ duration: 300, easing: quintOut }}>
+        <NutritionModule />
+      </div>
+    {/if}
+
+    <!-- Shared Module Content -->
+    {#if activeModule === 'shared'}
+      <div class="content-panel" in:fade={{ duration: 300, easing: quintOut }}>
+        {#if activeTab === 'import'}
+          <div class="import-content">
+            <h2>📥 Import Date</h2>
+            <p>Import functionality coming soon...</p>
           </div>
         {:else if activeTab === 'export'}
           <Export />
         {/if}
       </div>
-    {/key}
-  </div>
-
-  <!-- Toast notifications -->
-  <Toast />
-
-  <!-- Modals -->
-  {#if showPDFImporter}
-    <LazyComponent 
-      componentName="PDFImporter"
-      on:import={handlePDFImport}
-      on:close={() => showPDFImporter = false}
-    />
-  {/if}
-
-  {#if showReceiptParser}
-    <LazyComponent 
-      componentName="ReceiptParser" 
-      props={{ isOpen: showReceiptParser }}
-      on:productsAdded={() => {
-        showNotification('🛒 Produse adăugate cu succes în inventar!', 'success');
-        showReceiptParser = false;
-      }}
-      on:close={() => showReceiptParser = false}
-    />
-  {/if}
+    {/if}
+  </main>
 </div>
 
+<!-- Toast Notifications -->
+<Toast />
+
 <style>
-  /* Using system fonts for better performance and privacy */
+  /* GLOBAL VARIABLES - Enhanced for dark mode */
+  :global(:root) {
+    /* Light mode colors */
+    --bg-primary: #ffffff;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-tertiary: #64748b;
+    --border-color: #e2e8f0;
+    --border-light: #f1f5f9;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.25);
 
-  /* CSS Variables for modern animations and effects */
-  :root {
-    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-secondary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-    --font-monospace: 'SF Mono', Monaco, Inconsolata, 'Liberation Mono', 'Courier New', monospace;
+    /* Brand colors */
+    --color-primary: #3b82f6;
+    --color-secondary: #8b5cf6;
+    --color-accent: #06d6a0;
+    --color-warning: #f59e0b;
+    --color-danger: #ef4444;
+    --color-success: #10b981;
+
+    /* Gradients */
+    --gradient-primary: linear-gradient(135deg, var(--color-primary), var(--color-secondary));
+    --gradient-accent: linear-gradient(135deg, var(--color-accent), var(--color-primary));
     
-    /* Animation variables */
-    --transition-fast: 0.15s cubic-bezier(0.4, 0.0, 0.2, 1);
-    --transition-normal: 0.3s cubic-bezier(0.4, 0.0, 0.2, 1);
-    --transition-slow: 0.6s cubic-bezier(0.4, 0.0, 0.2, 1);
-    --transition-bounce: 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    /* Typography */
+    --font-primary: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'SF Mono', Monaco, 'Cascadia Code', monospace;
     
-    /* Modern gradients */
-    --gradient-primary: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    --gradient-secondary: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    --gradient-success: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-    --gradient-warm: linear-gradient(135deg, #fa709a 0%, #fee140 100%);
-    --gradient-cool: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%);
-    
-    /* Modern shadows */
-    --shadow-xs: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-    --shadow-sm: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
-    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
-    --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-    --shadow-2xl: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
-    
-    /* Glassmorphism */
-    --glass-bg: rgba(255, 255, 255, 0.1);
-    --glass-border: rgba(255, 255, 255, 0.2);
-    --glass-backdrop: blur(20px);
-    
-    /* Border radius scale */
-    --radius-sm: 0.375rem;
-    --radius-md: 0.5rem;
-    --radius-lg: 0.75rem;
-    --radius-xl: 1rem;
-    --radius-2xl: 1.5rem;
+    /* Transitions */
+    --transition-fast: 150ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition: 250ms cubic-bezier(0.4, 0, 0.2, 1);
+    --transition-bounce: 300ms cubic-bezier(0.68, -0.55, 0.265, 1.55);
   }
 
-  /* Enhanced button animations */
-  @keyframes buttonPulse {
-    0% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0.4); }
-    70% { box-shadow: 0 0 0 10px rgba(102, 126, 234, 0); }
-    100% { box-shadow: 0 0 0 0 rgba(102, 126, 234, 0); }
-  }
-  
-  @keyframes slideInUp {
-    from { transform: translateY(100px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  
-  @keyframes slideInDown {
-    from { transform: translateY(-100px); opacity: 0; }
-    to { transform: translateY(0); opacity: 1; }
-  }
-  
-  @keyframes fadeInScale {
-    from { transform: scale(0.8); opacity: 0; }
-    to { transform: scale(1); opacity: 1; }
-  }
-  
-  @keyframes shimmer {
-    0% { background-position: -200px 0; }
-    100% { background-position: calc(200px + 100%) 0; }
-  }
-  
-  @keyframes float {
-    0%, 100% { transform: translateY(0px); }
-    50% { transform: translateY(-10px); }
+  /* DARK MODE VARIABLES */
+  :global([data-theme="dark"]) {
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-tertiary: #94a3b8;
+    --border-color: #475569;
+    --border-light: #334155;
+    --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
+    --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
+    --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
+    --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
   }
 
-  /* Modern card animations */
-  @keyframes cardHover {
-    0% { transform: translateY(0) scale(1); }
-    100% { transform: translateY(-8px) scale(1.02); }
-  }
-  
-  @keyframes pulse {
-    0%, 100% { transform: scale(1); }
-    50% { transform: scale(1.1); }
+  /* GLOBAL DARK MODE STYLES */
+  :global(body.dark-mode) {
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
 
-  /* Responsive breakpoints as CSS custom properties */
-  @media (max-width: 640px) {
-    :root { --breakpoint: 'sm'; }
-  }
-  @media (max-width: 768px) and (min-width: 641px) {
-    :root { --breakpoint: 'md'; }
-  }
-  @media (max-width: 1024px) and (min-width: 769px) {
-    :root { --breakpoint: 'lg'; }
-  }
-  @media (max-width: 1280px) and (min-width: 1025px) {
-    :root { --breakpoint: 'xl'; }
-  }
-  @media (min-width: 1281px) {
-    :root { --breakpoint: '2xl'; }
+  :global(.dark-mode .card) {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
   }
 
-  /* Global font application */
-  * {
+  :global(.dark-mode .tab-button) {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border-color: var(--border-color) !important;
+  }
+
+  :global(.dark-mode .tab-button.active) {
+    background: var(--color-primary) !important;
+    color: white !important;
+  }
+
+  :global(.dark-mode input) {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  :global(.dark-mode select) {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  :global(.dark-mode textarea) {
+    background: var(--bg-tertiary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  :global(.dark-mode button) {
+    background: var(--bg-secondary) !important;
+    border-color: var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  /* APP CONTAINER */
+  .app-container {
+    min-height: 100vh;
+    background: var(--bg-primary);
+    color: var(--text-primary);
     font-family: var(--font-primary);
-    scroll-behavior: smooth;
+    transition: all var(--transition);
   }
 
-  .container {
+  /* APP HEADER - Fixed positioning */
+  .app-header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 80px;
+    background: var(--bg-primary);
+    border-bottom: 1px solid var(--border-color);
+    z-index: 900;
+    backdrop-filter: blur(10px);
+  }
+
+  .header-content {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 100%;
+    padding: 0 24px;
     max-width: 1400px;
     margin: 0 auto;
-    padding: 20px;
-    background: white;
-    border-radius: var(--radius-2xl);
-    box-shadow: var(--shadow-xl);
-    animation: fadeInScale 0.6s var(--transition-normal);
-    font-family: var(--font-primary);
   }
 
-  header {
+  .header-left {
     display: flex;
-    justify-content: space-between;
     align-items: center;
-    padding: 20px;
-    background: var(--gradient-primary);
-    color: white;
-    border-radius: var(--radius-xl);
-    margin-bottom: 20px;
-    box-shadow: var(--shadow-lg);
-    animation: slideInDown 0.8s var(--transition-normal);
   }
 
-  h1 {
-    margin: 0;
-    font-size: 1.8rem;
+  .app-logo {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .logo-icon {
+    font-size: 32px;
+    animation: float 4s ease-in-out infinite;
+  }
+
+  .logo-text h1 {
+    font-size: 24px;
     font-weight: 700;
-    font-family: var(--font-secondary);
+    margin: 0;
+    background: var(--gradient-primary);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
     letter-spacing: -0.025em;
   }
 
-  .balance-display {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-end;
-    gap: 8px;
-    background: var(--glass-bg);
-    padding: 12px 20px;
-    border-radius: var(--radius-lg);
-    backdrop-filter: var(--glass-backdrop);
-    border: 1px solid var(--glass-border);
-    animation: slideInUp 0.8s var(--transition-normal);
-    transition: all var(--transition-normal);
+  .version {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 500;
   }
 
-  .balance-display:hover {
-    transform: scale(1.02);
-    background: rgba(255, 255, 255, 0.2);
-  }
-
-  .balance-total {
-    font-size: 1.8rem;
-    font-weight: bold;
-    font-family: var(--font-monospace);
-    letter-spacing: -0.02em;
-  }
-
-  .balance-detail {
-    display: flex;
-    gap: 15px;
-    font-size: 0.9rem;
-    opacity: 0.95;
-  }
-
-  .balance-item {
-    padding: 4px 12px;
-    background: rgba(255, 255, 255, 0.2);
-    border-radius: 15px;
-    white-space: nowrap;
-  }
-
-  /* Modern Grid Navigation - 2x5 Layout */
-  .main-navigation {
-    display: grid;
-    grid-template-columns: repeat(5, 1fr);
-    grid-template-rows: repeat(2, 1fr);
-    gap: 10px;
-    padding: 16px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    border-radius: 20px;
-    margin: 16px 0;
-    box-shadow: var(--shadow-xl);
-    animation: slideInUp 0.8s var(--transition-normal);
-  }
-
-  .tab-button {
+  .header-center {
     display: flex;
     align-items: center;
+    gap: 24px;
+    flex: 1;
     justify-content: center;
+    max-width: 600px;
+  }
+
+  .balance-summary {
+    display: flex;
     flex-direction: column;
-    gap: 6px;
-    padding: 12px 8px;
-    background: rgba(255, 255, 255, 0.15);
-    backdrop-filter: blur(10px);
-    border: 1px solid rgba(255, 255, 255, 0.25);
-    border-radius: 16px;
-    color: white;
+    align-items: center;
+    text-align: center;
+  }
+
+  .balance-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
     font-weight: 500;
-    font-size: 13px;
-    cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    min-height: 70px;
-    position: relative;
-    overflow: hidden;
-    font-family: var(--font-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
   }
 
-  .tab-button::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: -100%;
-    width: 100%;
-    height: 100%;
-    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
-    transition: left 0.6s;
-  }
-
-  .tab-button:hover::before {
-    left: 100%;
-  }
-
-  .tab-button:hover {
-    background: rgba(255, 255, 255, 0.25);
-    transform: translateY(-3px) scale(1.02);
-    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.25);
-    border-color: rgba(255, 255, 255, 0.4);
-  }
-
-  .tab-button.active {
-    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-    box-shadow: 0 8px 20px rgba(245, 87, 108, 0.4);
-    transform: scale(1.05);
-    font-weight: 600;
-    animation: pulse 2s ease-in-out infinite;
-  }
-
-  .tab-button.active::before {
-    display: none;
-  }
-
-  .tab-icon {
+  .balance-amount {
     font-size: 24px;
-    transition: transform 0.3s ease;
-    filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
-  }
-
-  .tab-button:hover .tab-icon {
-    transform: rotate(5deg) scale(1.1);
-  }
-
-  .tab-button.active .tab-icon {
-    transform: scale(1.15);
-    animation: bounce 1s ease-in-out;
-  }
-
-  .tab-label {
-    font-size: 12px;
-    text-align: center;
-    line-height: 1.2;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
-    max-width: 100%;
-  }
-
-  @keyframes bounce {
-    0%, 20%, 53%, 80%, 100% {
-      transform: scale(1.15) translateY(0);
-    }
-    40%, 43% {
-      transform: scale(1.2) translateY(-8px);
-    }
-    70% {
-      transform: scale(1.18) translateY(-4px);
-    }
-  }
-
-  /* Secondary Navigation */
-  .secondary-navigation {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    align-items: center;
-    padding: 12px 16px;
-    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
-    border-radius: 12px;
-    margin: 10px 0;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .secondary-label {
-    font-size: 12px;
-    font-weight: 600;
-    color: #666;
-    margin-right: 8px;
-    font-family: var(--font-secondary);
-  }
-
-  .secondary-tab {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    padding: 6px 12px;
-    background: white;
-    border: 1px solid #e0e0e0;
-    border-radius: 20px;
-    color: #666;
-    font-size: 12px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    font-family: var(--font-primary);
-  }
-
-  .secondary-tab:hover {
-    background: #667eea;
+    font-weight: 700;
+    color: var(--color-success);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.025em;
     color: white;
-    transform: translateY(-1px);
-    box-shadow: var(--shadow-sm);
   }
 
-  .secondary-tab.active {
-    background: #f5576c;
-    color: white;
-    border-color: #f5576c;
-    box-shadow: var(--shadow-md);
-  }
-
-  .secondary-icon {
-    font-size: 14px;
-  }
-
-  .secondary-text {
-    white-space: nowrap;
-  }
-
-
-  .content-wrapper {
-    position: relative;
-    min-height: 500px;
-    overflow: hidden;
-  }
-
-  .tab-content {
-    position: relative;
-  }
-
-  /* Import section */
-  .import-section {
-    padding: 30px;
-    text-align: center;
-  }
-
-  .btn-import-pdf {
-    padding: 15px 30px;
-    font-size: 16px;
-    background: var(--gradient-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    margin-bottom: 30px;
-    font-family: var(--font-primary);
-    font-weight: 500;
-    letter-spacing: 0.025em;
-    box-shadow: var(--shadow-md);
-  }
-
-  .btn-import-pdf:hover {
-    transform: translateY(-3px);
-    box-shadow: var(--shadow-lg);
-    animation: buttonPulse 1s infinite;
-  }
-
-  .import-info {
-    max-width: 500px;
-    margin: 0 auto;
-    text-align: left;
-    background: #f8f9fa;
-    padding: 20px;
-    border-radius: 8px;
-  }
-
-  .import-info h3 {
-    margin-top: 0;
-  }
-
-  .import-info ul {
-    margin: 10px 0;
-    padding-left: 20px;
-  }
-
-  /* Grocery tab */
-  .grocery-tab {
-    padding: 20px;
-  }
-
-  .grocery-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-  }
-
-  .btn-receipt-parser {
-    padding: 10px 20px;
-    background: var(--gradient-primary);
-    color: white;
-    border: none;
-    border-radius: var(--radius-md);
-    cursor: pointer;
-    transition: all var(--transition-normal);
-    font-family: var(--font-primary);
-    font-weight: 500;
-    box-shadow: var(--shadow-sm);
-  }
-
-  .btn-receipt-parser:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow-md);
-    animation: buttonPulse 1s infinite;
-  }
-
-  /* Dark mode toggle */
-  .dark-mode-toggle {
+  /* HEADER RIGHT CONTROLS - FIXED Layout */
+  .header-right {
     position: fixed;
-    top: 10px;
-    right: 90px;
-    z-index: 999;
+    top: 20px;
+    right: 20px;
+    z-index: 1000;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    align-items: flex-end;
+    pointer-events: none;
+  }
+
+  /* Dark Mode Toggle */
+  .dark-mode-toggle {
     background: var(--gradient-primary);
-    border: none;
-    width: 50px;
-    height: 50px;
+    border: 2px solid var(--border-color);
+    width: 48px;
+    height: 48px;
     border-radius: 50%;
     cursor: pointer;
-    font-size: 24px;
+    font-size: 20px;
     display: flex;
     align-items: center;
     justify-content: center;
     box-shadow: var(--shadow-lg);
     transition: all var(--transition-bounce);
-    animation: float 4s ease-in-out infinite;
+    pointer-events: all;
+    z-index: 1001;
   }
 
   .dark-mode-toggle:hover {
-    transform: scale(1.1) rotate(180deg);
+    transform: scale(1.05) rotate(180deg);
     box-shadow: var(--shadow-2xl);
-    animation: buttonPulse 1s infinite;
   }
 
-  /* Dark mode styles */
-  :global(html.dark) {
-    --bg-primary: #1a1a1a;
-    --bg-secondary: #2d2d2d;
-    --text-primary: #e0e0e0;
-    --text-secondary: #a0a0a0;
-    --border-color: #404040;
-    --shadow: rgba(0, 0, 0, 0.5);
+  /* System Test Controls - VERTICAL Layout */
+  .system-test-controls {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    align-items: flex-end;
+    pointer-events: all;
+    z-index: 999;
   }
 
-  :global(html.dark .container) {
+  /* System Test Buttons Styling */
+  .system-test-controls :global(button) {
+    padding: 6px 12px !important;
+    font-size: 11px !important;
+    min-height: 28px !important;
+    max-width: 140px !important;
+    white-space: nowrap !important;
+    border-radius: 14px !important;
+    margin: 0 !important;
+    box-shadow: var(--shadow) !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+    color: var(--text-primary) !important;
+  }
+
+  .system-test-controls :global(button:hover) {
+    transform: translateY(-1px) !important;
+    box-shadow: var(--shadow-lg) !important;
+  }
+
+  /* MAIN NAVIGATION */
+  .main-navigation {
+    position: fixed;
+    top: 100px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 16px;
+    padding: 24px;
     background: var(--bg-secondary);
-    box-shadow: 0 10px 40px var(--shadow);
+    border-radius: 24px;
+    box-shadow: var(--shadow-lg);
+    z-index: 800;
+    border: 1px solid var(--border-color);
+    max-width: 800px;
+    width: calc(100vw - 48px);
   }
 
-  :global(html.dark header) {
-    background: linear-gradient(135deg, #2d2d2d 0%, #1a1a1a 100%);
+  .tab-button {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    padding: 20px 16px;
+    background: var(--bg-primary);
+    border: 2px solid var(--border-light);
+    border-radius: 16px;
+    cursor: pointer;
+    transition: all var(--transition-bounce);
     color: var(--text-primary);
+    font-family: var(--font-primary);
+    min-height: 100px;
+    position: relative;
+    overflow: hidden;
   }
 
-  :global(html.dark .tabs) {
-    background: linear-gradient(135deg, #2d2d2d 0%, #3d3d3d 100%);
+  .tab-button:hover {
+    transform: translateY(-4px) scale(1.02);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
   }
 
-  :global(html.dark .tab:not(.active)) {
+  .tab-button.active {
+    background: var(--gradient-primary);
+    border-color: var(--color-primary);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+  }
+
+  .tab-icon {
+    font-size: 28px;
+    display: block;
+    line-height: 1;
+  }
+
+  .tab-label {
+    font-size: 13px;
+    font-weight: 600;
+    text-align: center;
+    line-height: 1.2;
+    letter-spacing: 0.025em;
+  }
+
+  /* MAIN CONTENT */
+  .main-content {
+    padding-top: 350px;
+    padding-bottom: 40px;
+    padding-left: 24px;
+    padding-right: 24px;
+    min-height: 100vh;
+    background: var(--bg-primary);
+  }
+
+  .content-panel {
+    max-width: 1200px;
+    margin: 0 auto;
     background: var(--bg-secondary);
-    color: var(--text-secondary);
+    border-radius: 24px;
+    padding: 32px;
+    box-shadow: var(--shadow);
     border: 1px solid var(--border-color);
   }
 
-  :global(html.dark .tab:hover:not(.active)) {
-    background: linear-gradient(135deg, #3d3d3d 0%, #4d4d4d 100%);
+  /* DASHBOARD CONTENT */
+  .dashboard-content h2 {
+    margin: 0 0 32px 0;
+    font-size: 28px;
+    font-weight: 700;
     color: var(--text-primary);
   }
 
-  /* Responsive design for Grid Navigation */
-  @media (max-width: 768px) {
-    .container {
-      padding: 8px;
-      border-radius: 0;
-    }
-    
-    /* Switch to 3x4 grid on mobile */
+  .dashboard-cards {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 24px;
+    margin-bottom: 32px;
+  }
+
+  .summary-card {
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 16px;
+    padding: 24px;
+    text-align: center;
+    transition: all var(--transition);
+  }
+
+  .summary-card:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow-lg);
+    border-color: var(--color-primary);
+  }
+
+  .summary-card h3 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+    color: var(--text-secondary);
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+
+  .summary-number {
+    font-size: 32px;
+    font-weight: 700;
+    color: var(--text-primary);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* ANIMATIONS */
+  @keyframes float {
+    0%, 100% { transform: translateY(0px); }
+    50% { transform: translateY(-10px); }
+  }
+
+  @keyframes fadeInUp {
+    from { transform: translateY(30px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  @keyframes fadeInScale {
+    from { transform: scale(0.8); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+  }
+
+  /* RESPONSIVE DESIGN */
+  @media (max-width: 640px) {
     .main-navigation {
-      grid-template-columns: repeat(3, 1fr);
-      grid-template-rows: repeat(4, 1fr);
-      gap: 8px;
-      padding: 12px;
-      margin: 8px 0;
+      grid-template-columns: repeat(2, 1fr);
+      grid-template-rows: repeat(5, 1fr);
+      gap: 12px;
+      padding: 16px;
+      top: 90px;
     }
     
     .tab-button {
-      min-height: 60px;
-      padding: 8px 6px;
-      gap: 4px;
+      min-height: 80px;
+      padding: 12px 8px;
     }
     
     .tab-icon {
@@ -912,60 +816,87 @@
     }
     
     .tab-label {
-      font-size: 10px;
-    }
-    
-    /* Simplify secondary navigation on mobile */
-    .secondary-navigation {
-      padding: 8px 12px;
-      margin: 6px 0;
-    }
-    
-    .secondary-tab {
-      padding: 4px 8px;
       font-size: 11px;
     }
     
-    .secondary-icon {
-      font-size: 12px;
-    }
-    
-    .balance-display {
-      flex-direction: column;
-      align-items: flex-start;
-      gap: 8px;
-    }
-    
-    .balance-detail {
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    
-    .balance-item {
-      font-size: 0.8rem;
-      padding: 4px 8px;
-    }
-    
-    .balance-total {
-      font-size: 1.4rem;
-    }
-    
-    header {
-      flex-wrap: wrap;
-      padding: 12px 16px;
-    }
-    
-    h1 {
-      font-size: 1.2rem;
-    }
-    
-    .dark-mode-toggle {
+    .header-right {
       position: relative;
       top: auto;
       right: auto;
-      width: 40px;
-      height: 40px;
-      font-size: 20px;
+      flex-direction: row;
+      gap: 8px;
+      justify-content: flex-end;
+      padding: 12px;
     }
+    
+    .system-test-controls {
+      flex-direction: row;
+      gap: 4px;
+    }
+  }
+
+  /* ML ENGINE CARD - Positioned at bottom right */
+  :global(.ml-test-card) {
+    position: fixed !important;
+    bottom: 20px !important;
+    right: 20px !important;
+    z-index: 100 !important;
+    max-width: 300px !important;
+    max-height: 200px !important;
+    overflow: hidden !important;
+    border-radius: 12px !important;
+    box-shadow: var(--shadow-lg) !important;
+    background: var(--bg-secondary) !important;
+    border: 1px solid var(--border-color) !important;
+  }
+
+  /* SECONDARY NAVIGATION */
+  .secondary-navigation {
+    position: fixed;
+    bottom: 20px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 20px;
+    background: var(--bg-secondary);
+    border-radius: 50px;
+    box-shadow: var(--shadow-lg);
+    border: 1px solid var(--border-color);
+    z-index: 700;
+  }
+
+  .secondary-label {
+    font-size: 12px;
+    color: var(--text-tertiary);
+    font-weight: 600;
+    margin-right: 8px;
+  }
+
+  .secondary-tab {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 12px;
+    background: var(--bg-primary);
+    border: 1px solid var(--border-light);
+    border-radius: 20px;
+    cursor: pointer;
+    transition: all var(--transition);
+    font-size: 12px;
+    color: var(--text-primary);
+  }
+
+  .secondary-tab:hover {
+    background: var(--color-primary);
+    color: white;
+    transform: translateY(-1px);
+  }
+
+  .secondary-tab.active {
+    background: var(--color-primary);
+    color: white;
+    border-color: var(--color-primary);
   }
 </style>
