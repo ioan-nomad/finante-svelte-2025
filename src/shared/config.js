@@ -1,11 +1,71 @@
+// src/shared/config.js
 export const APP_CONFIG = {
+  // Module toggles
   modules: {
     finance: true,
     pantry: true,
-    nutrition: true  // ← ACTIVAT pentru Recipe Suggester
+    nutrition: true
   },
+  
+  // App metadata
+  version: '0.2.2',
   appName: 'N-OMAD Suite',
-  version: '1.0.0',
+  
+  // Feature flags
+  features: {
+    mlEngine: true,
+    ocrSupport: true,
+    advancedCharts: true,
+    pdfImport: true,
+    darkMode: true,
+    exportData: true,
+    cloudSync: false, // Disabled for privacy
+    analytics: false  // Disabled for privacy
+  },
+  
+  // API endpoints (if needed in future)
+  api: {
+    baseUrl: null, // Local only for now
+    timeout: 30000
+  },
+  
+  // Storage keys
+  storage: {
+    finance: 'fs_data',
+    pantry: 'groceryInventory',
+    nutrition: 'nutritionProfile',
+    settings: 'appSettings',
+    darkMode: 'darkMode'
+  },
+  
+  // Default settings
+  defaults: {
+    currency: 'RON',
+    language: 'ro',
+    dateFormat: 'DD.MM.YYYY',
+    numberFormat: 'ro-RO',
+    firstDayOfWeek: 1, // Monday
+    theme: 'light'
+  },
+  
+  // Performance settings
+  performance: {
+    debounceDelay: 300,
+    throttleDelay: 100,
+    maxTransactions: 10000,
+    cacheTimeout: 300000, // 5 minutes
+    lazyLoadDelay: 200
+  },
+  
+  // Security settings
+  security: {
+    encryptLocalStorage: true,
+    enforceCSP: true,
+    blockDevTools: false, // Disabled in dev
+    enableCopyrightProtection: true
+  },
+
+  // Navigation tabs (legacy support)
   tabs: {
     finance: [
       { id: 'dashboard', label: 'Dashboard', icon: '📊' },
@@ -32,3 +92,9 @@ export const APP_CONFIG = {
     ]
   }
 };
+
+// Export for quick access
+export const MODULES = APP_CONFIG.modules;
+export const FEATURES = APP_CONFIG.features;
+export const STORAGE_KEYS = APP_CONFIG.storage;
+export const DEFAULTS = APP_CONFIG.defaults;
