@@ -13,6 +13,11 @@
   
   // Advanced Components
   import RapoarteAvansate from './components/RapoarteAvansate.svelte';
+  import RecurringPayments from './components/RecurringPayments.svelte';
+  import Reconciliere from './components/Reconciliere.svelte';
+  import Export from './components/Export.svelte';
+  import ShoppingList from './components/ShoppingList.svelte';
+  import NutritionModule from './modules/nutrition/NutritionModule.svelte';
   
   // State
   let activeTab = 'dashboard';
@@ -136,8 +141,18 @@
       <Budgeturi />
     {:else if activeTab === 'obiective'}
       <Obiective />
+    {:else if activeTab === 'reconciliere'}
+      <Reconciliere />
+    {:else if activeTab === 'recurente'}
+      <RecurringPayments />
     {:else if activeTab === 'rapoarte'}
       <RapoarteAvansate />
+    {:else if activeTab === 'pantry'}
+      <ShoppingList />
+    {:else if activeTab === 'nutritie'}
+      <NutritionModule />
+    {:else if activeTab === 'export'}
+      <Export />
     {:else}
       <div class="placeholder">
         <h2>{secondaryTabs.find(t => t.id === activeTab)?.icon} {secondaryTabs.find(t => t.id === activeTab)?.label}</h2>
