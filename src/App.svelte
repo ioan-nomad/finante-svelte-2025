@@ -16,6 +16,9 @@
   // PDF Import - IMPORTANT!
   import PDFImporter from './components/PDFImporter.svelte';
   
+  // Advanced Reports
+  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
+  
   // Pantry & Nutrition
   import ShoppingList from './components/ShoppingList.svelte';
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
@@ -43,6 +46,7 @@
     { id: 'obiective', label: 'Obiective', icon: '🎯', module: 'finance' },
     { id: 'reconciliere', label: 'Reconciliere', icon: '✅', module: 'finance' },
     { id: 'recurring', label: 'Recurente', icon: '🔄', module: 'finance' },
+    { id: 'rapoarte', label: 'Rapoarte', icon: '📑', module: 'finance' },
     { id: 'pantry', label: 'Pantry', icon: '🛒', module: 'pantry' },
     { id: 'nutrition', label: 'Nutriție', icon: '🍽️', module: 'nutrition' },
     { id: 'export', label: 'Export', icon: '📤', module: 'shared' }
@@ -157,6 +161,8 @@
       <Reconciliere />
     {:else if activeTab === 'recurring'}
       <RecurringPayments />
+    {:else if activeTab === 'rapoarte'}
+      <RapoarteAvansate />
     {:else if activeTab === 'pantry'}
       <ShoppingList />
     {:else if activeTab === 'nutrition'}

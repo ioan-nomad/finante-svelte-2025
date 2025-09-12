@@ -12,10 +12,9 @@ export default defineConfig({
       external: ['dompurify', 'canvg'],
       output: {
         manualChunks: {
-          'vendor-svelte': ['svelte'],
-          'vendor-chart': ['chart.js'],
-          'vendor-pdf': ['pdfjs-dist', 'jspdf'],
-          'vendor-xlsx': ['xlsx']
+          'vendor-charts': ['chart.js'],
+          'vendor-pdf': ['pdfjs-dist'],
+          'vendor-ml': ['brain.js']
         },
         assetFileNames: 'assets/[name]-[hash].[ext]',
         chunkFileNames: 'js/[name]-[hash].js',
@@ -38,8 +37,13 @@ export default defineConfig({
     chunkSizeWarningLimit: 500
   },
   optimizeDeps: {
-    include: ['chart.js', 'pdfjs-dist', 'xlsx', 'jspdf', 'dompurify', 'canvg'],
-    exclude: ['@napi-rs/canvas']
+    include: [
+      'pdfjs-dist',
+      'chart.js',
+      'brain.js',
+      'tesseract.js'
+    ],
+    exclude: ['@sqlite.org/sqlite-wasm']
   },
   server: {
     port: 5173,
@@ -47,8 +51,9 @@ export default defineConfig({
     open: false,  // SCHIMBAT din true în false - NU mai deschide automat
     cors: true,
     host: 'localhost',
+    // DISABLE CSP pentru development
     headers: {
-      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; worker-src 'self' blob:;"
+      // Eliminăm CSP complet în dev
     }
   },
   preview: {
