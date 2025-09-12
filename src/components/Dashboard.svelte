@@ -1,180 +1,136 @@
-<!-- components/Dashboard.svelte -->
 <script>
-  import { onMount, onDestroy } from 'svelte';
-  import { slide } from 'svelte/transition';
+  import { onMount } from 'svelte';
   import Chart from 'chart.js/auto';
-  import { 
-    transactions, 
-    accounts,
-    monthStats,
-    computeAccountBalance,
-    CATEGORY_COLORS,
-    fmt,
-    currentMonth,
-    lastMonth
-  } from '../lib/store.js';
-  import AdvancedCharts from './AdvancedCharts.svelte';
-
-  let showAdvancedCharts = false;
+  import { transactions, accounts, totalBalance } from '../modules/finance/stores/financeStore.js';
   
-  // Chart instances
-  let charts = {};
+  let chartInstances = {};
+  let stats = {
+    income: 0,
+    expenses: 0,
+    savings: 0,
+    percentSaved: 0
+  };
   
-  // Canvas elements
-  let pieCanvas, lineCanvas, barCanvas, donutCanvas;
-  
-  // Reactive data for charts
-  $: currentMonthExpenses = getCategoryExpenses($transactions);
-  $: last6MonthsData = getLast6MonthsData($transactions);
-  $: top5Categories = getTop5Categories(currentMonthExpenses);
-  $: accountDistribution = getAccountDistribution($accounts);
-  
-  function getCategoryExpenses(txs) {
-    const current = currentMonth();
-    const expenses = txs.filter(t => 
-      t.type === 'expense' && 
-      t.date && 
-      t.date.startsWith(current)
-    );
+  // Calculate statistics
+  function calculateStats() {
+    const now = new Date();
+    const currentMonth = now.getMonth();
+    const currentYear = now.getFullYear();
     
-    const byCategory = {};
-    expenses.forEach(t => {
-      const cat = t.category || 'Altele';
-      byCategory[cat] = (byCategory[cat] || 0) + t.amount;
+    let monthlyIncome = 0;
+    let monthlyExpenses = 0;
+    
+    $transactions.forEach(tx => {
+      const txDate = new Date(tx.date);
+      if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
+        if (tx.type === 'income') {
+          monthlyIncome += tx.amount;
+        } else if (tx.type === 'expense') {
+          monthlyExpenses += tx.amount;
+        }
+      }
     });
     
-    return byCategory;
+    stats.income = monthlyIncome;
+    stats.expenses = monthlyExpenses;
+    stats.savings = monthlyIncome - monthlyExpenses;
+    stats.percentSaved = monthlyIncome > 0 ? Math.round((stats.savings / monthlyIncome) * 100) : 0;
   }
   
-  function getLast6MonthsData(txs) {
-    const months = [];
-    const incomeData = [];
-    const expenseData = [];
-    const savingsData = [];
-    
-    for (let i = 5; i >= 0; i--) {
-      const d = new Date();
-      d.setMonth(d.getMonth() - i);
-      const month = d.toISOString().slice(0, 7);
-      const monthName = d.toLocaleDateString('ro-RO', { month: 'short', year: '2-digit' });
-      months.push(monthName);
-      
-      const monthTx = txs.filter(t => t.date && t.date.startsWith(month));
-      const inc = monthTx.filter(t => t.type === 'income').reduce((s, t) => s + t.amount, 0);
-      const exp = monthTx.filter(t => t.type === 'expense').reduce((s, t) => s + t.amount, 0);
-      
-      incomeData.push(inc);
-      expenseData.push(exp);
-      savingsData.push(inc - exp);
-    }
-    
-    return { months, incomeData, expenseData, savingsData };
-  }
-  
-  function getTop5Categories(categoryExpenses) {
-    return Object.entries(categoryExpenses)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5);
-  }
-  
-  function getAccountDistribution(accs) {
-    return accs
-      .filter(a => a.currency === 'RON')
-      .map(a => ({
-        name: a.name,
-        balance: Math.abs(computeAccountBalance(a))
-      }));
-  }
-  
-  function drawCharts() {
-    // Get dark mode colors
-    const isDark = document.documentElement.classList.contains('dark-mode')
-    const textColor = isDark ? '#e6e9ff' : '#374151'
-    const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
-    const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
-    const tooltipBg = isDark ? 'rgba(23, 26, 43, 0.9)' : 'rgba(255, 255, 255, 0.9)'
-    const borderColor = isDark ? '#1a1a1a' : '#fff'
-    
+  // Create all charts
+  function createCharts() {
     // Destroy existing charts
-    Object.values(charts).forEach(chart => chart?.destroy());
-    charts = {};
+    Object.values(chartInstances).forEach(chart => chart?.destroy());
     
-    // 1. Pie chart - expenses by category
-    if (pieCanvas && Object.keys(currentMonthExpenses).length > 0) {
-      charts.pie = new Chart(pieCanvas, {
-        type: 'pie',
+    // 1. Expenses by Category (Pie Chart)
+    const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
+    if (categoryCtx) {
+      const categoryData = {};
+      $transactions.filter(t => t.type === 'expense').forEach(t => {
+        categoryData[t.category] = (categoryData[t.category] || 0) + t.amount;
+      });
+      
+      chartInstances.category = new Chart(categoryCtx, {
+        type: 'doughnut',
         data: {
-          labels: Object.keys(currentMonthExpenses),
+          labels: Object.keys(categoryData).slice(0, 6),
           datasets: [{
-            data: Object.values(currentMonthExpenses),
-            backgroundColor: Object.keys(currentMonthExpenses).map(c => CATEGORY_COLORS[c] || '#999'),
-            borderWidth: 2,
-            borderColor: borderColor
+            data: Object.values(categoryData).slice(0, 6),
+            backgroundColor: [
+              '#3b82f6', '#10b981', '#f59e0b', 
+              '#ef4444', '#8b5cf6', '#ec4899'
+            ]
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { 
+            legend: {
               position: 'bottom',
-              labels: {
-                color: textColor,
-                font: {
-                  size: 11,
-                  family: 'Inter, ui-sans-serif'
-                }
-              }
-            },
-            tooltip: {
-              titleColor: textColor,
-              bodyColor: textColor,
-              backgroundColor: tooltipBg,
-              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-              borderWidth: 1,
-              callbacks: {
-                label: (context) => {
-                  const label = context.label || '';
-                  const value = fmt(context.raw);
-                  const total = context.dataset.data.reduce((a, b) => a + b, 0);
-                  const percent = ((context.raw / total) * 100).toFixed(1);
-                  return `${label}: ${value} RON (${percent}%)`;
-                }
-              }
+              labels: { color: '#9ca3af', font: { size: 11 } }
             }
           }
         }
       });
     }
     
-    // 2. Line chart - trend last 6 months
-    if (lineCanvas) {
-      const data = last6MonthsData;
-      charts.line = new Chart(lineCanvas, {
+    // 2. Monthly Trend (Line Chart)
+    const trendCtx = document.getElementById('trendChart')?.getContext('2d');
+    if (trendCtx) {
+      const last6Months = [];
+      const incomeData = [];
+      const expenseData = [];
+      const savingsData = [];
+      
+      for (let i = 5; i >= 0; i--) {
+        const date = new Date();
+        date.setMonth(date.getMonth() - i);
+        const month = date.toLocaleDateString('ro-RO', { month: 'short' });
+        last6Months.push(month);
+        
+        // Calculate for each month
+        let monthIncome = 0;
+        let monthExpense = 0;
+        
+        $transactions.forEach(t => {
+          const tDate = new Date(t.date);
+          if (tDate.getMonth() === date.getMonth() && tDate.getFullYear() === date.getFullYear()) {
+            if (t.type === 'income') monthIncome += t.amount;
+            else if (t.type === 'expense') monthExpense += t.amount;
+          }
+        });
+        
+        incomeData.push(monthIncome);
+        expenseData.push(monthExpense);
+        savingsData.push(monthIncome - monthExpense);
+      }
+      
+      chartInstances.trend = new Chart(trendCtx, {
         type: 'line',
         data: {
-          labels: data.months,
+          labels: last6Months,
           datasets: [
             {
               label: 'Venituri',
-              data: data.incomeData,
+              data: incomeData,
               borderColor: '#10b981',
-              backgroundColor: '#10b98120',
-              tension: 0.3
+              backgroundColor: 'rgba(16, 185, 129, 0.1)',
+              tension: 0.4
             },
             {
               label: 'Cheltuieli',
-              data: data.expenseData,
+              data: expenseData,
               borderColor: '#ef4444',
-              backgroundColor: '#ef444420',
-              tension: 0.3
+              backgroundColor: 'rgba(239, 68, 68, 0.1)',
+              tension: 0.4
             },
             {
               label: 'Economii',
-              data: data.savingsData,
-              borderColor: '#fbbf24',
-              backgroundColor: '#fbbf2420',
-              tension: 0.3
+              data: savingsData,
+              borderColor: '#3b82f6',
+              backgroundColor: 'rgba(59, 130, 246, 0.1)',
+              tension: 0.4
             }
           ]
         },
@@ -182,364 +138,274 @@
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { 
-              position: 'bottom',
-              labels: {
-                color: textColor,
-                font: {
-                  size: 11,
-                  family: 'Inter, ui-sans-serif'
-                }
-              }
-            },
-            tooltip: {
-              titleColor: textColor,
-              bodyColor: textColor,
-              backgroundColor: tooltipBg,
-              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-              borderWidth: 1,
-              callbacks: {
-                label: (context) => `${context.dataset.label}: ${fmt(context.raw)} RON`
-              }
+            legend: {
+              labels: { color: '#9ca3af', font: { size: 11 } }
             }
           },
           scales: {
-            x: {
-              ticks: {
-                color: mutedColor
-              },
-              grid: {
-                color: gridColor
-              }
+            y: {
+              ticks: { color: '#9ca3af' },
+              grid: { color: 'rgba(156, 163, 175, 0.1)' }
             },
-            y: { 
-              beginAtZero: true,
-              ticks: {
-                color: mutedColor
-              },
-              grid: {
-                color: gridColor
-              }
+            x: {
+              ticks: { color: '#9ca3af' },
+              grid: { color: 'rgba(156, 163, 175, 0.1)' }
             }
           }
         }
       });
     }
     
-    // 3. Bar chart - top 5 categories
-    if (barCanvas && top5Categories.length > 0) {
-      charts.bar = new Chart(barCanvas, {
+    // 3. Top 5 Categories (Bar Chart)
+    const topCtx = document.getElementById('topCategoriesChart')?.getContext('2d');
+    if (topCtx) {
+      const categoryTotals = {};
+      $transactions.filter(t => t.type === 'expense').forEach(t => {
+        categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
+      });
+      
+      const sorted = Object.entries(categoryTotals)
+        .sort((a, b) => b[1] - a[1])
+        .slice(0, 5);
+      
+      chartInstances.topCategories = new Chart(topCtx, {
         type: 'bar',
         data: {
-          labels: top5Categories.map(([cat]) => cat),
+          labels: sorted.map(([cat]) => cat),
           datasets: [{
             label: 'Cheltuieli',
-            data: top5Categories.map(([, amount]) => amount),
-            backgroundColor: top5Categories.map(([cat]) => CATEGORY_COLORS[cat] || '#999')
+            data: sorted.map(([, amount]) => amount),
+            backgroundColor: '#8b5cf6'
           }]
         },
         options: {
           responsive: true,
           maintainAspectRatio: false,
           plugins: {
-            legend: { display: false },
-            tooltip: {
-              titleColor: textColor,
-              bodyColor: textColor,
-              backgroundColor: tooltipBg,
-              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-              borderWidth: 1,
-              callbacks: {
-                label: (context) => `${fmt(context.raw)} RON`
-              }
-            }
+            legend: { display: false }
           },
           scales: {
-            x: {
-              ticks: {
-                color: mutedColor
-              },
-              grid: {
-                color: gridColor
-              }
+            y: {
+              ticks: { color: '#9ca3af' },
+              grid: { color: 'rgba(156, 163, 175, 0.1)' }
             },
-            y: { 
-              beginAtZero: true,
-              ticks: {
-                color: mutedColor
-              },
-              grid: {
-                color: gridColor
-              }
+            x: {
+              ticks: { color: '#9ca3af' },
+              grid: { color: 'rgba(156, 163, 175, 0.1)' }
             }
           }
         }
       });
     }
     
-    // 4. Donut chart - account distribution
-    if (donutCanvas && accountDistribution.length > 0) {
-      const colors = [
-        '#3b82f6', '#10b981', '#f59e0b', '#ef4444', 
-        '#8b5cf6', '#ec4899', '#06b6d4', '#84cc16',
-        '#f472b6', '#fbbf24', '#a855f7', '#64748b'
-      ];
+    // 4. Account Distribution (Pie Chart)
+    const accountCtx = document.getElementById('accountChart')?.getContext('2d');
+    if (accountCtx) {
+      const accountBalances = $accounts.map(acc => ({
+        name: acc.name,
+        balance: acc.balance
+      })).filter(acc => acc.balance > 0);
       
-      charts.donut = new Chart(donutCanvas, {
-        type: 'doughnut',
-        data: {
-          labels: accountDistribution.map(a => a.name),
-          datasets: [{
-            data: accountDistribution.map(a => a.balance),
-            backgroundColor: colors,
-            borderWidth: 2,
-            borderColor: borderColor
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: {
-            legend: { 
-              position: 'bottom',
-              labels: {
-                color: textColor,
-                font: {
-                  size: 11,
-                  family: 'Inter, ui-sans-serif'
-                }
-              }
-            },
-            tooltip: {
-              titleColor: textColor,
-              bodyColor: textColor,
-              backgroundColor: tooltipBg,
-              borderColor: isDark ? 'rgba(128, 184, 255, 0.2)' : 'rgba(0, 0, 0, 0.1)',
-              borderWidth: 1,
-              callbacks: {
-                label: (context) => `${context.label}: ${fmt(context.raw)} RON`
+      if (accountBalances.length > 0) {
+        chartInstances.accounts = new Chart(accountCtx, {
+          type: 'pie',
+          data: {
+            labels: accountBalances.map(a => a.name),
+            datasets: [{
+              data: accountBalances.map(a => a.balance),
+              backgroundColor: [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+              ]
+            }]
+          },
+          options: {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                position: 'bottom',
+                labels: { color: '#9ca3af', font: { size: 11 } }
               }
             }
           }
-        }
-      });
+        });
+      }
     }
-  }
-  
-  // Redraw charts when data changes
-  $: if (pieCanvas && lineCanvas && barCanvas && donutCanvas) {
-    drawCharts();
   }
   
   onMount(() => {
-    // Charts will be drawn when canvases are ready
-    
-    // Listen for dark mode changes
-    const observer = new MutationObserver(() => {
-      if (Object.keys(charts).length > 0) {
-        drawCharts() // Redraw charts with new colors
-      }
-    })
-    
-    observer.observe(document.documentElement, {
-      attributes: true,
-      attributeFilter: ['class']
-    })
-    
-    // Store observer for cleanup
-    window._dashboardChartObserver = observer
+    calculateStats();
+    setTimeout(createCharts, 100); // Delay for DOM
   });
   
-  onDestroy(() => {
-    Object.values(charts).forEach(chart => chart?.destroy());
-    
-    // Clean up observer
-    if (window._dashboardChartObserver) {
-      window._dashboardChartObserver.disconnect()
-      delete window._dashboardChartObserver
+  // Reactive updates
+  $: if ($transactions) {
+    calculateStats();
+    if (typeof window !== 'undefined') {
+      setTimeout(createCharts, 100);
     }
-  });
+  }
 </script>
 
 <div class="dashboard">
-  <!-- Summary cards -->
-  <div class="summary-grid">
-    <div class="summary-card income">
-      <h3>Venituri (luna curentă)</h3>
-      <div class="value">{fmt($monthStats.currentIncome)}</div>
-      <div class="percent">
-        {$monthStats.incomeChange > 0 ? '+' : ''}{$monthStats.incomeChange}% față de luna trecută
-      </div>
+  <h1 class="dashboard-title">📊 Dashboard Financiar</h1>
+  
+  <!-- Stats Cards -->
+  <div class="stats-grid">
+    <div class="stat-card income-card">
+      <div class="stat-label">Venituri (luna curentă)</div>
+      <div class="stat-value income">{stats.income.toFixed(2)}</div>
+      <div class="stat-percent">0% față de luna trecută</div>
     </div>
     
-    <div class="summary-card expense">
-      <h3>Cheltuieli (luna curentă)</h3>
-      <div class="value">{fmt($monthStats.currentExpense)}</div>
-      <div class="percent">
-        {$monthStats.expenseChange > 0 ? '+' : ''}{$monthStats.expenseChange}% față de luna trecută
-      </div>
+    <div class="stat-card expense-card">
+      <div class="stat-label">Cheltuieli (luna curentă)</div>
+      <div class="stat-value expense">{stats.expenses.toFixed(2)}</div>
+      <div class="stat-percent">0% față de luna trecută</div>
     </div>
     
-    <div class="summary-card savings">
-      <h3>Economii (luna curentă)</h3>
-      <div class="value">{fmt($monthStats.currentSavings)}</div>
-      <div class="percent">{$monthStats.savingsPercent}% din venituri</div>
+    <div class="stat-card savings-card">
+      <div class="stat-label">Economii (luna curentă)</div>
+      <div class="stat-value savings">{stats.savings.toFixed(2)}</div>
+      <div class="stat-percent">{stats.percentSaved}% din venituri</div>
     </div>
   </div>
-
-  <!-- Charts grid -->
+  
+  <!-- Charts Grid -->
   <div class="charts-grid">
-    <div class="chart-card">
-      <h2>Cheltuieli pe Categorii (Luna Curentă)</h2>
-      <div class="chart-container">
-        <canvas bind:this={pieCanvas}></canvas>
+    <div class="chart-container">
+      <h3>Cheltuieli pe Categorii (Luna Curentă)</h3>
+      <div class="chart-wrapper">
+        <canvas id="categoryChart"></canvas>
       </div>
     </div>
     
-    <div class="chart-card">
-      <h2>Trend Lunar (Ultimele 6 Luni)</h2>
-      <div class="chart-container">
-        <canvas bind:this={lineCanvas}></canvas>
+    <div class="chart-container">
+      <h3>Trend Lunar (Ultimele 6 Luni)</h3>
+      <div class="chart-wrapper">
+        <canvas id="trendChart"></canvas>
       </div>
     </div>
     
-    <div class="chart-card">
-      <h2>Top 5 Categorii Cheltuieli</h2>
-      <div class="chart-container">
-        <canvas bind:this={barCanvas}></canvas>
+    <div class="chart-container">
+      <h3>Top 5 Categorii Cheltuieli</h3>
+      <div class="chart-wrapper">
+        <canvas id="topCategoriesChart"></canvas>
       </div>
     </div>
     
-    <div class="chart-card">
-      <h2>Distribuție Conturi</h2>
-      <div class="chart-container">
-        <canvas bind:this={donutCanvas}></canvas>
+    <div class="chart-container">
+      <h3>Distribuție Conturi</h3>
+      <div class="chart-wrapper">
+        <canvas id="accountChart"></canvas>
       </div>
     </div>
   </div>
-
-  <div class="dashboard-controls">
-    <button on:click={() => showAdvancedCharts = !showAdvancedCharts}>
-      {showAdvancedCharts ? '🔼' : '🔽'} Grafice Avansate
-    </button>
-  </div>
-
-  {#if showAdvancedCharts}
-    <div transition:slide>
-      <AdvancedCharts />
-    </div>
-  {/if}
 </div>
 
 <style>
   .dashboard {
-    padding: 0;
+    padding: 1.5rem;
+    max-width: 1400px;
+    margin: 0 auto;
   }
   
-  .summary-grid {
+  .dashboard-title {
+    font-size: 1.75rem;
+    font-weight: 700;
+    margin-bottom: 1.5rem;
+    color: var(--text-primary);
+  }
+  
+  /* Stats Grid */
+  .stats-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 16px;
-    margin: 20px 0;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 1.25rem;
+    margin-bottom: 2rem;
   }
   
-  .summary-card {
-    background: linear-gradient(135deg, var(--panel) 0%, var(--panel2) 100%);
-    border-radius: 14px;
-    padding: 16px;
-    border: 1px solid rgba(128, 184, 255, .2);
+  .stat-card {
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
   }
   
-  .summary-card h3 {
-    margin: 0 0 8px;
-    font-size: 0.9rem;
-    color: var(--muted);
+  :global(.dark-mode) .stat-card {
+    background: #2d3748;
+    border-color: #4a5568;
   }
   
-  .summary-card .value {
-    font-size: 1.8rem;
-    font-weight: 900;
-    margin-bottom: 8px;
+  .stat-label {
+    font-size: 0.875rem;
+    color: #6b7280;
+    margin-bottom: 0.5rem;
+    font-weight: 500;
   }
   
-  .summary-card .percent {
-    font-size: 0.85rem;
-    color: var(--muted);
+  :global(.dark-mode) .stat-label {
+    color: #a0aec0;
   }
   
-  .summary-card.income {
-    border-color: var(--ok);
+  .stat-value {
+    font-size: 2rem;
+    font-weight: 700;
+    margin-bottom: 0.25rem;
   }
   
-  .summary-card.income .value {
-    color: var(--ok);
+  .stat-value.income { color: #10b981; }
+  .stat-value.expense { color: #ef4444; }
+  .stat-value.savings { color: #3b82f6; }
+  
+  .stat-percent {
+    font-size: 0.75rem;
+    color: #9ca3af;
   }
   
-  .summary-card.expense {
-    border-color: var(--err);
-  }
-  
-  .summary-card.expense .value {
-    color: var(--err);
-  }
-  
-  .summary-card.savings {
-    border-color: var(--warn);
-  }
-  
-  .summary-card.savings .value {
-    color: var(--warn);
-  }
-  
+  /* Charts Grid */
   .charts-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-  }
-  
-  .chart-card {
-    background: var(--panel);
-    border-radius: 14px;
-    padding: 16px;
-  }
-  
-  .chart-card h2 {
-    margin: 0 0 16px;
-    color: var(--acc);
-    font-size: 1.1rem;
+    gap: 1.5rem;
   }
   
   .chart-container {
-    height: 300px;
+    background: white;
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    border: 1px solid #e5e7eb;
+  }
+  
+  :global(.dark-mode) .chart-container {
+    background: #2d3748;
+    border-color: #4a5568;
+  }
+  
+  .chart-container h3 {
+    font-size: 1rem;
+    font-weight: 600;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+  
+  :global(.dark-mode) .chart-container h3 {
+    color: #e2e8f0;
+  }
+  
+  .chart-wrapper {
+    height: 250px;
     position: relative;
   }
   
-  .dashboard-controls {
-    display: flex;
-    gap: 10px;
-    margin: 20px 0;
-    justify-content: center;
-  }
-
-  .dashboard-controls button {
-    padding: 10px 20px;
-    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-    color: white;
-    border: none;
-    border-radius: 8px;
-    cursor: pointer;
-    font-weight: 500;
-    transition: all 0.3s ease;
-  }
-
-  .dashboard-controls button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.3);
-  }
-
   @media (max-width: 768px) {
     .charts-grid {
+      grid-template-columns: 1fr;
+    }
+    
+    .stats-grid {
       grid-template-columns: 1fr;
     }
   }
