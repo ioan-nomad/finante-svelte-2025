@@ -58,7 +58,8 @@
       "Bash(\"taskkill\" \"/F\" \"/IM\" \"node.exe\")",
       "Bash(start firefox http://localhost:5177)",
       "Bash(start firefox http://localhost:5178)",
-      "Bash(start firefox http://localhost:5179)"
+      "Bash(start firefox http://localhost:5179)",
+      "Bash(start generate-icon.html)"
     ],
     "deny": [],
     "ask": []

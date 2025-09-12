@@ -39,11 +39,16 @@
   
   // Create all charts
   function createCharts() {
+    console.log('🎨 createCharts() called');
+    console.log('Chart available?', typeof Chart !== 'undefined');
+    
     // Destroy existing charts
+    console.log('🗑️ Destroying existing charts:', Object.keys(chartInstances));
     Object.values(chartInstances).forEach(chart => chart?.destroy());
     
     // 1. Expenses by Category (Pie Chart)
     const categoryCtx = document.getElementById('categoryChart')?.getContext('2d');
+    console.log('📊 Category chart element found?', !!categoryCtx);
     if (categoryCtx) {
       const categoryData = {};
       $transactions.filter(t => t.type === 'expense').forEach(t => {
@@ -233,9 +238,34 @@
     }
   }
   
-  onMount(() => {
+  onMount(async () => {
+    console.log('🎯 Dashboard mounting...');
+    console.log('Chart.js available?', typeof Chart !== 'undefined');
+    console.log('Transactions store:', $transactions.length, 'transactions');
+    console.log('Accounts store:', $accounts.length, 'accounts');
+    
+    // Forțează încărcarea Chart.js
+    if (typeof Chart === 'undefined') {
+      console.log('⏳ Loading Chart.js...');
+      try {
+        const ChartModule = await import('chart.js/auto');
+        window.Chart = ChartModule.default || ChartModule.Chart;
+        console.log('✅ Chart.js loaded successfully');
+      } catch (error) {
+        console.error('❌ Failed to load Chart.js:', error);
+      }
+    }
+    
+    // Calculează statistici
     calculateStats();
-    setTimeout(createCharts, 100); // Delay for DOM
+    console.log('📊 Stats calculated:', stats);
+    
+    // Delay pentru DOM
+    setTimeout(() => {
+      console.log('📊 Creating charts...');
+      createCharts();
+      console.log('Chart instances:', Object.keys(chartInstances));
+    }, 500);
   });
   
   // Reactive updates
