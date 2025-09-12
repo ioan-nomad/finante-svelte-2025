@@ -46,7 +46,10 @@ export default defineConfig({
     strictPort: false,
     open: false,  // SCHIMBAT din true în false - NU mai deschide automat
     cors: true,
-    host: 'localhost'
+    host: 'localhost',
+    headers: {
+      'Content-Security-Policy': "default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; connect-src 'self' data: blob: https://cdnjs.cloudflare.com https://cdn.jsdelivr.net https://unpkg.com; worker-src 'self' blob:;"
+    }
   },
   preview: {
     port: 4173,

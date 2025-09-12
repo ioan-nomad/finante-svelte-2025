@@ -11,6 +11,7 @@
   import { quintOut } from 'svelte/easing';
   
   // Finance components (currently in components dir, will be moved to modules later)
+  import Dashboard from './components/Dashboard.svelte';
   import Conturi from './components/Conturi.svelte';
   import Tranzactii from './components/Tranzactii.svelte';
   import Budgeturi from './components/Budgeturi.svelte';
@@ -297,32 +298,7 @@
     {#if activeModule === 'finance'}
       <div class="content-panel" in:fade={{ duration: 300, easing: quintOut }}>
         {#if activeTab === 'dashboard'}
-          <div class="dashboard-content">
-            <h2>📊 Dashboard Financiar</h2>
-            <LazyComponent>
-              <div class="dashboard-cards">
-                <!-- Summary Cards -->
-                <div class="summary-card">
-                  <h3>🏦 Conturi Active</h3>
-                  <span class="summary-number">{$accounts.length}</span>
-                </div>
-                <div class="summary-card">
-                  <h3>💸 Tranzacții Luna</h3>
-                  <span class="summary-number">{$transactions.filter(t => 
-                    new Date(t.date).getMonth() === new Date().getMonth()
-                  ).length}</span>
-                </div>
-                <div class="summary-card">
-                  <h3>💰 Sold Total</h3>
-                  <span class="summary-number">{new Intl.NumberFormat('ro-RO', { 
-                    style: 'currency', 
-                    currency: 'RON',
-                    maximumFractionDigits: 0 
-                  }).format($totalBalance)}</span>
-                </div>
-              </div>
-            </LazyComponent>
-          </div>
+          <Dashboard />
         {:else if activeTab === 'conturi'}
           <Conturi />
         {:else if activeTab === 'tranzactii'}
@@ -382,17 +358,17 @@
 <Toast />
 
 <style>
-  /* GLOBAL VARIABLES - Enhanced for dark mode */
+  /* Reset și variabile CORECTE pentru ambele moduri */
   :global(:root) {
     /* Light mode colors */
     --bg-primary: #ffffff;
-    --bg-secondary: #f8fafc;
+    --bg-secondary: #f9fafb;
     --bg-tertiary: #f1f5f9;
-    --text-primary: #1e293b;
-    --text-secondary: #475569;
-    --text-tertiary: #64748b;
-    --border-color: #e2e8f0;
-    --border-light: #f1f5f9;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --text-tertiary: #9ca3af;
+    --border-color: #e5e7eb;
+    --border-light: #f3f4f6;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
@@ -421,25 +397,25 @@
   }
 
   /* DARK MODE VARIABLES */
-  :global([data-theme="dark"]) {
-    --bg-primary: #0f172a;
-    --bg-secondary: #1e293b;
-    --bg-tertiary: #334155;
-    --text-primary: #f8fafc;
-    --text-secondary: #cbd5e1;
-    --text-tertiary: #94a3b8;
-    --border-color: #475569;
-    --border-light: #334155;
+  :global(.dark-mode) {
+    --bg-primary: #0f1220 !important;
+    --bg-secondary: #1a1b2e !important;
+    --bg-tertiary: #334155 !important;
+    --text-primary: #e0e0e0 !important;
+    --text-secondary: #a0a0a0 !important;
+    --text-tertiary: #808080 !important;
+    --border-color: #2a2b3e !important;
+    --border-light: #25263a !important;
     --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.3);
     --shadow: 0 1px 3px 0 rgb(0 0 0 / 0.4), 0 1px 2px -1px rgb(0 0 0 / 0.4);
     --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.4), 0 4px 6px -4px rgb(0 0 0 / 0.4);
     --shadow-2xl: 0 25px 50px -12px rgb(0 0 0 / 0.6);
   }
 
-  /* GLOBAL DARK MODE STYLES */
+  /* Aplicare dark mode pe body */
   :global(body.dark-mode) {
-    background: var(--bg-primary);
-    color: var(--text-primary);
+    background: #0f1220 !important;
+    color: #e0e0e0 !important;
   }
 
   :global(.dark-mode .card) {
@@ -483,16 +459,17 @@
     color: var(--text-primary) !important;
   }
 
-  /* APP CONTAINER */
+  /* App container cu padding corect */
   .app-container {
     min-height: 100vh;
+    padding-top: 90px; /* Space pentru header fix */
     background: var(--bg-primary);
     color: var(--text-primary);
     font-family: var(--font-primary);
-    transition: all var(--transition);
+    transition: all 0.3s ease;
   }
 
-  /* APP HEADER - Fixed positioning */
+  /* Header fix și centrat */
   .app-header {
     position: fixed;
     top: 0;
@@ -502,6 +479,10 @@
     background: var(--bg-primary);
     border-bottom: 1px solid var(--border-color);
     z-index: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 20px;
     backdrop-filter: blur(10px);
   }
 
@@ -581,16 +562,15 @@
     color: white;
   }
 
-  /* HEADER RIGHT CONTROLS - FIXED Layout */
+  /* Butoane dreapta - VERTICAL, nu suprapuse */
   .header-right {
     position: fixed;
     top: 20px;
     right: 20px;
-    z-index: 1000;
     display: flex;
-    flex-direction: column;
-    gap: 12px;
-    align-items: flex-end;
+    flex-direction: column; /* VERTICAL! */
+    gap: 10px;
+    z-index: 1000;
     pointer-events: none;
   }
 
@@ -722,6 +702,8 @@
     padding-right: 24px;
     min-height: 100vh;
     background: var(--bg-primary);
+    max-width: 1200px;
+    margin: 0 auto;
   }
 
   .content-panel {

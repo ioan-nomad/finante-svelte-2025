@@ -88,7 +88,7 @@
   
   function drawCharts() {
     // Get dark mode colors
-    const isDark = document.documentElement.classList.contains('dark')
+    const isDark = document.documentElement.classList.contains('dark-mode')
     const textColor = isDark ? '#e6e9ff' : '#374151'
     const mutedColor = isDark ? '#9aa3b2' : '#6b7280'
     const gridColor = isDark ? 'rgba(154, 163, 178, 0.1)' : 'rgba(0, 0, 0, 0.1)'
