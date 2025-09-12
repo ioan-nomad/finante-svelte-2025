@@ -11,6 +11,9 @@
   import PDFImporter from './components/PDFImporter.svelte';
   import Toast from './components/Toast.svelte';
   
+  // Advanced Components
+  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
+  
   // State
   let activeTab = 'dashboard';
   let showPDFImporter = false;
@@ -133,6 +136,8 @@
       <Budgeturi />
     {:else if activeTab === 'obiective'}
       <Obiective />
+    {:else if activeTab === 'rapoarte'}
+      <RapoarteAvansate />
     {:else}
       <div class="placeholder">
         <h2>{secondaryTabs.find(t => t.id === activeTab)?.icon} {secondaryTabs.find(t => t.id === activeTab)?.label}</h2>
