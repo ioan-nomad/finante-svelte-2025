@@ -9,7 +9,7 @@
   import MealPlanner from './components/MealPlanner.svelte';
   import CodexDashboard from './components/CodexDashboard.svelte';
   import CodexRecipeUI from './components/CodexRecipeUI.svelte';
-  import SmartRecipeDisplay from './components/SmartRecipeDisplay.svelte';
+  const SmartRecipeDisplay = null; // TEMPORARY FIX până creezi fișierul
   
   // Import CODEX N-OMAD v3.0 Components
   import RecipeDisplay from './codex/RecipeDisplay.svelte';
