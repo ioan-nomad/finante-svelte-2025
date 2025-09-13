@@ -8,7 +8,7 @@
   import Tranzactii from './components/Tranzactii.svelte';
   import Budgeturi from './components/Budgeturi.svelte';
   import Obiective from './components/Obiective.svelte';
-  import PDFImporter from './components/PDFImporter.svelte';
+  import PDFImportSimple from './components/PDFImportSimple.svelte';
   import Toast from './components/Toast.svelte';
   
   // Advanced Components
@@ -163,18 +163,7 @@
   
   <!-- PDF Importer Modal -->
   {#if showPDFImporter}
-    <div class="modal-overlay" on:click={() => showPDFImporter = false}>
-      <div class="modal" on:click|stopPropagation>
-        <div class="modal-header">
-          <h2>📄 Import Extras Bancar PDF</h2>
-          <button on:click={() => showPDFImporter = false}>✕</button>
-        </div>
-        <div class="modal-body">
-          <p>⚠️ Funcția de import PDF este temporar dezactivată pentru reparații.</p>
-          <p>Va fi disponibilă în curând cu suport pentru toate băncile din România.</p>
-        </div>
-      </div>
-    </div>
+    <PDFImportSimple onClose={() => showPDFImporter = false} />
   {/if}
   
   <Toast />
