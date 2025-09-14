@@ -1,11 +1,12 @@
-import { codexDatabase } from './codexDatabase.js';
-import { codexScoring } from './codexScoring.js';
+import { CODEX_INGREDIENTS, getIngredientData, getNicoSafeIngredients, getAntiInflammatoryIngredients } from './codexDatabase.js';
+import { CodexScorer } from './codexScoring.js';
 import { groceryInventory } from '../../../stores/groceryStore.js';
 import { get } from 'svelte/store';
 
 export class SmartRecipeGenerator {
   constructor() {
-    this.nutrients = codexDatabase?.nutrients || {};
+    this.ingredients = CODEX_INGREDIENTS;
+    this.scorer = new CodexScorer();
     this.instantPotLayers = this.initializeLayers();
     this.recipeTemplates = this.initializeTemplates();
   }
