@@ -562,6 +562,289 @@ function calculateDaysSinceStart(state) {
   return daysDifference + 1;
 }
 
+// Auto-cycle management
+class MTORAutomation {
+  constructor() {
+    this.cycleLength = 14; // days
+    this.checkInterval = null;
+    this.lastCheck = null;
+    this.notifications = [];
+  }
+
+  startAutomation() {
+    console.log('🤖 Starting mTOR automation...');
+
+    // Check immediately
+    this.checkCycle();
+
+    // Then check every hour
+    this.checkInterval = setInterval(() => {
+      this.checkCycle();
+    }, 60 * 60 * 1000); // 1 hour
+
+    // Also check at midnight
+    this.scheduleMidnightCheck();
+
+    return true;
+  }
+
+  stopAutomation() {
+    if (this.checkInterval) {
+      clearInterval(this.checkInterval);
+      this.checkInterval = null;
+    }
+    console.log('🛑 mTOR automation stopped');
+  }
+
+  checkCycle() {
+    const now = new Date();
+    const currentDay = this.getCurrentDay();
+
+    console.log(`🔄 mTOR Check: Day ${currentDay} of ${this.cycleLength}`);
+
+    // Auto-reset if cycle complete
+    if (currentDay > this.cycleLength) {
+      this.performAutoReset();
+    }
+
+    // Check for phase transitions
+    this.checkPhaseTransition(currentDay);
+
+    // Update last check
+    this.lastCheck = now.toISOString();
+    localStorage.setItem('mtor_last_auto_check', this.lastCheck);
+  }
+
+  getCurrentDay() {
+    const state = get(mtorCycleState);
+    return calculateCurrentCycleDay(state);
+  }
+
+  getCurrentPhase() {
+    const state = get(mtorCycleState);
+    return state.currentPhase;
+  }
+
+  getCycleHistory() {
+    const state = get(mtorCycleState);
+    return {
+      startDate: state.cycleStartDate,
+      currentPhase: state.currentPhase,
+      dayInPhase: state.dayInPhase,
+      avgProtein: state.currentMetrics.protein,
+      plantDiversity: 0 // placeholder
+    };
+  }
+
+  resetCycle() {
+    startNewCycle();
+  }
+
+  performAutoReset() {
+    console.log('🔄 Auto-resetting mTOR cycle...');
+
+    const oldCycle = this.getCycleHistory();
+
+    // Save old cycle to history
+    const history = JSON.parse(localStorage.getItem('mtor_history') || '[]');
+    history.push({
+      cycleNumber: history.length + 1,
+      startDate: oldCycle.startDate,
+      endDate: new Date().toISOString(),
+      completionRate: this.calculateCompletionRate(oldCycle),
+      avgProtein: oldCycle.avgProtein || 0,
+      plantDiversity: oldCycle.plantDiversity || 0
+    });
+
+    // Keep last 12 cycles
+    if (history.length > 12) {
+      history.shift();
+    }
+
+    localStorage.setItem('mtor_history', JSON.stringify(history));
+
+    // Reset cycle
+    this.resetCycle();
+
+    // Send notification
+    this.sendNotification({
+      type: 'cycle_reset',
+      title: '🔄 Ciclu mTOR Resetat',
+      message: `Ciclu nou început! Ziua 1 - Fază ${this.getCurrentPhase()}`,
+      timestamp: new Date().toISOString()
+    });
+  }
+
+  checkPhaseTransition(currentDay) {
+    const phases = {
+      1: { phase: 'growth', message: '💪 Început fază GROWTH (High Protein)' },
+      4: { phase: 'transition', message: '🔄 Tranziție către maintenance' },
+      8: { phase: 'longevity', message: '🌿 Început fază LONGEVITY (Plant Focus)' },
+      11: { phase: 'transition', message: '🔄 Pregătire pentru ciclu nou' }
+    };
+
+    if (phases[currentDay]) {
+      const lastNotification = this.getLastNotification('phase_change');
+      const hoursSinceLastNotification = lastNotification
+        ? (Date.now() - new Date(lastNotification.timestamp)) / (1000 * 60 * 60)
+        : 24;
+
+      if (hoursSinceLastNotification >= 20) {
+        this.sendNotification({
+          type: 'phase_change',
+          title: '📅 Schimbare Fază mTOR',
+          message: phases[currentDay].message,
+          day: currentDay,
+          phase: phases[currentDay].phase,
+          timestamp: new Date().toISOString()
+        });
+      }
+    }
+  }
+
+  calculateCompletionRate(cycle) {
+    // Calculate how well the cycle was followed
+    return 85; // placeholder
+  }
+
+  sendNotification(notification) {
+    // Add to notifications array
+    this.notifications.push(notification);
+
+    // Save to localStorage
+    const allNotifications = JSON.parse(localStorage.getItem('mtor_notifications') || '[]');
+    allNotifications.unshift(notification);
+
+    // Keep last 50 notifications
+    if (allNotifications.length > 50) {
+      allNotifications.pop();
+    }
+
+    localStorage.setItem('mtor_notifications', JSON.stringify(allNotifications));
+
+    // Dispatch custom event for UI updates
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('mtor-notification', {
+        detail: notification
+      }));
+    }
+
+    // Show browser notification if permitted
+    if (typeof window !== 'undefined' && 'Notification' in window && Notification.permission === 'granted') {
+      new Notification(notification.title, {
+        body: notification.message,
+        icon: '/icon-192.png',
+        badge: '/icon-192.png',
+        tag: 'mtor-notification',
+        requireInteraction: false
+      });
+    }
+
+    console.log('📬 Notification sent:', notification);
+  }
+
+  getLastNotification(type) {
+    const allNotifications = JSON.parse(localStorage.getItem('mtor_notifications') || '[]');
+    return allNotifications.find(n => n.type === type);
+  }
+
+  scheduleMidnightCheck() {
+    const now = new Date();
+    const midnight = new Date();
+    midnight.setDate(midnight.getDate() + 1);
+    midnight.setHours(0, 0, 0, 0);
+
+    const msUntilMidnight = midnight - now;
+
+    setTimeout(() => {
+      this.checkCycle();
+      // Schedule next midnight check
+      this.scheduleMidnightCheck();
+    }, msUntilMidnight);
+
+    console.log(`⏰ Next midnight check in ${Math.round(msUntilMidnight / 1000 / 60)} minutes`);
+  }
+
+  getAutomationStatus() {
+    return {
+      running: !!this.checkInterval,
+      lastCheck: this.lastCheck,
+      notifications: this.notifications.length,
+      currentDay: this.getCurrentDay(),
+      currentPhase: this.getCurrentPhase()
+    };
+  }
+
+  // Analytics functions
+  getCycleAnalytics() {
+    const history = JSON.parse(localStorage.getItem('mtor_history') || '[]');
+
+    if (history.length === 0) {
+      return null;
+    }
+
+    return {
+      totalCycles: history.length,
+      avgCompletionRate: Math.round(
+        history.reduce((sum, c) => sum + c.completionRate, 0) / history.length
+      ),
+      bestCycle: history.reduce((best, current) =>
+        current.completionRate > (best?.completionRate || 0) ? current : best
+      ),
+      trend: this.calculateTrend(history),
+      predictions: this.generatePredictions(history)
+    };
+  }
+
+  calculateTrend(history) {
+    if (history.length < 2) return 'neutral';
+
+    const recent = history.slice(-3);
+    const older = history.slice(-6, -3);
+
+    if (older.length === 0) return 'neutral';
+
+    const recentAvg = recent.reduce((sum, c) => sum + c.completionRate, 0) / recent.length;
+    const olderAvg = older.reduce((sum, c) => sum + c.completionRate, 0) / older.length;
+
+    if (recentAvg > olderAvg + 5) return 'improving';
+    if (recentAvg < olderAvg - 5) return 'declining';
+    return 'stable';
+  }
+
+  generatePredictions(history) {
+    // Simple prediction based on historical data
+    const avgProteinGrowth = history
+      .filter(c => c.avgProtein)
+      .reduce((sum, c) => sum + c.avgProtein, 0) / history.length || 100;
+
+    const avgPlantDiversity = history
+      .filter(c => c.plantDiversity)
+      .reduce((sum, c) => sum + c.plantDiversity, 0) / history.length || 25;
+
+    return {
+      nextCycleProteinTarget: Math.round(avgProteinGrowth * 1.05),
+      nextCyclePlantTarget: Math.round(avgPlantDiversity * 1.1),
+      estimatedCompletionRate: Math.round(
+        history.slice(-3).reduce((sum, c) => sum + c.completionRate, 0) / 3
+      )
+    };
+  }
+}
+
+// Export and auto-start
+export const mtorAutomation = new MTORAutomation();
+
+// Helper function for getting mTOR tracker (backwards compatibility)
+export function getMTORTracker() {
+  return {
+    getCurrentDay: () => mtorAutomation.getCurrentDay(),
+    getCurrentPhase: () => mtorAutomation.getCurrentPhase(),
+    getCycleHistory: () => mtorAutomation.getCycleHistory(),
+    resetCycle: () => mtorAutomation.resetCycle()
+  };
+}
+
 export default {
   mtorCycleState,
   currentRecommendations,
@@ -570,5 +853,7 @@ export default {
   startNewCycle,
   updateDailyMetrics,
   updateUserProfile,
-  PHASE_PROTOCOLS
+  PHASE_PROTOCOLS,
+  mtorAutomation,
+  getMTORTracker
 };

@@ -37,7 +37,7 @@ export class RecipeEngine {
     try {
       // 1. Get current pantry inventory with defensive checks
       const pantryData = get(groceryInventory) || { inventory: {} };
-      const availableIngredients = this.getAvailableIngredients(pantryData);
+      const availableIngredients = await this.getAvailableIngredients(pantryData);
       console.log('📦 Available ingredients:', availableIngredients.length);
 
       // 2. Get nutritional needs for profile
@@ -110,34 +110,88 @@ export class RecipeEngine {
   /**
    * Get available ingredients from pantry inventory
    */
-  getAvailableIngredients(pantryData) {
+  async getAvailableIngredients(pantryData) {
     const available = [];
-    
-    if (pantryData?.inventory && typeof pantryData.inventory === 'object') {
-      for (const [category, items] of Object.entries(pantryData.inventory || {})) {
-        if (items && typeof items === 'object') {
-          for (const [itemName, itemData] of Object.entries(items)) {
-            if (itemData && itemData.quantity > 0) {
-              // Find nutrition data for this ingredient
-              const nutrientData = this.findNutrientData(itemName);
-              
-              available.push({
-                name: itemName,
-                category: category,
-                available: itemData.quantity,
-                unit: itemData.unit || 'g',
-                freshness: this.calculateFreshness(itemData.expiryDate),
-                nutrientData: nutrientData,
-                pantrySource: true
-              });
-            }
+
+    // Try to get real pantry data from store
+    try {
+      const { groceryInventory } = await import('../../stores/groceryStore.js');
+      const { get } = await import('svelte/store');
+      const realPantryData = get(groceryInventory);
+
+      if (realPantryData?.inventory) {
+        console.log('📦 Using REAL pantry data from groceryInventory');
+
+        // Convert pantry format to recipe ingredients
+        Object.entries(realPantryData.inventory).forEach(([itemName, itemData]) => {
+          if (itemData && itemData.quantity > 0) {
+            const nutrientData = this.findNutrientData(itemName);
+
+            available.push({
+              name: itemName,
+              nameRo: itemName,
+              category: itemData.category || 'other',
+              available: itemData.quantity,
+              unit: itemData.unit || 'g',
+              expiryDate: itemData.expiryDate,
+              freshness: this.calculateFreshness(itemData.expiryDate),
+              nutrientData: nutrientData,
+              pantrySource: true,
+              needToBuy: false
+            });
           }
-        }
+        });
+
+        console.log(`✅ Loaded ${available.length} items from pantry`);
       }
+    } catch (error) {
+      console.log('⚠️ Could not load pantry data, using defaults');
     }
-    
-    console.log('📦 Pantry inventory processed:', available.length, 'items available');
+
+    // If no pantry data or not enough items, add common ingredients
+    if (available.length < 5) {
+      const defaults = [
+        { name: 'Somon', available: 0, needToBuy: true },
+        { name: 'Broccoli', available: 0, needToBuy: true },
+        { name: 'Quinoa', available: 0, needToBuy: true },
+        { name: 'Spanac', available: 0, needToBuy: true },
+        { name: 'Avocado', available: 0, needToBuy: true }
+      ];
+
+      defaults.forEach(item => {
+        if (!available.find(a => a.name === item.name)) {
+          available.push({
+            ...item,
+            category: 'suggested',
+            unit: 'g',
+            freshness: 1.0,
+            pantrySource: false,
+            nutrientData: this.findNutrientData(item.name)
+          });
+        }
+      });
+    }
+
     return available;
+  }
+
+  markIngredientsAvailability(ingredients, pantryItems) {
+    return ingredients.map(ing => {
+      const inPantry = pantryItems.find(p =>
+        p.name.toLowerCase().includes(ing.name.toLowerCase()) ||
+        ing.name.toLowerCase().includes(p.name.toLowerCase())
+      );
+
+      return {
+        ...ing,
+        inStock: !!inPantry,
+        stockAmount: inPantry?.available || 0,
+        needAmount: ing.amount - (inPantry?.available || 0),
+        displayStatus: inPantry
+          ? `✅ În stoc: ${inPantry.available}${inPantry.unit}`
+          : `🛒 De cumpărat: ${ing.amount}${ing.unit}`
+      };
+    });
   }
 
   /**

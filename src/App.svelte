@@ -19,6 +19,7 @@
   import ShoppingList from './components/ShoppingList.svelte';
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
   import TestRecipe from './components/TestRecipe.svelte';
+  import MTORDashboard from './components/MTORDashboard.svelte';
   
   // State
   let activeTab = 'dashboard';
@@ -42,6 +43,7 @@
     { id: 'rapoarte', label: 'Rapoarte', icon: '📑' },
     { id: 'pantry', label: 'Pantry', icon: '🛒' },
     { id: 'nutritie', label: 'Nutriție', icon: '🍽️' },
+    { id: 'mtor', label: 'mTOR Cycle', icon: '🔄' },
     { id: 'test-recipe', label: 'Test Recipe', icon: '🧪' },
     { id: 'export', label: 'Export', icon: '📤' }
   ];
@@ -153,6 +155,8 @@
       <ShoppingList />
     {:else if activeTab === 'nutritie'}
       <NutritionModule />
+    {:else if activeTab === 'mtor'}
+      <MTORDashboard />
     {:else if activeTab === 'test-recipe'}
       <TestRecipe />
     {:else if activeTab === 'export'}
