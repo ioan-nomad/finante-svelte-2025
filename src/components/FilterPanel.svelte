@@ -10,6 +10,9 @@
 
   const dispatch = createEventDispatcher();
 
+  // Props to fix warnings
+  export let categories = [];
+
   // Filter properties
   export let filters = {
     type: 'all',

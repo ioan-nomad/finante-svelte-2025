@@ -1,7 +1,7 @@
 <!-- modules/nutrition/NutritionModule.svelte -->
 <script>
   import { onMount } from 'svelte';
-  export let activeTab;
+  export let activeTab = 'recipes';
 
   // Import nutrition components
   import RecipeSuggester from './components/RecipeSuggester.svelte';
