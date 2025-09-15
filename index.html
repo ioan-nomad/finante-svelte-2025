@@ -11,6 +11,7 @@
     <!-- Anti-clickjacking -->
     <style id="antiClickjack">body{display:none !important;}</style>
     <script>
+      window.appStartTime = Date.now();
       if (self === top) {
         var antiClickjack = document.getElementById("antiClickjack");
         antiClickjack.parentNode.removeChild(antiClickjack);
@@ -247,9 +248,10 @@
 
       // Performance monitoring
       window.addEventListener('load', () => {
-        if (typeof performance !== 'undefined' && performance.navigation) {
-          const loadTime = performance.timing.loadEventEnd - performance.timing.navigationStart;
-          console.log(`App loaded in ${loadTime}ms`);
+        if (window.appStartTime && window.appStartTime > 0) {
+          console.log(`App loaded in ${Date.now() - window.appStartTime}ms`);
+        } else {
+          console.log('App loaded successfully');
         }
       });
     </script>

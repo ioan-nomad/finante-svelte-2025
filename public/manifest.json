@@ -1,48 +1,11 @@
 {
-  "name": "N-OMAD Suite - Finance, Pantry & Nutrition",
+  "name": "N-OMAD Suite",
   "short_name": "N-OMAD",
-  "description": "Aplicație completă pentru management financiar, inventar alimentar și nutriție CODEX",
   "start_url": "/",
   "display": "standalone",
-  "orientation": "any",
-  "background_color": "#0f1220",
-  "theme_color": "#667eea",
-  "dir": "ltr",
-  "lang": "ro-RO",
-  "categories": ["finance", "productivity", "lifestyle", "health"],
-  "icons": [
-    {
-      "src": "/icon-192.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/icon-512.png",
-      "sizes": "512x512",
-      "type": "image/png",
-      "purpose": "any maskable"
-    }
-  ],
-  "screenshots": [
-    {
-      "src": "/screenshot-1.png",
-      "sizes": "1280x720",
-      "type": "image/png"
-    }
-  ],
-  "shortcuts": [
-    {
-      "name": "Dashboard",
-      "url": "/?tab=dashboard",
-      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
-    },
-    {
-      "name": "Rețete",
-      "url": "/?tab=recipes",
-      "icons": [{"src": "/icon-192.png", "sizes": "192x192"}]
-    }
-  ],
-  "prefer_related_applications": false,
-  "related_applications": []
+  "background_color": "#1a1a1a",
+  "theme_color": "#00a651",
+  "description": "Complete Finance, Pantry & Nutrition Management Suite",
+  "categories": ["finance", "health", "productivity"],
+  "orientation": "portrait-primary"
 }
