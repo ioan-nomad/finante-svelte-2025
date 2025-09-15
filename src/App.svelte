@@ -20,6 +20,8 @@
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
   import TestRecipe from './components/TestRecipe.svelte';
   import MTORDashboard from './components/MTORDashboard.svelte';
+  import AnalyticsDashboard from './modules/nutrition/components/AnalyticsDashboard.svelte';
+  import TestDashboard from './components/TestDashboard.svelte';
   
   // State
   let activeTab = 'dashboard';
@@ -43,8 +45,10 @@
     { id: 'rapoarte', label: 'Rapoarte', icon: '📑' },
     { id: 'pantry', label: 'Pantry', icon: '🛒' },
     { id: 'nutritie', label: 'Nutriție', icon: '🍽️' },
+    { id: 'analytics', label: 'Analytics Dashboard', icon: '📊' },
     { id: 'mtor', label: 'mTOR Cycle', icon: '🔄' },
     { id: 'test-recipe', label: 'Test Recipe', icon: '🧪' },
+    { id: 'testing', label: 'Testing Suite', icon: '🧪' },
     { id: 'export', label: 'Export', icon: '📤' }
   ];
   
@@ -155,10 +159,14 @@
       <ShoppingList />
     {:else if activeTab === 'nutritie'}
       <NutritionModule />
+    {:else if activeTab === 'analytics'}
+      <AnalyticsDashboard />
     {:else if activeTab === 'mtor'}
       <MTORDashboard />
     {:else if activeTab === 'test-recipe'}
       <TestRecipe />
+    {:else if activeTab === 'testing'}
+      <TestDashboard />
     {:else if activeTab === 'export'}
       <Export />
     {:else}
