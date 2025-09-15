@@ -61,7 +61,8 @@
       "Bash(start firefox http://localhost:5179)",
       "Bash(start generate-icon.html)",
       "Bash(start C:UsersciupeDesktopFinanteNoiAugust2025finante-appsrctest-recipe-button.html)",
-      "Bash(start firefox http://localhost:5173/test-runner.html)"
+      "Bash(start firefox http://localhost:5173/test-runner.html)",
+      "Bash(start firefox http://localhost:5174/test-runner.html)"
     ],
     "deny": [],
     "ask": []

@@ -10,7 +10,19 @@
   <p>Deschide Developer Console (F12) pentru a vedea rezultatele testelor.</p>
 
   <script type="module">
-    console.log('🔬 N-OMAD Suite Test Runner Starting...');
+    console.log('🔬 N-OMAD Suite Enhanced Test Runner Starting...');
+
+    // Import new testing infrastructure
+    let TestRunner, TestUtils;
+    try {
+      const testRunnerModule = await import('./src/lib/testing/testRunner.js');
+      const testUtilsModule = await import('./src/lib/testing/testUtils.js');
+      TestRunner = testRunnerModule.TestRunner;
+      TestUtils = testUtilsModule.default;
+      console.log('✅ Advanced testing infrastructure loaded');
+    } catch (error) {
+      console.warn('⚠️ Advanced testing infrastructure not available:', error.message);
+    }
 
     // Test 1: Check Module Loading
     async function testModules() {
@@ -19,7 +31,9 @@
       try {
         const modules = [
           './src/modules/nutrition/analytics/AnalyticsEngine.js',
-          './src/modules/testing/IntegrationTester.js'
+          './src/modules/testing/IntegrationTester.js',
+          './src/lib/testing/testRunner.js',
+          './src/lib/testing/testUtils.js'
         ];
 
         for (const path of modules) {
@@ -34,9 +48,24 @@
       }
     }
 
-    // Test 2: Run Integration Tests
+    // Test 2: Run Advanced Unit Tests
+    async function runAdvancedTests() {
+      if (!TestRunner) {
+        console.log('\n⚠️ Skipping advanced tests - TestRunner not available');
+        return null;
+      }
+
+      console.log('\n🧪 Running Advanced Test Suite...');
+
+      const runner = new TestRunner();
+      const results = await runner.runAllTests();
+
+      return results;
+    }
+
+    // Test 3: Run Integration Tests
     async function runIntegrationTests() {
-      console.log('\n🧪 Running Integration Tests...');
+      console.log('\n🔧 Running Integration Tests...');
 
       try {
         const { integrationTester } = await import('./src/modules/testing/IntegrationTester.js');
@@ -59,7 +88,39 @@
       }
     }
 
-    // Test 3: Check localStorage Data
+    // Test 4: Performance & Security Tests
+    async function runPerformanceTests() {
+      if (!TestUtils) {
+        console.log('\n⚠️ Skipping performance tests - TestUtils not available');
+        return;
+      }
+
+      console.log('\n⚡ Running Performance & Security Tests...');
+
+      // Test localStorage performance
+      const perfResult = await TestUtils.measurePerformance(() => {
+        localStorage.setItem('test', JSON.stringify({ data: 'test' }));
+        localStorage.getItem('test');
+        localStorage.removeItem('test');
+      }, 100);
+
+      console.log(`📈 localStorage Performance: ${perfResult.avg.toFixed(2)}ms avg (${perfResult.iterations} iterations)`);
+
+      // Test XSS vulnerability
+      const xssTests = [
+        '<script>alert("xss")</script>',
+        'javascript:alert("xss")',
+        '<img src=x onerror=alert("xss")>'
+      ];
+
+      console.log('\n🔒 Security Tests:');
+      xssTests.forEach(test => {
+        const isVulnerable = TestUtils.testXSSVulnerability(test);
+        console.log((isVulnerable ? '⚠️' : '✅') + ' XSS Test: ' + test.substring(0, 20) + '...');
+      });
+    }
+
+    // Test 5: Check localStorage Data
     function checkLocalStorage() {
       console.log('\n💾 Checking localStorage...');
 
@@ -91,20 +152,42 @@
     // Run all tests
     async function runAllTests() {
       console.log('════════════════════════════════════════');
-      console.log('   N-OMAD SUITE - COMPLETE TEST SUITE   ');
+      console.log('   N-OMAD SUITE - ENHANCED TEST SUITE   ');
       console.log('════════════════════════════════════════');
+
+      const startTime = Date.now();
 
       await testModules();
+      const advancedResults = await runAdvancedTests();
       checkLocalStorage();
-      const readiness = await runIntegrationTests();
+      const integrationResults = await runIntegrationTests();
+      await runPerformanceTests();
+
+      const duration = Date.now() - startTime;
 
       console.log('\n════════════════════════════════════════');
-      if (readiness && readiness.ready) {
-        console.log('🎉 PRODUCTION READY! All tests passed!');
+      console.log(`⏱️ Total Test Duration: ${duration}ms`);
+
+      // Overall status
+      const allPassed = integrationResults?.ready &&
+                       (!advancedResults || advancedResults.failed === 0);
+
+      if (allPassed) {
+        console.log('🎉 ALL TESTS PASSED! Production Ready!');
       } else {
-        console.log('⚠️ Not production ready. Check failed tests above.');
+        console.log('⚠️ Some tests failed. Review results above.');
       }
       console.log('════════════════════════════════════════');
+
+      // Make results available globally for manual inspection
+      window.testResults = {
+        integration: integrationResults,
+        advanced: advancedResults,
+        duration,
+        passed: allPassed
+      };
+
+      console.log('\n💡 Test results available at: window.testResults');
     }
 
     // Auto-run tests

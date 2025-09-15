@@ -21,7 +21,7 @@
   import TestRecipe from './components/TestRecipe.svelte';
   import MTORDashboard from './components/MTORDashboard.svelte';
   import AnalyticsDashboard from './modules/nutrition/components/AnalyticsDashboard.svelte';
-  import TestDashboard from './components/TestDashboard.svelte';
+  import TestDashboard from './modules/testing/TestDashboard.svelte';
   
   // State
   let activeTab = 'dashboard';

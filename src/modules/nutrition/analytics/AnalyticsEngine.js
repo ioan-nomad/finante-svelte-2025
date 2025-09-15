@@ -1,4 +1,5 @@
 // src/modules/nutrition/analytics/AnalyticsEngine.js
+// Force Vite reload
 import { ROMANIAN_FOODS_DATABASE } from '../codex/database/nutrients.js';
 
 export class AnalyticsEngine {
