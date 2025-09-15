@@ -1,5 +1,5 @@
 // src/modules/nutrition/analytics/AnalyticsEngine.js
-import { ROMANIAN_FOODS_DATABASE } from '../database/FoodDatabase.js';
+import { ROMANIAN_FOODS_DATABASE } from '../codex/database/nutrients.js';
 
 export class AnalyticsEngine {
   constructor() {
