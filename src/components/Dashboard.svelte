@@ -2,6 +2,8 @@
   import { onMount } from 'svelte';
   import Chart from 'chart.js/auto';
   import { transactions, accounts, totalBalance } from '../modules/finance/stores/financeStore.js';
+  import ExportPanel from '../modules/finance/components/ExportPanel.svelte';
+  import ExcelExportButton from './ExcelExportButton.svelte';
   
   let chartInstances = {};
   let stats = {
@@ -278,8 +280,14 @@
 </script>
 
 <div class="dashboard">
-  <h1 class="dashboard-title">📊 Dashboard Financiar</h1>
-  
+  <div class="dashboard-header">
+    <h1 class="dashboard-title">📊 Dashboard Financiar</h1>
+    <div class="export-buttons">
+      <ExportPanel />
+      <ExcelExportButton module="finance" variant="button" />
+    </div>
+  </div>
+
   <!-- Stats Cards -->
   <div class="stats-grid">
     <div class="stat-card income-card">
@@ -303,28 +311,28 @@
   
   <!-- Charts Grid -->
   <div class="charts-grid">
-    <div class="chart-container">
+    <div class="chart-container" id="categoryChartContainer">
       <h3>Cheltuieli pe Categorii (Luna Curentă)</h3>
       <div class="chart-wrapper">
         <canvas id="categoryChart"></canvas>
       </div>
     </div>
-    
-    <div class="chart-container">
+
+    <div class="chart-container" id="trendChartContainer">
       <h3>Trend Lunar (Ultimele 6 Luni)</h3>
       <div class="chart-wrapper">
         <canvas id="trendChart"></canvas>
       </div>
     </div>
-    
-    <div class="chart-container">
+
+    <div class="chart-container" id="topCategoriesChartContainer">
       <h3>Top 5 Categorii Cheltuieli</h3>
       <div class="chart-wrapper">
         <canvas id="topCategoriesChart"></canvas>
       </div>
     </div>
-    
-    <div class="chart-container">
+
+    <div class="chart-container" id="accountChartContainer">
       <h3>Distribuție Conturi</h3>
       <div class="chart-wrapper">
         <canvas id="accountChart"></canvas>
@@ -340,11 +348,29 @@
     margin: 0 auto;
   }
   
+  /* Dashboard Header */
+  .dashboard-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    flex-wrap: wrap;
+    gap: 1rem;
+  }
+
   .dashboard-title {
     font-size: 1.75rem;
     font-weight: 700;
-    margin-bottom: 1.5rem;
+    margin: 0;
+    flex: 1;
     color: var(--text-primary);
+  }
+
+  .export-buttons {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+    flex-wrap: wrap;
   }
   
   /* Stats Grid */
@@ -402,6 +428,7 @@
   }
   
   .chart-container {
+    position: relative;
     background: white;
     border-radius: 12px;
     padding: 1.5rem;

@@ -22,6 +22,9 @@
   import MTORDashboard from './components/MTORDashboard.svelte';
   import AnalyticsDashboard from './modules/nutrition/components/AnalyticsDashboard.svelte';
   import TestDashboard from './modules/testing/TestDashboard.svelte';
+
+  // Backup System
+  import BackupManager from './components/BackupManager.svelte';
   
   // State
   let activeTab = 'dashboard';
@@ -181,7 +184,10 @@
   {#if showPDFImporter}
     <PDFImportSimple onClose={() => showPDFImporter = false} />
   {/if}
-  
+
+  <!-- Backup Manager -->
+  <BackupManager />
+
   <Toast />
 </div>
 
