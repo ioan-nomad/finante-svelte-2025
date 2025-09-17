@@ -2,7 +2,7 @@
     import { onMount, createEventDispatcher } from 'svelte';
     import { excelExporter } from '../../../lib/services/ExcelExporter.js';
     import { transactions, accounts, totalBalance } from '../stores/financeStore.js';
-    import { toastStore } from '../../../lib/stores/toastStore.js';
+    import { toastStore } from '../../../lib/toastStore.js';
 
     const dispatch = createEventDispatcher();
 

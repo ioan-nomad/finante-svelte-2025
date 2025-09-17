@@ -2,7 +2,7 @@
     import { onMount, onDestroy } from 'svelte';
     import { excelExporter } from '../lib/services/ExcelExporter.js';
     import { transactions, accounts, totalBalance } from '../modules/finance/stores/financeStore.js';
-    import { toastStore } from '../lib/stores/toastStore.js';
+    import { toastStore } from '../lib/toastStore.js';
 
     // Props
     export let module = 'finance'; // finance, pantry, nutrition, all
