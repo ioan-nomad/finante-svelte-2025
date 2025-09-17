@@ -30,4 +30,5 @@ function createToastStore() {
 }
 
 export const toastStore = createToastStore();
+export const toast = toastStore; // pentru compatibilitate
 export default toastStore;
