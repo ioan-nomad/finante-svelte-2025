@@ -1,20 +1,10 @@
 <script>
   import { onMount } from 'svelte';
-  import Dashboard from './components/Dashboard.svelte';
-  import Conturi from './components/Conturi.svelte';
-  import Tranzactii from './components/Tranzactii.svelte';
-  import Budgete from './components/Budgete.svelte';
-  import Obiective from './components/Obiective.svelte';
-  import Reconciliere from './components/Reconciliere.svelte';
-  import RecurringPayments from './components/RecurringPayments.svelte';
-  import PDFImporter from './components/PDFImporter.svelte';
-  import EditModal from './components/EditModal.svelte';
-  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
-  import GroceryDashboard from './components/GroceryDashboard.svelte';
-  import ReceiptParser from './components/ReceiptParser.svelte';
+  import FinanceModule from './modules/finance/FinanceModule.svelte';
+  import PantryModule from './modules/pantry/PantryModule.svelte';
+  import NutritionModule from './modules/nutrition/NutritionModule.svelte';
 
   let activeModule = 'finance';
-  let activeTab = 'dashboard';
   let theme = 'light';
 
   onMount(() => {
@@ -28,17 +18,6 @@
     localStorage.setItem('theme', theme);
   }
 
-  const financeTabs = [
-    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
-    { id: 'conturi', label: 'Conturi', icon: '💳' },
-    { id: 'tranzactii', label: 'Tranzacții', icon: '💸' },
-    { id: 'budgete', label: 'Bugete', icon: '🎯' },
-    { id: 'obiective', label: 'Obiective', icon: '🏆' },
-    { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
-    { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
-    { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
-    { id: 'import', label: 'Import PDF', icon: '📥' }
-  ];
 </script>
 
 <div class='app'>
@@ -60,48 +39,15 @@
     </button>
   </header>
 
-  {#if activeModule === 'finance'}
-    <nav class='tabs'>
-      {#each financeTabs as tab}
-        <button
-          class:active={activeTab === tab.id}
-          on:click={() => activeTab = tab.id}
-        >
-          {tab.icon} {tab.label}
-        </button>
-      {/each}
-    </nav>
-
-    <main>
-      {#if activeTab === 'dashboard'}
-        <Dashboard />
-      {:else if activeTab === 'conturi'}
-        <Conturi />
-      {:else if activeTab === 'tranzactii'}
-        <Tranzactii />
-      {:else if activeTab === 'budgete'}
-        <Budgete />
-      {:else if activeTab === 'obiective'}
-        <Obiective />
-      {:else if activeTab === 'reconciliere'}
-        <Reconciliere />
-      {:else if activeTab === 'recurring'}
-        <RecurringPayments />
-      {:else if activeTab === 'rapoarte'}
-        <RapoarteAvansate />
-      {:else if activeTab === 'import'}
-        <PDFImporter />
-      {/if}
-    </main>
-  {:else if activeModule === 'pantry'}
-    <main>
-      <GroceryDashboard />
-    </main>
-  {:else if activeModule === 'nutrition'}
-    <main>
-      <ReceiptParser />
-    </main>
-  {/if}
+  <main>
+    {#if activeModule === 'finance'}
+      <FinanceModule />
+    {:else if activeModule === 'pantry'}
+      <PantryModule />
+    {:else if activeModule === 'nutrition'}
+      <NutritionModule />
+    {/if}
+  </main>
 </div>
 
 <style>
@@ -180,30 +126,6 @@
     font-size: 1.2rem;
   }
 
-  nav.tabs {
-    background: var(--bg-secondary);
-    padding: 0 2rem;
-    display: flex;
-    gap: 1rem;
-    overflow-x: auto;
-    border-bottom: 1px solid var(--border-color);
-  }
-
-  nav.tabs button {
-    padding: 1rem;
-    background: transparent;
-    color: var(--text-secondary);
-    border: none;
-    border-bottom: 2px solid transparent;
-    cursor: pointer;
-    white-space: nowrap;
-    transition: all 0.2s;
-  }
-
-  nav.tabs button.active {
-    color: var(--accent-color);
-    border-bottom-color: var(--accent-color);
-  }
 
   main {
     flex: 1;

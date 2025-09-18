@@ -76,7 +76,8 @@
       "Read(//c/**)",
       "Bash(del nul)",
       "Bash(git tag:*)",
-      "Bash(git ls-tree:*)"
+      "Bash(git ls-tree:*)",
+      "Bash(test:*)"
     ],
     "deny": [],
     "ask": []
