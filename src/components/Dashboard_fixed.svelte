@@ -8,7 +8,6 @@
   let chartInstances = {};
   let chartUpdateTimeout;
   let chartsInitialized = false;
-  let unsubscribeStores = [];
   let stats = {
     income: 0,
     expenses: 0,
@@ -47,15 +46,6 @@
     Object.values(chartInstances).forEach(chart => {
       if (chart && typeof chart.destroy === 'function') {
         try {
-          // Clear any animations
-          if (chart.options && chart.options.animation) {
-            chart.options.animation = false;
-          }
-          // Stop any ongoing animations
-          if (typeof chart.stop === 'function') {
-            chart.stop();
-          }
-          // Destroy the chart instance
           chart.destroy();
         } catch (error) {
           console.error('Error destroying chart:', error);
@@ -63,43 +53,8 @@
       }
     });
     chartInstances = {};
-
-    // Force garbage collection hint (if available)
-    if (typeof window !== 'undefined' && window.gc) {
-      try {
-        window.gc();
-      } catch (e) {
-        // gc() not available, ignore
-      }
-    }
   }
   
-  // Chart default options to prevent memory leaks
-  const chartDefaults = {
-    responsive: true,
-    maintainAspectRatio: false,
-    animation: {
-      duration: 750,
-      easing: 'easeInOutQuart'
-    },
-    elements: {
-      arc: { borderWidth: 0 },
-      point: { radius: 3 },
-      line: { borderWidth: 2 }
-    },
-    plugins: {
-      legend: {
-        labels: {
-          color: '#9ca3af',
-          font: { size: 11 },
-          usePointStyle: true
-        }
-      }
-    },
-    onHover: null, // Disable hover effects to reduce memory usage
-    events: ['click'] // Reduce events to essential ones only
-  };
-
   // Create all charts with error handling
   function createCharts() {
     // Prevent multiple simultaneous calls
@@ -107,9 +62,9 @@
       console.log('Charts not ready to initialize');
       return;
     }
-
+    
     console.log('🎨 Creating charts');
-
+    
     // Destroy existing charts first
     destroyAllCharts();
     
@@ -129,18 +84,18 @@
             datasets: [{
               data: Object.values(categoryData).slice(0, 6),
               backgroundColor: [
-                '#3b82f6', '#10b981', '#f59e0b',
+                '#3b82f6', '#10b981', '#f59e0b', 
                 '#ef4444', '#8b5cf6', '#ec4899'
               ]
             }]
           },
           options: {
-            ...chartDefaults,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-              ...chartDefaults.plugins,
               legend: {
-                ...chartDefaults.plugins.legend,
-                position: 'bottom'
+                position: 'bottom',
+                labels: { color: '#9ca3af', font: { size: 11 } }
               }
             }
           }
@@ -188,29 +143,32 @@
                 data: incomeData,
                 borderColor: '#10b981',
                 backgroundColor: 'rgba(16, 185, 129, 0.1)',
-                tension: 0.4,
-                pointHoverRadius: 0 // Disable hover effects
+                tension: 0.4
               },
               {
                 label: 'Cheltuieli',
                 data: expenseData,
                 borderColor: '#ef4444',
                 backgroundColor: 'rgba(239, 68, 68, 0.1)',
-                tension: 0.4,
-                pointHoverRadius: 0
+                tension: 0.4
               },
               {
                 label: 'Economii',
                 data: savingsData,
                 borderColor: '#3b82f6',
                 backgroundColor: 'rgba(59, 130, 246, 0.1)',
-                tension: 0.4,
-                pointHoverRadius: 0
+                tension: 0.4
               }
             ]
           },
           options: {
-            ...chartDefaults,
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+              legend: {
+                labels: { color: '#9ca3af', font: { size: 11 } }
+              }
+            },
             scales: {
               y: {
                 ticks: { color: '#9ca3af' },
@@ -248,9 +206,9 @@
             }]
           },
           options: {
-            ...chartDefaults,
+            responsive: true,
+            maintainAspectRatio: false,
             plugins: {
-              ...chartDefaults.plugins,
               legend: { display: false }
             },
             scales: {
@@ -288,12 +246,12 @@
               }]
             },
             options: {
-              ...chartDefaults,
+              responsive: true,
+              maintainAspectRatio: false,
               plugins: {
-                ...chartDefaults.plugins,
                 legend: {
-                  ...chartDefaults.plugins.legend,
-                  position: 'bottom'
+                  position: 'bottom',
+                  labels: { color: '#9ca3af', font: { size: 11 } }
                 }
               }
             }
@@ -305,115 +263,41 @@
     }
   }
   
-  // Enhanced debounced chart update to prevent excessive redraws
+  // Debounced chart update to prevent excessive redraws
   function updateChartsDebounced() {
     clearTimeout(chartUpdateTimeout);
     chartUpdateTimeout = setTimeout(() => {
-      if (chartsInitialized && typeof window !== 'undefined') {
-        // Check if DOM elements still exist
-        const chartsExist = ['categoryChart', 'trendChart', 'topCategoriesChart', 'accountChart']
-          .every(id => document.getElementById(id));
-
-        if (chartsExist) {
-          createCharts();
-        } else {
-          console.warn('Chart elements not found, skipping chart update');
-        }
+      if (chartsInitialized) {
+        createCharts();
       }
-    }, 500); // Increased debounce time to 500ms for better performance
+    }, 300);
   }
   
   onMount(() => {
     console.log('🎯 Dashboard mounting...');
-
+    
     // Calculate initial statistics
     calculateStats();
-
-    // Initialize charts after DOM is ready with intersection observer for performance
-    const initializeChartsWhenVisible = () => {
-      if ('IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-          entries.forEach(entry => {
-            if (entry.isIntersecting && !chartsInitialized) {
-              chartsInitialized = true;
-              requestAnimationFrame(() => createCharts());
-              observer.disconnect();
-            }
-          });
-        }, { threshold: 0.1 });
-
-        const dashboardElement = document.querySelector('.dashboard');
-        if (dashboardElement) {
-          observer.observe(dashboardElement);
-          // Store observer for cleanup
-          unsubscribeStores.push(() => observer.disconnect());
-        } else {
-          // Fallback if observer fails
-          requestAnimationFrame(() => {
-            chartsInitialized = true;
-            createCharts();
-          });
-        }
-      } else {
-        // Fallback for browsers without IntersectionObserver
-        requestAnimationFrame(() => {
-          chartsInitialized = true;
-          createCharts();
-        });
-      }
-    };
-
-    // Initialize charts
-    initializeChartsWhenVisible();
+    
+    // Initialize charts after DOM is ready
+    requestAnimationFrame(() => {
+      chartsInitialized = true;
+      createCharts();
+    });
   });
   
   onDestroy(() => {
-    console.log('🧹 Dashboard cleanup starting...');
-
-    // Clear all timeouts
+    // Clean up charts and timeouts on component destroy
     clearTimeout(chartUpdateTimeout);
-
-    // Unsubscribe from all store subscriptions and observers
-    unsubscribeStores.forEach(unsub => {
-      try {
-        if (typeof unsub === 'function') {
-          unsub();
-        }
-      } catch (error) {
-        console.warn('Error during store cleanup:', error);
-      }
-    });
-    unsubscribeStores = [];
-
-    // Destroy all charts with proper cleanup
     destroyAllCharts();
-
-    // Reset flags
     chartsInitialized = false;
-
-    console.log('✅ Dashboard cleanup completed');
   });
   
-  // Reactive updates with enhanced debouncing and memory management
-  let lastTransactionLength = 0;
-  let lastAccountLength = 0;
-
-  $: {
-    // Only update if data actually changed (not just store reference)
-    const currentTransactionLength = $transactions?.length || 0;
-    const currentAccountLength = $accounts?.length || 0;
-
-    if (currentTransactionLength !== lastTransactionLength ||
-        currentAccountLength !== lastAccountLength) {
-
-      lastTransactionLength = currentTransactionLength;
-      lastAccountLength = currentAccountLength;
-
-      calculateStats();
-
-      if (typeof window !== 'undefined' && chartsInitialized) {
-        updateChartsDebounced();
-      }
+  // Reactive updates with debouncing
+  $: if ($transactions) {
+    calculateStats();
+    if (typeof window !== 'undefined' && chartsInitialized) {
+      updateChartsDebounced();
     }
   }
 </script>

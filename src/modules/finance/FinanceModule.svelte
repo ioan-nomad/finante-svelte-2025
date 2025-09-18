@@ -1,7 +1,7 @@
 <script>
     import { onMount } from 'svelte';
     import Dashboard from '../../components/Dashboard.svelte';
-    import { financeStore } from './stores/financeStore.js';
+    import { accounts, transactions, totalBalance } from './stores/financeStore.js';
 
     let isLoading = false;
 
