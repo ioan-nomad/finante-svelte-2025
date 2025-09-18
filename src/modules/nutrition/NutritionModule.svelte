@@ -1,7 +1,6 @@
 <!-- modules/nutrition/NutritionModule.svelte -->
 <script>
   import { onMount } from 'svelte';
-  export let activeTab = 'recipes';
 
   // Import nutrition components
   import RecipeSuggester from './components/RecipeSuggester.svelte';
@@ -9,21 +8,23 @@
   import MealPlanner from './components/MealPlanner.svelte';
   import CodexDashboard from './components/CodexDashboard.svelte';
   import CodexRecipeUI from './components/CodexRecipeUI.svelte';
-  const SmartRecipeDisplay = null; // TEMPORARY FIX până creezi fișierul
-  
+
   // Import CODEX N-OMAD v3.0 Components
   import RecipeDisplay from './codex/RecipeDisplay.svelte';
   import { ProfileEngine, CodexIntegration, NutrientDatabase } from './codex/CodexCore.js';
   import { initializeNutrientDatabase } from './codex/database/nutrients.js';
   import { CookingMethodIntegration } from './codex/CookingMethods.js';
   import { RecipeEngine } from './RecipeEngine.js';
-  
-  // Import nutrition stores  
-  import { 
-    nutritionProfile, 
-    weeklyProgress, 
-    todaysRecommendations 
+
+  // Import nutrition stores
+  import {
+    nutritionProfile,
+    weeklyProgress,
+    todaysRecommendations
   } from './stores/nutritionStore.js';
+
+  let activeTab = 'recipes';
+  let isLoading = false;
 
   // Future components (placeholders)
   let CodexDatabase = null;
@@ -37,926 +38,488 @@
   let isAnalyzingNutrition = false;
   let recipeEngine = null;
 
+  // mTOR Tracker state
+  let mtorData = {
+    protein: 0,
+    leucine: 0,
+    carbs: 0,
+    fasting: 0,
+    score: 0
+  };
+
+  const tabs = [
+    { id: 'recipes', label: 'Recipe Suggester', icon: '🍳' },
+    { id: 'planner', label: 'Meal Planner', icon: '📅' },
+    { id: 'codex', label: 'CODEX Database', icon: '🧬' },
+    { id: 'mtor', label: 'mTOR Tracker', icon: '⚡' }
+  ];
+
   onMount(async () => {
+    console.log('🍽️ Nutrition Module loaded');
+
     // Initialize CODEX N-OMAD v3.0 Database
-    initializeNutrientDatabase(NutrientDatabase);
-    console.log('🧬 CODEX N-OMAD v3.0 initialized with complete nutrient database');
-    
-    // Initialize RecipeEngine
-    recipeEngine = new RecipeEngine();
-    console.log('🚀 RecipeEngine v3.0 initialized with orchestration system');
-    
-    // Load future components dynamically when they're created
     try {
-      // These will be implemented later
-      // CodexDatabase = (await import('./components/CodexDatabase.svelte')).default;
-      // NutritionTracker = (await import('./components/NutritionTracker.svelte')).default;
+      initializeNutrientDatabase(NutrientDatabase);
+      console.log('🧬 CODEX N-OMAD v3.0 initialized with complete nutrient database');
+
+      // Initialize RecipeEngine
+      recipeEngine = new RecipeEngine();
+      console.log('🚀 RecipeEngine v3.0 initialized with orchestration system');
     } catch (error) {
-      console.log('Future nutrition components not yet available');
+      console.log('CODEX initialization skipped - components not available');
     }
+
+    // Load saved tab preference
+    const savedTab = localStorage.getItem('nutritionActiveTab');
+    if (savedTab) {
+      activeTab = savedTab;
+    }
+
+    // Load mTOR data
+    loadMTORData();
   });
+
+  function switchTab(tabId) {
+    activeTab = tabId;
+    localStorage.setItem('nutritionActiveTab', tabId);
+  }
+
+  function loadMTORData() {
+    const stored = localStorage.getItem('mtorData');
+    if (stored) {
+      try {
+        mtorData = JSON.parse(stored);
+      } catch (e) {
+        console.error('Error loading mTOR data:', e);
+      }
+    }
+  }
+
+  function saveMTORData() {
+    localStorage.setItem('mtorData', JSON.stringify(mtorData));
+  }
+
+  function calculateMTORScore() {
+    // Simple mTOR activation score calculation
+    const proteinScore = Math.min(mtorData.protein / 30, 1) * 30; // Target: 30g protein
+    const leucineScore = Math.min(mtorData.leucine / 2.5, 1) * 25; // Target: 2.5g leucine
+    const carbScore = Math.min(mtorData.carbs / 50, 1) * 20; // Target: 50g carbs
+    const fastingPenalty = mtorData.fasting > 16 ? -10 : 0; // Penalty for long fasting
+
+    mtorData.score = Math.max(0, proteinScore + leucineScore + carbScore + fastingPenalty);
+    saveMTORData();
+  }
+
+  function updateMTORValue(field, value) {
+    mtorData[field] = parseFloat(value) || 0;
+    calculateMTORScore();
+  }
 
   // CODEX N-OMAD v3.0 Event Handlers
   async function handleGenerateRecipe(event) {
     if (!recipeEngine) return;
-    
+
     isGeneratingRecipe = true;
     const profile = event.detail?.profile || currentProfile;
-    
+
     try {
       // Switch to selected profile
       recipeEngine.switchProfile(profile);
-      
+
       // Generate complete OMAD recipe with orchestration
       const completeRecipe = await recipeEngine.generateOMADRecipe({
         preferences: event.detail?.preferences || {},
         dietaryRestrictions: profile === 'nico' ? ['mushrooms'] : []
       });
-      
+
       recipeData = completeRecipe;
       nutritionAnalysis = completeRecipe.nutrition;
-      
+
       console.log('🔄 Generated complete OMAD recipe:', completeRecipe);
     } catch (error) {
-      console.error('❌ Recipe generation failed:', error);
+      console.error('Recipe generation error:', error);
     } finally {
       isGeneratingRecipe = false;
     }
   }
 
-  async function handleAnalyzeNutrition(event) {
-    if (!recipeEngine) return;
-    
+  async function handleNutritionAnalysis(event) {
     isAnalyzingNutrition = true;
-    const profile = event.detail?.profile || currentProfile;
-    
+
     try {
-      // Switch to selected profile
-      recipeEngine.switchProfile(profile);
-      
-      // Initialize sample pantry for demonstration
-      const samplePantry = [
-        { ingredient: "Somon", quantity: 200, unit: "g", expiryDate: "2025-09-10" },
-        { ingredient: "Broccoli", quantity: 300, unit: "g", expiryDate: "2025-09-08" },
-        { ingredient: "Quinoa", quantity: 150, unit: "g", expiryDate: "2025-12-01" },
-        { ingredient: "Ulei de măsline", quantity: 50, unit: "ml", expiryDate: "2025-12-01" },
-        { ingredient: "Nucă", quantity: 100, unit: "g", expiryDate: "2025-10-01" }
-      ];
-      
-      recipeEngine.initializePantry(samplePantry);
-      
-      // Generate and analyze complete recipe
-      const completeAnalysis = await recipeEngine.generateOMADRecipe({
-        preferences: { maxCookingTime: 30, preferredCookingMethod: 'instant-pot' }
-      });
-      
-      nutritionAnalysis = completeAnalysis.nutrition;
-      recipeData = completeAnalysis;
-      
-      console.log('📊 Complete nutrition analysis:', completeAnalysis);
+      const analysis = await CodexIntegration.analyzeNutrition(event.detail.ingredients);
+      nutritionAnalysis = analysis;
+
+      console.log('🧬 Nutrition analysis complete:', analysis);
     } catch (error) {
-      console.error('❌ Nutrition analysis failed:', error);
+      console.error('Nutrition analysis error:', error);
     } finally {
       isAnalyzingNutrition = false;
     }
   }
-
-  // Check pantry module availability for enhanced integration
-  let pantryAvailable = false;
-  onMount(async () => {
-    try {
-      await import('../../stores/groceryStore.js');
-      pantryAvailable = true;
-    } catch {
-      pantryAvailable = false;
-    }
-  });
 </script>
 
-<div class="nutrition-module">
-  {#if activeTab === 'recipes'}
+<div class="nutrition-container">
+  {#if isLoading}
+    <div class="loading-state">
+      <div class="loading-spinner"></div>
+      <div>Se încarcă...</div>
+    </div>
+  {:else}
+    <!-- Module Header -->
+    <div class="module-header">
+      <h1 class="module-title">
+        <span>🍽️</span>
+        Nutrition Management
+      </h1>
+    </div>
+
+    <!-- Tab Navigation -->
+    <div class="tab-navigation">
+      {#each tabs as tab}
+        <button
+          class="tab-button"
+          class:active={activeTab === tab.id}
+          on:click={() => switchTab(tab.id)}
+        >
+          <span class="tab-icon">{tab.icon}</span>
+          <span class="tab-name">{tab.label}</span>
+        </button>
+      {/each}
+    </div>
+
+    <!-- Tab Content -->
     <div class="tab-content">
-      <div class="module-header">
-        <div class="header-info">
-          <h2>👨‍🍳 Recipe Suggester</h2>
-          <p>Rețete inteligente bazate pe principiile CODEX N-OMAD</p>
-        </div>
-        
-        <div class="codex-status">
-          <div class="cycle-info">
-            <span class="label">Ciclu mTOR:</span>
-            <span class="phase {$nutritionProfile.currentPhase}">
-              {$nutritionProfile.currentPhase === 'high' ? '🔥 High Protein' : '🌿 Plant Focus'}
-            </span>
-            <span class="day">Ziua {$nutritionProfile.cycleDay}/14</span>
-          </div>
-          
-          <div class="plant-progress">
-            <span class="label">Plante săptămana:</span>
-            <div class="progress-bar">
-              <div class="progress-fill" style="width: {$weeklyProgress.plantProgress}%"></div>
-              <span class="progress-text">
-                {$weeklyProgress.plantsAchieved}/30
-              </span>
+      {#if activeTab === 'recipes'}
+        <div class="recipes-section">
+          <h3>🍳 Recipe Suggester</h3>
+          <RecipeSuggester
+            on:generateRecipe={handleGenerateRecipe}
+            {isGeneratingRecipe}
+          />
+
+          {#if recipeData}
+            <div class="recipe-display">
+              <h4>Generated Recipe</h4>
+              <RecipeDisplay recipe={recipeData} analysis={nutritionAnalysis} />
             </div>
+          {/if}
+        </div>
+
+      {:else if activeTab === 'planner'}
+        <div class="planner-section">
+          <h3>📅 Meal Planner</h3>
+          <MealPlanner />
+
+          <div class="codex-ui">
+            <h4>🧬 CODEX Recipe Generator</h4>
+            <CodexRecipeUI
+              on:generateRecipe={handleGenerateRecipe}
+              on:analyzeNutrition={handleNutritionAnalysis}
+              {isGeneratingRecipe}
+              {isAnalyzingNutrition}
+            />
           </div>
         </div>
-      </div>
 
-      <!-- Smart Recipe Generator with Real Data -->
-      <div class="recipe-sections">
-        <SmartRecipeDisplay />
-        
-        <div class="divider">
-          <span>SAU</span>
-        </div>
-        
-        <RecipeSuggester />
-      </div>
-    </div>
+      {:else if activeTab === 'codex'}
+        <div class="codex-section">
+          <h3>🧬 CODEX Database</h3>
+          <CodexDashboard />
 
-  {:else if activeTab === 'biomarkers'}
-    <div class="tab-content">
-      <BiomarkerTracking />
-    </div>
+          <div class="biomarker-tracking">
+            <h4>📊 Biomarker Tracking</h4>
+            <BiomarkerTracking />
+          </div>
 
-  {:else if activeTab === 'meals'}
-    <div class="tab-content">
-      <MealPlanner />
-    </div>
-
-  {:else if activeTab === 'dashboard'}
-    <CodexDashboard />
-
-  {:else if activeTab === 'generator'}
-    <div class="tab-content">
-      <CodexRecipeUI />
-    </div>
-
-  {:else if activeTab === 'codex-nomad'}
-    <div class="tab-content">
-      <div class="codex-nomad-header">
-        <div class="header-info">
-          <h2>🧬 CODEX N-OMAD v3.0</h2>
-          <p>Complete evidence-based nutrition system for Ioan & Nico profiles</p>
-        </div>
-        
-        <div class="profile-selector">
-          <label>Active Profile:</label>
-          <select bind:value={currentProfile}>
-            <option value="ioan">Ioan (45, Male)</option>
-            <option value="nico">Nico (42, Female, Mushroom Allergy)</option>
-          </select>
-        </div>
-      </div>
-
-      <RecipeDisplay 
-        {recipeData} 
-        {nutritionAnalysis}
-        profile={currentProfile}
-        on:generate-recipe={handleGenerateRecipe}
-        on:analyze-nutrition={handleAnalyzeNutrition}
-      />
-    </div>
-
-  {:else if activeTab === 'meals_old'}
-    <div class="tab-content placeholder">
-        <div class="coming-soon">
-          <h2>🍽️ Meal Planner</h2>
-          <p>Planificarea meselor bazată pe ciclul mTOR și obiectivele nutriționale.</p>
-          <div class="features-preview">
-            <h3>Features în dezvoltare:</h3>
+          <div class="codex-placeholder">
+            <p>🚀 Advanced CODEX features:</p>
             <ul>
-              <li>📅 Planificare săptămânală automată</li>
-              <li>🔄 Sincronizare cu ciclul mTOR</li>
-              <li>🛒 Generare listă cumpărături</li>
-              <li>📊 Tracking macro și micro nutrienți</li>
-              <li>⚡ Integrare Instant Pot</li>
+              <li>🧬 Complete nutrient database</li>
+              <li>🔬 Biomarker optimization</li>
+              <li>🍳 Smart recipe generation</li>
+              <li>📊 Nutrition analysis engine</li>
             </ul>
           </div>
-          
-          <div class="current-recommendations">
-            <h3>Recomandări pentru astăzi:</h3>
-            <div class="recommendations-grid">
-              <div class="recommendation">
-                <span class="icon">🎯</span>
-                <div class="content">
-                  <strong>Proteină țintă:</strong>
-                  <span>{$todaysRecommendations.targetProtein}</span>
-                </div>
-              </div>
-              <div class="recommendation">
-                <span class="icon">🌱</span>
-                <div class="content">
-                  <strong>Plante țintă:</strong>
-                  <span>{$todaysRecommendations.targetPlants}</span>
-                </div>
-              </div>
-              <div class="recommendation">
-                <span class="icon">🍽️</span>
-                <div class="content">
-                  <strong>Masa recomandată:</strong>
-                  <span>{$todaysRecommendations.mealType}</span>
-                </div>
-              </div>
-            </div>
-          </div>
         </div>
-    </div>
 
-  {:else if activeTab === 'codex'}
-    <div class="tab-content placeholder">
-      {#if CodexDatabase}
-        <svelte:component this={CodexDatabase} />
-      {:else}
-        <div class="coming-soon">
-          <h2>📚 CODEX Alimente</h2>
-          <p>Baza de date completă cu informații nutriționale și proprietăți funcționale.</p>
-          
-          <div class="codex-principles">
-            <h3>🧬 Principiile CODEX N-OMAD:</h3>
-            <div class="principles-grid">
-              <div class="principle">
-                <h4>🔄 mTOR Cycling</h4>
-                <p>Alternarea între zile cu proteină ridicată (1-3, 8-10) și zile cu focus pe plante (4-7, 11-14) într-un ciclu de 14 zile.</p>
-              </div>
-              
-              <div class="principle">
-                <h4>🌿 Diversitatea Plantelor</h4>
-                <p>Obiectiv de 30+ plante diferite pe săptămână pentru maximizarea microbiotei intestinale.</p>
-              </div>
-              
-              <div class="principle">
-                <h4>🔥 Anti-Inflammatory</h4>
-                <p>Prioritizarea alimentelor cu proprietăți anti-inflamatoare: turmeric, ghimbir, afine, salmón.</p>
-              </div>
-              
-              <div class="principle">
-                <h4>⚡ Instant Pot Strategy</h4>
-                <p>Stratificare corectă în Instant Pot pentru păstrarea nutrienților și texturii.</p>
-              </div>
-              
-              <div class="principle">
-                <h4>🧠 Longevitate</h4>
-                <p>Alimentele care promovează sănătatea cerebrală și longevitatea: nuci, avocado, broccoli.</p>
-              </div>
-              
-              <div class="principle">
-                <h4>⏰ Sincronizare Circadiană</h4>
-                <p>Aliniera tipurilor de mese cu ritmurile naturale ale corpului.</p>
+      {:else if activeTab === 'mtor'}
+        <div class="mtor-section">
+          <h3>⚡ mTOR Tracker</h3>
+
+          <div class="mtor-dashboard">
+            <div class="mtor-score">
+              <h4>Current mTOR Score</h4>
+              <div class="score-display" class:high={mtorData.score > 70} class:medium={mtorData.score > 40 && mtorData.score <= 70}>
+                {mtorData.score.toFixed(1)}
               </div>
             </div>
-          </div>
 
-          <div class="database-preview">
-            <h3>Preview Database:</h3>
-            <div class="food-categories">
-              <div class="category">
-                <h4>🥩 Proteine Animale</h4>
-                <p>Salmón, sardine, ouă, pui organic</p>
+            <div class="mtor-inputs">
+              <div class="input-group">
+                <label>Protein (g):</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={mtorData.protein}
+                  on:input={(e) => updateMTORValue('protein', e.target.value)}
+                />
               </div>
-              <div class="category">
-                <h4>🌱 Proteine Vegetale</h4>
-                <p>Linte, naut, quinoa, semințe</p>
+
+              <div class="input-group">
+                <label>Leucine (g):</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={mtorData.leucine}
+                  on:input={(e) => updateMTORValue('leucine', e.target.value)}
+                />
               </div>
-              <div class="category">
-                <h4>🥬 Super Greens</h4>
-                <p>Kale, spanac, rucola, broccoli</p>
+
+              <div class="input-group">
+                <label>Carbs (g):</label>
+                <input
+                  type="number"
+                  step="0.1"
+                  value={mtorData.carbs}
+                  on:input={(e) => updateMTORValue('carbs', e.target.value)}
+                />
               </div>
-              <div class="category">
-                <h4>🫐 Antioxidanți</h4>
-                <p>Afine, mure, rodie, cacao</p>
+
+              <div class="input-group">
+                <label>Fasting Hours:</label>
+                <input
+                  type="number"
+                  step="0.5"
+                  value={mtorData.fasting}
+                  on:input={(e) => updateMTORValue('fasting', e.target.value)}
+                />
               </div>
+            </div>
+
+            <div class="mtor-info">
+              <h4>💡 mTOR Optimization Tips</h4>
+              <ul>
+                <li>🥩 Target 25-30g protein per meal</li>
+                <li>🧀 Include 2.5g+ leucine for activation</li>
+                <li>🍠 Add 30-50g carbs post-workout</li>
+                <li>⏰ Limit fasting to 16h for muscle growth</li>
+              </ul>
             </div>
           </div>
         </div>
       {/if}
-    </div>
-
-  {:else if activeTab === 'tracking'}
-    <div class="tab-content placeholder">
-      {#if NutritionTracker}
-        <svelte:component this={NutritionTracker} />
-      {:else}
-        <div class="coming-soon">
-          <h2>📊 Nutrition Tracker</h2>
-          <p>Urmărirea detaliată a progresului nutrițional și a obiectivelor CODEX.</p>
-          
-          <div class="current-stats">
-            <h3>Statusul actual:</h3>
-            <div class="stats-grid">
-              <div class="stat-card">
-                <h4>Ciclul mTOR</h4>
-                <div class="cycle-visual">
-                  <div class="cycle-days">
-                    {#each Array(14).fill(0) as _, i}
-                      <div class="day {$nutritionProfile.cycleDay - 1 === i ? 'active' : ''} {i < 3 || (i >= 7 && i < 10) ? 'high-protein' : 'low-protein'}">
-                        {i + 1}
-                      </div>
-                    {/each}
-                  </div>
-                  <div class="cycle-legend">
-                    <span class="high-protein">🔥 High Protein</span>
-                    <span class="low-protein">🌿 Plant Focus</span>
-                  </div>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <h4>Progres Plante</h4>
-                <div class="plant-chart">
-                  <div class="circular-progress">
-                    <div class="progress-circle" style="--progress: {$weeklyProgress.plantProgress}%">
-                      <span class="progress-number">{$weeklyProgress.plantsAchieved}</span>
-                      <span class="progress-total">/30</span>
-                    </div>
-                  </div>
-                  <p>Plante diferite săptămâna aceasta</p>
-                </div>
-              </div>
-
-              <div class="stat-card">
-                <h4>Risc Inflamație</h4>
-                <div class="risk-meter">
-                  <div class="meter-bar">
-                    <div class="risk-fill" style="width: {$nutritionProfile.inflammationRisk * 100}%"></div>
-                  </div>
-                  <span class="risk-level">
-                    {$nutritionProfile.inflammationRisk < 0.3 ? '🟢 Scăzut' : 
-                     $nutritionProfile.inflammationRisk < 0.7 ? '🟡 Moderat' : '🔴 Ridicat'}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div class="integration-status">
-            <h3>Integrări active:</h3>
-            <div class="integrations">
-              {#if pantryAvailable}
-                <div class="integration active">
-                  <span class="icon">📦</span>
-                  <span>Pantry Module - Inventory aware recipes</span>
-                </div>
-              {:else}
-                <div class="integration inactive">
-                  <span class="icon">📦</span>
-                  <span>Pantry Module - Standalone mode</span>
-                </div>
-              {/if}
-              
-              <div class="integration active">
-                <span class="icon">🧬</span>
-                <span>CODEX Principles - Active</span>
-              </div>
-              
-              <div class="integration active">
-                <span class="icon">⚡</span>
-                <span>Instant Pot Optimization - Enabled</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      {/if}
-    </div>
-
-  {:else}
-    <div class="tab-content">
-      <div class="nutrition-dashboard">
-        <h2>🍽️ Nutrition Module Dashboard</h2>
-        <p>Bun venit în modulul de nutriție bazat pe principiile CODEX N-OMAD!</p>
-        
-        <div class="quick-actions">
-          <button class="action-card" on:click={() => activeTab = 'recipes'}>
-            <span class="icon">👨‍🍳</span>
-            <h3>Recipe Suggester</h3>
-            <p>Găsește rețete personalizate</p>
-          </button>
-          
-          <button class="action-card" on:click={() => activeTab = 'biomarkers'}>
-            <span class="icon">🔬</span>
-            <h3>Biomarker Tracking</h3>
-            <p>Monitorizează markerii de sănătate</p>
-          </button>
-          
-          <button class="action-card" on:click={() => activeTab = 'meals'}>
-            <span class="icon">🍽️</span>
-            <h3>Meal Planner</h3>
-            <p>Planificare inteligentă de mese</p>
-          </button>
-          
-          <button class="action-card" on:click={() => activeTab = 'dashboard'}>
-            <span class="icon">🧬</span>
-            <h3>CODEX Dashboard</h3>
-            <p>Evidence-based monitoring system</p>
-          </button>
-          
-          <button class="action-card" on:click={() => activeTab = 'generator'}>
-            <span class="icon">🚀</span>
-            <h3>Recipe Generator v4.0</h3>
-            <p>Generare rețete cu workflow logic impecabil</p>
-          </button>
-          
-          <button class="action-card featured" on:click={() => activeTab = 'codex-nomad'}>
-            <span class="icon">🧬</span>
-            <h3>CODEX N-OMAD v3.0</h3>
-            <p>Complete evidence-based nutrition system with PMID sources</p>
-            <div class="new-badge">NEW</div>
-          </button>
-        </div>
-      </div>
     </div>
   {/if}
 </div>
 
 <style>
-  .nutrition-module {
-    width: 100%;
-    min-height: 500px;
-  }
-
-  .tab-content {
-    padding: 20px;
+  .nutrition-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 2rem;
   }
 
   .module-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
-    margin-bottom: 30px;
-    padding: 20px;
-    background: var(--panel, #2d2d2d);
-    border-radius: 12px;
+    margin-bottom: 2rem;
   }
 
-  .header-info h2 {
-    margin: 0 0 5px 0;
-    color: var(--acc, #80b8ff);
-  }
-
-  .header-info p {
-    margin: 0;
-    color: var(--muted, #9aa3b2);
-  }
-
-  .codex-status {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-    align-items: flex-end;
-  }
-
-  .cycle-info {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .phase {
-    padding: 6px 12px;
-    border-radius: 6px;
-    font-weight: 600;
-  }
-
-  .phase.high {
-    background: #dc2626;
-    color: white;
-  }
-
-  .phase.low {
-    background: #16a34a;
-    color: white;
-  }
-
-  .plant-progress {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-
-  .progress-bar {
-    position: relative;
-    width: 150px;
-    height: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 10px;
-    overflow: hidden;
-  }
-
-  .progress-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #dc2626 0%, #f59e0b 50%, #16a34a 100%);
-    transition: width 0.3s ease;
-  }
-
-  .progress-text {
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    font-size: 0.8rem;
-    font-weight: 600;
-    color: white;
-  }
-
-  .coming-soon {
-    text-align: center;
-    padding: 40px 20px;
-    max-width: 800px;
-    margin: 0 auto;
-  }
-
-  .coming-soon h2 {
-    color: var(--acc, #80b8ff);
-    margin-bottom: 15px;
-  }
-
-  .features-preview {
-    margin: 40px 0;
-    text-align: left;
-  }
-
-  .features-preview ul {
-    list-style: none;
-    padding: 0;
-  }
-
-  .features-preview li {
-    padding: 8px 0;
-    border-bottom: 1px solid var(--border, #404040);
-  }
-
-  .current-recommendations {
-    margin: 40px 0;
-    padding: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 12px;
-  }
-
-  .recommendations-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-  }
-
-  .recommendation {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 15px;
-    background: var(--panel, #2d2d2d);
-    border-radius: 8px;
-  }
-
-  .recommendation .icon {
-    font-size: 1.5rem;
-  }
-
-  .codex-principles {
-    margin: 40px 0;
-    text-align: left;
-  }
-
-  .principles-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-  }
-
-  .principle {
-    padding: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 12px;
-    border-left: 4px solid var(--acc, #80b8ff);
-  }
-
-  .principle h4 {
-    margin: 0 0 10px 0;
-    color: var(--acc, #80b8ff);
-  }
-
-  .database-preview {
-    margin: 40px 0;
-  }
-
-  .food-categories {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-    margin-top: 15px;
-  }
-
-  .category {
-    padding: 15px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 8px;
-  }
-
-  .category h4 {
-    margin: 0 0 8px 0;
-    color: var(--ink, #e6e9ff);
-  }
-
-  .current-stats {
-    margin: 40px 0;
-  }
-
-  .stats-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
-    gap: 20px;
-    margin-top: 20px;
-  }
-
-  .stat-card {
-    padding: 20px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 12px;
-  }
-
-  .cycle-visual {
-    margin-top: 15px;
-  }
-
-  .cycle-days {
-    display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 5px;
-    margin-bottom: 15px;
-  }
-
-  .day {
-    width: 30px;
-    height: 30px;
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-size: 0.8rem;
-    font-weight: 600;
-  }
-
-  .day.high-protein {
-    background: #dc2626;
-    color: white;
-  }
-
-  .day.low-protein {
-    background: #16a34a;
-    color: white;
-  }
-
-  .day.active {
-    ring: 2px solid var(--acc, #80b8ff);
-    transform: scale(1.1);
-  }
-
-  .cycle-legend {
-    display: flex;
-    gap: 15px;
-    font-size: 0.8rem;
-  }
-
-  .circular-progress {
-    position: relative;
-    width: 120px;
-    height: 120px;
-    margin: 15px auto;
-  }
-
-  .progress-circle {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    background: conic-gradient(var(--acc, #80b8ff) var(--progress, 0%), var(--panel, #2d2d2d) 0%);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-direction: column;
-  }
-
-  .progress-number {
+  .module-title {
     font-size: 2rem;
     font-weight: 600;
-    color: var(--acc, #80b8ff);
-  }
-
-  .progress-total {
-    font-size: 0.9rem;
-    color: var(--muted, #9aa3b2);
-  }
-
-  .risk-meter {
-    margin-top: 15px;
-  }
-
-  .meter-bar {
-    height: 20px;
-    background: var(--panel, #2d2d2d);
-    border-radius: 10px;
-    overflow: hidden;
-    margin-bottom: 10px;
-  }
-
-  .risk-fill {
-    height: 100%;
-    background: linear-gradient(90deg, #16a34a 0%, #f59e0b 50%, #dc2626 100%);
-  }
-
-  .integration-status {
-    margin: 40px 0;
-  }
-
-  .integrations {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    margin-top: 15px;
-  }
-
-  .integration {
+    color: var(--text-primary);
     display: flex;
     align-items: center;
-    gap: 10px;
-    padding: 10px 15px;
-    background: var(--panel2, #1a1a1a);
-    border-radius: 8px;
+    gap: 0.5rem;
+    margin: 0;
   }
 
-  .integration.active {
-    border-left: 4px solid #16a34a;
+  .tab-navigation {
+    display: flex;
+    gap: 1rem;
+    margin-bottom: 2rem;
+    border-bottom: 2px solid var(--border-color);
+    overflow-x: auto;
   }
 
-  .integration.inactive {
-    border-left: 4px solid #f59e0b;
-    opacity: 0.7;
-  }
-
-  .nutrition-dashboard {
-    text-align: center;
-    padding: 40px;
-  }
-
-  .quick-actions {
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 20px;
-    margin-top: 40px;
-  }
-
-  .action-card {
-    padding: 30px 20px;
-    background: var(--panel, #2d2d2d);
-    border: 1px solid var(--border, #404040);
-    border-radius: 12px;
+  .tab-button {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    padding: 1rem 1.5rem;
+    background: none;
+    border: none;
+    color: var(--text-secondary);
     cursor: pointer;
+    font-weight: 500;
+    white-space: nowrap;
+    border-bottom: 3px solid transparent;
     transition: all 0.3s ease;
   }
 
-  .action-card:hover:not(.disabled) {
-    transform: translateY(-2px);
-    border-color: var(--acc, #80b8ff);
+  .tab-button:hover {
+    color: var(--text-primary);
+    background: var(--bg-secondary);
   }
 
-  .action-card.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
+  .tab-button.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+    background: rgba(59, 130, 246, 0.1);
   }
 
-  .action-card .icon {
+  .tab-icon {
+    font-size: 1.2rem;
+  }
+
+  .tab-content {
+    min-height: 400px;
+  }
+
+  .recipes-section h3,
+  .planner-section h3,
+  .codex-section h3,
+  .mtor-section h3 {
+    margin: 0 0 1.5rem 0;
+    font-size: 1.5rem;
+  }
+
+  .recipe-display,
+  .codex-ui,
+  .biomarker-tracking {
+    margin-top: 2rem;
+    padding: 1.5rem;
+    background: var(--bg-secondary);
+    border-radius: 0.5rem;
+    border: 1px solid var(--border-color);
+  }
+
+  .recipe-display h4,
+  .codex-ui h4,
+  .biomarker-tracking h4 {
+    margin: 0 0 1rem 0;
+    font-size: 1.2rem;
+  }
+
+  .codex-placeholder {
+    background: var(--bg-secondary);
+    padding: 2rem;
+    border-radius: 0.5rem;
+    margin-top: 2rem;
+    text-align: center;
+  }
+
+  .codex-placeholder ul {
+    list-style: none;
+    padding: 0;
+    margin: 1rem 0;
+  }
+
+  .codex-placeholder li {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 0.25rem;
+  }
+
+  .mtor-dashboard {
+    display: grid;
+    grid-template-columns: 1fr 2fr;
+    gap: 2rem;
+    margin-bottom: 2rem;
+  }
+
+  .mtor-score {
+    text-align: center;
+  }
+
+  .score-display {
     font-size: 3rem;
-    margin-bottom: 15px;
+    font-weight: bold;
+    padding: 1rem;
+    border-radius: 1rem;
+    background: var(--bg-secondary);
+    color: var(--text-secondary);
+    margin-top: 1rem;
   }
 
-  .action-card h3 {
-    margin: 0 0 10px 0;
-    color: var(--acc, #80b8ff);
+  .score-display.medium {
+    background: #fbbf24;
+    color: white;
   }
 
-  .action-card p {
-    margin: 0;
-    color: var(--muted, #9aa3b2);
+  .score-display.high {
+    background: #10b981;
+    color: white;
   }
 
-  /* CODEX N-OMAD v3.0 Specific Styles */
-  .codex-nomad-header {
+  .mtor-inputs {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+  }
+
+  .input-group {
     display: flex;
-    justify-content: space-between;
-    align-items: center;
-    margin-bottom: 20px;
-    padding: 20px;
-    background: linear-gradient(135deg, #0078d4 0%, #106ebe 100%);
-    color: white;
-    border-radius: 12px;
+    flex-direction: column;
+    gap: 0.5rem;
   }
 
-  .codex-nomad-header .header-info h2 {
-    margin: 0 0 5px 0;
-    color: white;
-    font-size: 24px;
-    font-weight: 600;
-  }
-
-  .codex-nomad-header .header-info p {
-    margin: 0;
-    opacity: 0.9;
-    font-size: 14px;
-  }
-
-  .profile-selector {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    background: rgba(255, 255, 255, 0.1);
-    padding: 10px 15px;
-    border-radius: 8px;
-    backdrop-filter: blur(10px);
-  }
-
-  .profile-selector label {
-    font-size: 12px;
-    font-weight: 600;
-    color: white;
-    opacity: 0.9;
-  }
-
-  .profile-selector select {
-    background: white;
-    border: none;
-    padding: 8px 12px;
-    border-radius: 4px;
-    font-size: 12px;
+  .input-group label {
     font-weight: 500;
-    color: #323130;
-    cursor: pointer;
+    color: var(--text-primary);
   }
 
-  .profile-selector select:focus {
-    outline: none;
-    box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  .input-group input {
+    padding: 0.5rem;
+    border: 1px solid var(--border-color);
+    border-radius: 0.25rem;
+    background: var(--bg-primary);
+    color: var(--text-primary);
   }
 
-  .action-card.featured {
-    border: 2px solid var(--acc, #80b8ff);
-    background: linear-gradient(135deg, var(--panel, #2d2d2d) 0%, rgba(128, 184, 255, 0.1) 100%);
-    position: relative;
-    overflow: hidden;
+  .mtor-info {
+    grid-column: 1 / -1;
+    background: var(--bg-secondary);
+    padding: 1.5rem;
+    border-radius: 0.5rem;
+    margin-top: 1rem;
   }
 
-  .action-card.featured::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    height: 3px;
-    background: linear-gradient(90deg, #0078d4, #106ebe, #80b8ff);
+  .mtor-info h4 {
+    margin: 0 0 1rem 0;
   }
 
-  .new-badge {
-    position: absolute;
-    top: 15px;
-    right: 15px;
-    background: #107c10;
-    color: white;
-    padding: 4px 8px;
-    border-radius: 12px;
-    font-size: 10px;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.5px;
+  .mtor-info ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
   }
 
-  .action-card.featured:hover {
-    border-color: #106ebe;
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(128, 184, 255, 0.3);
+  .mtor-info li {
+    margin: 0.5rem 0;
+    padding: 0.5rem;
+    background: var(--bg-primary);
+    border-radius: 0.25rem;
   }
 
-  /* Loading States */
-  .loading-overlay {
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: rgba(0, 0, 0, 0.7);
+  .loading-state {
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: center;
-    border-radius: 12px;
-    z-index: 10;
+    padding: 3rem;
+    color: var(--text-secondary);
   }
 
   .loading-spinner {
     width: 40px;
     height: 40px;
-    border: 3px solid rgba(255, 255, 255, 0.3);
-    border-top: 3px solid white;
+    border: 4px solid var(--border-color);
+    border-top: 4px solid var(--accent-color);
     border-radius: 50%;
     animation: spin 1s linear infinite;
+    margin-bottom: 1rem;
   }
 
   @keyframes spin {
@@ -965,85 +528,12 @@
   }
 
   @media (max-width: 768px) {
-    .module-header {
-      flex-direction: column;
-      gap: 20px;
-    }
-
-    .codex-nomad-header {
-      flex-direction: column;
-      gap: 15px;
-      text-align: center;
-    }
-
-    .codex-status {
-      align-items: flex-start;
-    }
-
-    .principles-grid,
-    .stats-grid,
-    .quick-actions {
+    .mtor-dashboard {
       grid-template-columns: 1fr;
     }
 
-    .recommendations-grid {
+    .mtor-inputs {
       grid-template-columns: 1fr;
-    }
-
-    .profile-selector {
-      flex-direction: column;
-      gap: 8px;
-    }
-  }
-
-  /* Smart Recipe Display Styles */
-  .recipe-sections {
-    display: flex;
-    flex-direction: column;
-    gap: 40px;
-  }
-
-  .divider {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    position: relative;
-    margin: 20px 0;
-  }
-
-  .divider::before {
-    content: '';
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: linear-gradient(90deg, transparent 0%, #666 20%, #666 80%, transparent 100%);
-  }
-
-  .divider span {
-    background: var(--bg, #1a1a1a);
-    padding: 8px 20px;
-    color: var(--muted, #9aa3b2);
-    font-weight: 600;
-    border-radius: 20px;
-    border: 1px solid var(--border, #404040);
-    z-index: 1;
-    position: relative;
-  }
-
-  @media (max-width: 768px) {
-    .recipe-sections {
-      gap: 20px;
-    }
-    
-    .divider {
-      margin: 10px 0;
-    }
-    
-    .divider span {
-      padding: 6px 16px;
-      font-size: 0.9rem;
     }
   }
 </style>
