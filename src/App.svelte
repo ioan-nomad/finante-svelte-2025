@@ -7,9 +7,22 @@
     // Import Toast Component
     import Toast from './components/Toast.svelte';
 
-    // Theme handling
-    let darkMode = localStorage.getItem('theme') === 'dark';
-    let activeModule = localStorage.getItem('activeModule') || 'finance';
+    // Theme handling with proper initialization
+    let darkMode = false;
+    let activeModule = 'finance';
+
+    // Initialize theme and module from localStorage with enhanced detection
+    if (typeof window !== 'undefined') {
+        const savedTheme = localStorage.getItem('theme');
+        if (savedTheme) {
+            darkMode = savedTheme === 'dark';
+        } else {
+            // Use system preference if no saved theme
+            darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
+            localStorage.setItem('theme', darkMode ? 'dark' : 'light');
+        }
+        activeModule = localStorage.getItem('activeModule') || 'finance';
+    }
 
     const modules = [
         { id: 'finance', name: 'Finance', icon: '💰', component: FinanceModule },
@@ -18,8 +31,23 @@
     ];
 
     onMount(() => {
-        // Apply theme
-        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+        // Apply theme immediately
+        applyTheme();
+
+        // Listen for system theme changes
+        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+        const handleThemeChange = (e) => {
+            if (!localStorage.getItem('theme')) {
+                darkMode = e.matches;
+                applyTheme();
+            }
+        };
+
+        if (mediaQuery.addEventListener) {
+            mediaQuery.addEventListener('change', handleThemeChange);
+        } else {
+            mediaQuery.addListener(handleThemeChange);
+        }
 
         // Remove loading screen
         const loader = document.getElementById('app-loader');
@@ -29,11 +57,25 @@
                 setTimeout(() => loader.remove(), 300);
             }, 500);
         }
+
+        // Cleanup function
+        return () => {
+            if (mediaQuery.removeEventListener) {
+                mediaQuery.removeEventListener('change', handleThemeChange);
+            } else {
+                mediaQuery.removeListener(handleThemeChange);
+            }
+        };
     });
+
+    function applyTheme() {
+        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+        document.body.classList.toggle('dark-mode', darkMode);
+    }
 
     function toggleTheme() {
         darkMode = !darkMode;
-        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
+        applyTheme();
         localStorage.setItem('theme', darkMode ? 'dark' : 'light');
     }
 
@@ -54,22 +96,57 @@
         color: var(--text-primary, #202124);
     }
 
-    :global([data-theme="dark"]) {
-        --bg-primary: #1e1e1e;
-        --bg-secondary: #2a2a2a;
-        --text-primary: #e8eaed;
-        --text-secondary: #9aa0a6;
-        --border-color: #5f6368;
-        --card-bg: #292929;
+    :global(:root) {
+        /* Light theme variables (default) */
+        --bg-primary: #ffffff;
+        --bg-secondary: #f3f4f6;
+        --text-primary: #1f2937;
+        --text-secondary: #6b7280;
+        --border-color: #e5e7eb;
+        --accent-color: #3b82f6;
+        --card-bg: #ffffff;
+        --panel: #ffffff;
+        --panel2: #f3f4f6;
+        --ink: #1f2937;
+        --muted: #6b7280;
+        --acc: #3b82f6;
+        --success: #10b981;
+        --error: #ef4444;
+        --warning: #f59e0b;
+        --info: #3b82f6;
+
+        /* Additional variables for complete theming */
+        --bg: #f9fafb;
+        --bg-dark: #111827;
+        --text-dark: #f9fafb;
+        --text-secondary-dark: #9ca3af;
+        --border-dark: #374151;
+        --card-bg-dark: #1f2937;
+        --panel-dark: #1f2937;
+        --panel2-dark: #374151;
+        --ink-dark: #f9fafb;
+        --muted-dark: #9ca3af;
+        --acc-dark: #60a5fa;
     }
 
-    :global([data-theme="light"]) {
-        --bg-primary: #ffffff;
-        --bg-secondary: #f8f9fa;
-        --text-primary: #202124;
-        --text-secondary: #5f6368;
-        --border-color: #dadce0;
-        --card-bg: #ffffff;
+    :global([data-theme="dark"]) {
+        --bg-primary: #111827;
+        --bg-secondary: #1f2937;
+        --text-primary: #f9fafb;
+        --text-secondary: #9ca3af;
+        --border-color: #374151;
+        --accent-color: #60a5fa;
+        --card-bg: #1f2937;
+        --panel: #1f2937;
+        --panel2: #374151;
+        --ink: #f9fafb;
+        --muted: #9ca3af;
+        --acc: #60a5fa;
+        --success: #10b981;
+        --error: #ef4444;
+        --warning: #f59e0b;
+        --info: #60a5fa;
+        --bg: #111827;
     }
 
     .app-container {

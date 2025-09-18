@@ -70,7 +70,11 @@
       "Bash(del package-lock.json)",
       "Bash(findstr:*)",
       "Bash(cmd /c:*)",
-      "Bash(timeout 10 npx vite build)"
+      "Bash(timeout 10 npx vite build)",
+      "Bash(git log:*)",
+      "Bash(copy:*)",
+      "Read(//c/**)",
+      "Bash(del nul)"
     ],
     "deny": [],
     "ask": []

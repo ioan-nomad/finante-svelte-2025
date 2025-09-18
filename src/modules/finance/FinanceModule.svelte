@@ -1,6 +1,16 @@
 <script>
     import { onMount } from 'svelte';
-    import Dashboard from '../../components/Dashboard.svelte';
+    // Import all Finance components
+    import Dashboard from './components/Dashboard.svelte';
+    import Conturi from '../../components/Conturi.svelte';
+    import Tranzactii from '../../components/Tranzactii.svelte';
+    import Budgeturi from '../../components/Budgeturi.svelte';
+    import Obiective from '../../components/Obiective.svelte';
+    import Reconciliere from '../../components/Reconciliere.svelte';
+    import RecurringPayments from '../../components/RecurringPayments.svelte';
+    import RapoarteAvansate from '../../components/RapoarteAvansate.svelte';
+    import PDFImporter from '../../components/PDFImporter.svelte';
+    import EditModal from '../../components/EditModal.svelte';
     import ExportPanel from './components/ExportPanel.svelte';
     import ExcelExportButton from '../../components/ExcelExportButton.svelte';
     import { accounts, transactions, totalBalance } from './stores/financeStore.js';
@@ -9,10 +19,16 @@
     let isLoading = false;
 
     const tabs = [
-        { id: 'dashboard', name: 'Dashboard', icon: '📊' },
-        { id: 'transactions', name: 'Transactions', icon: '💸' },
-        { id: 'accounts', name: 'Accounts', icon: '🏦' },
-        { id: 'export', name: 'Export', icon: '📤' }
+        { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+        { id: 'conturi', label: 'Conturi', icon: '💳' },
+        { id: 'tranzactii', label: 'Tranzacții', icon: '💸' },
+        { id: 'budgete', label: 'Bugete', icon: '🎯' },
+        { id: 'obiective', label: 'Obiective', icon: '🏆' },
+        { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
+        { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
+        { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
+        { id: 'import', label: 'Import PDF', icon: '📥' },
+        { id: 'export', label: 'Export', icon: '📤' }
     ];
 
     onMount(() => {
@@ -54,7 +70,7 @@
                     on:click={() => switchTab(tab.id)}
                 >
                     <span class="tab-icon">{tab.icon}</span>
-                    <span class="tab-name">{tab.name}</span>
+                    <span class="tab-name">{tab.label}</span>
                 </button>
             {/each}
         </div>
@@ -63,17 +79,24 @@
         <div class="tab-content">
             {#if activeTab === 'dashboard'}
                 <Dashboard />
-            {:else if activeTab === 'transactions'}
-                <div class="coming-soon">
-                    <h3>💸 Transactions Management</h3>
-                    <p>Advanced transaction management coming soon...</p>
-                    <p>For now, use the Dashboard to manage transactions.</p>
-                </div>
-            {:else if activeTab === 'accounts'}
-                <div class="coming-soon">
-                    <h3>🏦 Account Management</h3>
-                    <p>Advanced account management coming soon...</p>
-                    <p>For now, use the Dashboard to manage accounts.</p>
+            {:else if activeTab === 'conturi'}
+                <Conturi />
+            {:else if activeTab === 'tranzactii'}
+                <Tranzactii />
+            {:else if activeTab === 'budgete'}
+                <Budgeturi />
+            {:else if activeTab === 'obiective'}
+                <Obiective />
+            {:else if activeTab === 'reconciliere'}
+                <Reconciliere />
+            {:else if activeTab === 'recurring'}
+                <RecurringPayments />
+            {:else if activeTab === 'rapoarte'}
+                <RapoarteAvansate />
+            {:else if activeTab === 'import'}
+                <div class="import-section">
+                    <h3>📥 Import PDF Extrase</h3>
+                    <PDFImporter />
                 </div>
             {:else if activeTab === 'export'}
                 <div class="export-section">
@@ -85,6 +108,9 @@
                 </div>
             {/if}
         </div>
+
+        <!-- EditModal - Global component for editing transactions -->
+        <EditModal />
     {/if}
 </div>
 
@@ -196,14 +222,14 @@
         margin-bottom: 0.5rem;
     }
 
-    .export-section {
+    .export-section, .import-section {
         background: var(--card-bg, white);
         border-radius: 12px;
         padding: 2rem;
         border: 1px solid var(--border-color, #e0e0e0);
     }
 
-    .export-section h3 {
+    .export-section h3, .import-section h3 {
         font-size: 1.5rem;
         margin-bottom: 1.5rem;
         color: var(--text-primary, #333);
@@ -212,6 +238,52 @@
     .export-options {
         display: grid;
         gap: 2rem;
+    }
+
+    /* Dark mode support */
+    :global(.dark-mode) .finance-container {
+        background: var(--bg-dark, #1a1f2e);
+        color: var(--text-dark, #e5e7eb);
+    }
+
+    :global(.dark-mode) .module-title {
+        color: var(--text-dark, #e5e7eb);
+    }
+
+    :global(.dark-mode) .tab-navigation {
+        border-bottom-color: var(--border-dark, #374151);
+    }
+
+    :global(.dark-mode) .tab-button {
+        color: var(--text-secondary-dark, #9ca3af);
+    }
+
+    :global(.dark-mode) .tab-button:hover {
+        color: var(--text-dark, #e5e7eb);
+        background: rgba(255, 255, 255, 0.05);
+    }
+
+    :global(.dark-mode) .tab-button.active {
+        color: #60a5fa;
+        background: rgba(96, 165, 250, 0.1);
+        border-bottom-color: #60a5fa;
+    }
+
+    :global(.dark-mode) .export-section,
+    :global(.dark-mode) .import-section,
+    :global(.dark-mode) .coming-soon {
+        background: var(--card-bg-dark, #252a3a);
+        border-color: var(--border-dark, #374151);
+    }
+
+    :global(.dark-mode) .export-section h3,
+    :global(.dark-mode) .import-section h3,
+    :global(.dark-mode) .coming-soon h3 {
+        color: var(--text-dark, #e5e7eb);
+    }
+
+    :global(.dark-mode) .coming-soon p {
+        color: var(--text-secondary-dark, #9ca3af);
     }
 
     @media (max-width: 768px) {
