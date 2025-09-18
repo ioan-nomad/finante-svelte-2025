@@ -1,300 +1,213 @@
 <script>
-    import { onMount } from 'svelte';
-    import FinanceModule from './modules/finance/FinanceModule.svelte';
-    import PantryModule from './modules/pantry/PantryModule.svelte';
-    import NutritionModule from './modules/nutrition/NutritionModule.svelte';
+  import { onMount } from 'svelte';
+  import Dashboard from './components/Dashboard.svelte';
+  import Conturi from './components/Conturi.svelte';
+  import Tranzactii from './components/Tranzactii.svelte';
+  import Budgete from './components/Budgete.svelte';
+  import Obiective from './components/Obiective.svelte';
+  import Reconciliere from './components/Reconciliere.svelte';
+  import RecurringPayments from './components/RecurringPayments.svelte';
+  import PDFImporter from './components/PDFImporter.svelte';
+  import EditModal from './components/EditModal.svelte';
+  import RapoarteAvansate from './components/RapoarteAvansate.svelte';
+  import GroceryDashboard from './components/GroceryDashboard.svelte';
+  import ReceiptParser from './components/ReceiptParser.svelte';
 
-    // Import Toast Component
-    import Toast from './components/Toast.svelte';
+  let activeModule = 'finance';
+  let activeTab = 'dashboard';
+  let theme = 'light';
 
-    // Theme handling with proper initialization
-    let darkMode = false;
-    let activeModule = 'finance';
+  onMount(() => {
+    theme = localStorage.getItem('theme') || 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+  });
 
-    // Initialize theme and module from localStorage with enhanced detection
-    if (typeof window !== 'undefined') {
-        const savedTheme = localStorage.getItem('theme');
-        if (savedTheme) {
-            darkMode = savedTheme === 'dark';
-        } else {
-            // Use system preference if no saved theme
-            darkMode = window.matchMedia('(prefers-color-scheme: dark)').matches;
-            localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-        }
-        activeModule = localStorage.getItem('activeModule') || 'finance';
-    }
+  function toggleTheme() {
+    theme = theme === 'light' ? 'dark' : 'light';
+    document.documentElement.setAttribute('data-theme', theme);
+    localStorage.setItem('theme', theme);
+  }
 
-    const modules = [
-        { id: 'finance', name: 'Finance', icon: '💰', component: FinanceModule },
-        { id: 'pantry', name: 'Pantry', icon: '🛒', component: PantryModule },
-        { id: 'nutrition', name: 'Nutrition', icon: '🍽️', component: NutritionModule }
-    ];
-
-    onMount(() => {
-        // Apply theme immediately
-        applyTheme();
-
-        // Listen for system theme changes
-        const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-        const handleThemeChange = (e) => {
-            if (!localStorage.getItem('theme')) {
-                darkMode = e.matches;
-                applyTheme();
-            }
-        };
-
-        if (mediaQuery.addEventListener) {
-            mediaQuery.addEventListener('change', handleThemeChange);
-        } else {
-            mediaQuery.addListener(handleThemeChange);
-        }
-
-        // Remove loading screen
-        const loader = document.getElementById('app-loader');
-        if (loader) {
-            setTimeout(() => {
-                loader.style.opacity = '0';
-                setTimeout(() => loader.remove(), 300);
-            }, 500);
-        }
-
-        // Cleanup function
-        return () => {
-            if (mediaQuery.removeEventListener) {
-                mediaQuery.removeEventListener('change', handleThemeChange);
-            } else {
-                mediaQuery.removeListener(handleThemeChange);
-            }
-        };
-    });
-
-    function applyTheme() {
-        document.documentElement.setAttribute('data-theme', darkMode ? 'dark' : 'light');
-        document.body.classList.toggle('dark-mode', darkMode);
-    }
-
-    function toggleTheme() {
-        darkMode = !darkMode;
-        applyTheme();
-        localStorage.setItem('theme', darkMode ? 'dark' : 'light');
-    }
-
-    function switchModule(moduleId) {
-        activeModule = moduleId;
-        localStorage.setItem('activeModule', moduleId);
-    }
-
-    $: currentModule = modules.find(m => m.id === activeModule) || modules[0];
+  const financeTabs = [
+    { id: 'dashboard', label: 'Dashboard', icon: '📊' },
+    { id: 'conturi', label: 'Conturi', icon: '💳' },
+    { id: 'tranzactii', label: 'Tranzacții', icon: '💸' },
+    { id: 'budgete', label: 'Bugete', icon: '🎯' },
+    { id: 'obiective', label: 'Obiective', icon: '🏆' },
+    { id: 'reconciliere', label: 'Reconciliere', icon: '✅' },
+    { id: 'recurring', label: 'Plăți Recurente', icon: '🔄' },
+    { id: 'rapoarte', label: 'Rapoarte', icon: '📈' },
+    { id: 'import', label: 'Import PDF', icon: '📥' }
+  ];
 </script>
 
-<style>
-    :global(body) {
-        margin: 0;
-        padding: 0;
-        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
-        background: var(--bg-primary, #ffffff);
-        color: var(--text-primary, #202124);
-    }
+<div class='app'>
+  <header>
+    <h1>💰 N-OMAD Suite</h1>
+    <div class='module-tabs'>
+      <button class:active={activeModule === 'finance'} on:click={() => activeModule = 'finance'}>
+        💰 Finance
+      </button>
+      <button class:active={activeModule === 'pantry'} on:click={() => activeModule = 'pantry'}>
+        🛒 Pantry
+      </button>
+      <button class:active={activeModule === 'nutrition'} on:click={() => activeModule = 'nutrition'}>
+        🍽️ Nutrition
+      </button>
+    </div>
+    <button class='theme-toggle' on:click={toggleTheme}>
+      {theme === 'light' ? '🌙' : '☀️'}
+    </button>
+  </header>
 
-    :global(:root) {
-        /* Light theme variables (default) */
-        --bg-primary: #ffffff;
-        --bg-secondary: #f3f4f6;
-        --text-primary: #1f2937;
-        --text-secondary: #6b7280;
-        --border-color: #e5e7eb;
-        --accent-color: #3b82f6;
-        --card-bg: #ffffff;
-        --panel: #ffffff;
-        --panel2: #f3f4f6;
-        --ink: #1f2937;
-        --muted: #6b7280;
-        --acc: #3b82f6;
-        --success: #10b981;
-        --error: #ef4444;
-        --warning: #f59e0b;
-        --info: #3b82f6;
-
-        /* Additional variables for complete theming */
-        --bg: #f9fafb;
-        --bg-dark: #111827;
-        --text-dark: #f9fafb;
-        --text-secondary-dark: #9ca3af;
-        --border-dark: #374151;
-        --card-bg-dark: #1f2937;
-        --panel-dark: #1f2937;
-        --panel2-dark: #374151;
-        --ink-dark: #f9fafb;
-        --muted-dark: #9ca3af;
-        --acc-dark: #60a5fa;
-    }
-
-    :global([data-theme="dark"]) {
-        --bg-primary: #111827;
-        --bg-secondary: #1f2937;
-        --text-primary: #f9fafb;
-        --text-secondary: #9ca3af;
-        --border-color: #374151;
-        --accent-color: #60a5fa;
-        --card-bg: #1f2937;
-        --panel: #1f2937;
-        --panel2: #374151;
-        --ink: #f9fafb;
-        --muted: #9ca3af;
-        --acc: #60a5fa;
-        --success: #10b981;
-        --error: #ef4444;
-        --warning: #f59e0b;
-        --info: #60a5fa;
-        --bg: #111827;
-    }
-
-    .app-container {
-        min-height: 100vh;
-        display: flex;
-        flex-direction: column;
-    }
-
-    .app-header {
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border-color);
-        padding: 1rem 2rem;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-    }
-
-    .app-title {
-        font-size: 1.5rem;
-        font-weight: 600;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-    }
-
-    .theme-toggle {
-        background: none;
-        border: 1px solid var(--border-color);
-        color: var(--text-primary);
-        padding: 0.5rem 1rem;
-        border-radius: 8px;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        transition: all 0.3s ease;
-    }
-
-    .theme-toggle:hover {
-        background: var(--border-color);
-    }
-
-    .navigation {
-        background: var(--bg-secondary);
-        border-bottom: 1px solid var(--border-color);
-        padding: 0 2rem;
-        display: flex;
-        gap: 0;
-        overflow-x: auto;
-    }
-
-    .nav-tab {
-        background: none;
-        border: none;
-        padding: 1rem 1.5rem;
-        cursor: pointer;
-        display: flex;
-        align-items: center;
-        gap: 0.5rem;
-        font-weight: 600;
-        color: var(--text-secondary);
-        border-bottom: 3px solid transparent;
-        transition: all 0.3s ease;
-        white-space: nowrap;
-        min-width: max-content;
-    }
-
-    .nav-tab:hover {
-        color: var(--text-primary);
-        background: rgba(0, 0, 0, 0.05);
-    }
-
-    .nav-tab.active {
-        color: #3b82f6;
-        border-bottom-color: #3b82f6;
-        background: rgba(59, 130, 246, 0.1);
-    }
-
-    .nav-icon {
-        font-size: 1.2rem;
-    }
-
-    .app-content {
-        flex: 1;
-        max-width: 1400px;
-        width: 100%;
-        margin: 0 auto;
-        box-sizing: border-box;
-        min-height: 0;
-    }
-
-    @media (max-width: 768px) {
-        .app-header {
-            padding: 1rem;
-            flex-direction: column;
-            gap: 1rem;
-        }
-
-        .navigation {
-            padding: 0 1rem;
-        }
-
-        .nav-tab {
-            padding: 0.75rem 1rem;
-            font-size: 0.875rem;
-        }
-
-        .app-title {
-            font-size: 1.25rem;
-        }
-    }
-</style>
-
-<div class="app-container">
-    <header class="app-header">
-        <div class="app-title">
-            <span>💰</span>
-            <span>N-OMAD Suite</span>
-        </div>
-        <button class="theme-toggle" on:click={toggleTheme}>
-            {#if darkMode}
-                <span>☀️</span>
-                <span>Light Mode</span>
-            {:else}
-                <span>🌙</span>
-                <span>Dark Mode</span>
-            {/if}
+  {#if activeModule === 'finance'}
+    <nav class='tabs'>
+      {#each financeTabs as tab}
+        <button
+          class:active={activeTab === tab.id}
+          on:click={() => activeTab = tab.id}
+        >
+          {tab.icon} {tab.label}
         </button>
-    </header>
-
-    <!-- Navigation Tabs -->
-    <nav class="navigation">
-        {#each modules as module}
-            <button
-                class="nav-tab"
-                class:active={activeModule === module.id}
-                on:click={() => switchModule(module.id)}
-            >
-                <span class="nav-icon">{module.icon}</span>
-                <span>{module.name}</span>
-            </button>
-        {/each}
+      {/each}
     </nav>
 
-    <main class="app-content">
-        <svelte:component this={currentModule.component} />
+    <main>
+      {#if activeTab === 'dashboard'}
+        <Dashboard />
+      {:else if activeTab === 'conturi'}
+        <Conturi />
+      {:else if activeTab === 'tranzactii'}
+        <Tranzactii />
+      {:else if activeTab === 'budgete'}
+        <Budgete />
+      {:else if activeTab === 'obiective'}
+        <Obiective />
+      {:else if activeTab === 'reconciliere'}
+        <Reconciliere />
+      {:else if activeTab === 'recurring'}
+        <RecurringPayments />
+      {:else if activeTab === 'rapoarte'}
+        <RapoarteAvansate />
+      {:else if activeTab === 'import'}
+        <PDFImporter />
+      {/if}
     </main>
-
-    <!-- Toast Notifications -->
-    <Toast />
+  {:else if activeModule === 'pantry'}
+    <main>
+      <GroceryDashboard />
+    </main>
+  {:else if activeModule === 'nutrition'}
+    <main>
+      <ReceiptParser />
+    </main>
+  {/if}
 </div>
+
+<style>
+  :global(:root) {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f3f4f6;
+    --text-primary: #1f2937;
+    --text-secondary: #6b7280;
+    --border-color: #e5e7eb;
+    --accent-color: #3b82f6;
+  }
+
+  :global([data-theme='dark']) {
+    --bg-primary: #111827;
+    --bg-secondary: #1f2937;
+    --text-primary: #f9fafb;
+    --text-secondary: #9ca3af;
+    --border-color: #374151;
+    --accent-color: #60a5fa;
+  }
+
+  :global(body) {
+    margin: 0;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  }
+
+  .app {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  header {
+    background: var(--bg-secondary);
+    padding: 1rem 2rem;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  h1 {
+    margin: 0;
+    font-size: 1.5rem;
+  }
+
+  .module-tabs {
+    display: flex;
+    gap: 1rem;
+  }
+
+  .module-tabs button {
+    padding: 0.5rem 1rem;
+    background: transparent;
+    color: var(--text-primary);
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+
+  .module-tabs button.active {
+    background: var(--accent-color);
+    color: white;
+    border-color: var(--accent-color);
+  }
+
+  .theme-toggle {
+    padding: 0.5rem;
+    background: transparent;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-size: 1.2rem;
+  }
+
+  nav.tabs {
+    background: var(--bg-secondary);
+    padding: 0 2rem;
+    display: flex;
+    gap: 1rem;
+    overflow-x: auto;
+    border-bottom: 1px solid var(--border-color);
+  }
+
+  nav.tabs button {
+    padding: 1rem;
+    background: transparent;
+    color: var(--text-secondary);
+    border: none;
+    border-bottom: 2px solid transparent;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: all 0.2s;
+  }
+
+  nav.tabs button.active {
+    color: var(--accent-color);
+    border-bottom-color: var(--accent-color);
+  }
+
+  main {
+    flex: 1;
+    padding: 2rem;
+    background: var(--bg-primary);
+  }
+</style>

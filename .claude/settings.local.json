@@ -74,7 +74,9 @@
       "Bash(git log:*)",
       "Bash(copy:*)",
       "Read(//c/**)",
-      "Bash(del nul)"
+      "Bash(del nul)",
+      "Bash(git tag:*)",
+      "Bash(git ls-tree:*)"
     ],
     "deny": [],
     "ask": []
