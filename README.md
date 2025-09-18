@@ -1,222 +1,182 @@
-# Aplicație de Management Financiar Personal cu Smart Pantry Tracker
+# N-OMAD Suite - Aplicație Financiară, Pantry & Nutriție
 
-O aplicație modernă dezvoltată în Svelte pentru gestionarea completă a finanțelor personale, cu funcții avansate de planificare bugetară și sistem inteligent de gestionare a stocului de alimente.
+O aplicație completă pentru management financiar personal, gestionare pantry inteligentă și tracking nutrițional cu CODEX N-OMAD.
 
-## 🚀 Funcționalități Principale
+## 🚀 Features
 
-### 💰 Management Financiar
-- **Gestionare Conturi**: Adăugare și monitorizare multiple conturi bancare
-- **Tranzacții**: Înregistrare automată și manuală a veniturilor și cheltuielilor
-- **Categorii Personalizabile**: Organizare tranzacții pe categorii cu icoane
-- **Statistici și Rapoarte**: Analiză detaliată cu grafice interactive
-- **Buget Planning**: Planificare bugetară cu alerte și notificări
-- **Obiective Financiare**: Stabilire și tracking obiective de economisire
-- **Rapoarte Avansate**: Filtre complexe și export date
+### 💰 Finance Module
+- **10 tab-uri funcționale**: Dashboard, Conturi, Tranzacții, Budgeturi, Obiective, Reconciliere, Plăți Recurente, Rapoarte, Import PDF, Export
+- **Grafice Chart.js interactive**: Pie charts, line charts, bar charts pentru analiză financiară
+- **Dark mode complet**: Suport pentru tema întunecată cu persistență
+- **Export/Import**: CSV, PDF pentru rapoarte și backup date
+- **Filtare avansată**: Căutare și filtrare multi-criteriu
 
-### 🛒 Smart Pantry Tracker (NOU!)
-- **Scanare Bonuri Fiscale**: Import automat bonuri PDF cu tehnologie OCR
-- **Inventar Inteligent**: Tracking automat stoc produse alimentare
-- **Sistem de Învățare**: AI adaptiv pentru magazine necunoscute
-- **Analiză Preturi**: Istoric prețuri și identificare reduceri
-- **Notificări Stoc**: Alerte pentru produse în curs de epuizare
-- **Categorii Automate**: Clasificare automată produse în 9 categorii
-- **Suport Multi-Magazine**: Compatibil cu 7+ lanțuri de magazine din România
+### 🛒 Pantry Module
+- **Smart inventory management**: Gestionare inventar cu categorii și date expirare
+- **Receipt parser**: Suport pentru 7+ magazine din România cu OCR automat
+- **Shopping list generator**: Liste cumpărături cu prețuri estimate
+- **Price trends tracking**: Monitorizare prețuri produse în timp
 
-## 🏪 Magazine Suportate (Smart Pantry)
+### 🍽️ Nutrition Module
+- **CODEX N-OMAD recipes**: Generator rețete cu algoritmi avansați
+- **mTOR cycling tracker**: Calculator mTOR cu scoring inteligent
+- **Meal planner**: Planificare mese cu drag & drop
+- **Biomarker tracking**: Monitorizare parametri nutriționali
 
-- **Kaufland** - Recunoaștere completă pattern bonuri
-- **Lidl** - Parser optimizat pentru format specific
-- **Carrefour** - Suport complet inclusiv hipermarket
-- **Mega Image** - Integrare avansată cu categorii
-- **Auchan** - Parser dedicat format specific
-- **Penny** - Recunoaștere automată produse
-- **Profi** - Suport complet cu learning system
+## 📦 Installation
 
-## 🧠 Sistem de Învățare Avansată
-
-### Pattern Recognition
-- **Algoritm ML**: Recunoaștere automată formaturi noi bonuri
-- **Training Mode**: Interfață wizard pentru antrenare pattern-uri necunoscute
-- **Success Rate Tracking**: Monitorizare acuratețe parsare per magazin
-- **Auto-Improvement**: Optimizare continuă algoritmi recunoaștere
-
-### Smart Categorization
-- **15+ Produse Pre-definite**: Dicționar normalizare produse comune
-- **9 Categorii Automate**: Lactate, Carne, Legume, Fructe, Pâine, Conserve, Băuturi, Igienă, Altele
-- **Adaptive Learning**: Învățare continuă produse noi
-- **Price Analytics**: Analiză trend-uri prețuri și identificare oferte
-
-## 📊 Dashboard și Statistici
-
-### Vizualizări Interactive
-- **Grafice Chart.js**: Pie charts, line charts, bar charts
-- **Filtre Avansate**: Căutare, sortare, filtrare pe multiple criterii
-- **Export Functionalitate**: CSV, PDF pentru toate rapoartele
-- **Real-time Updates**: Sincronizare automată date
-
-### Mobile-First Design
-- **Responsive Layout**: Optimizat pentru toate dispozitivele
-- **Dark Mode**: Suport complet mod întunecat
-- **Touch Gestures**: Navigare intuitivă pe mobile
-- **PWA Ready**: Instalare ca aplicație nativă
-
-## 🛠 Tehnologii și Arhitectură
-
-### Frontend Stack
-- **Svelte/SvelteKit**: Framework modern reactive
-- **Chart.js**: Vizualizări grafice interactive
-- **PDF.js**: Processing bonuri fiscale PDF
-- **CSS Variables**: Theming dinamic și responsive design
-- **LocalStorage**: Persistența datelor client-side
-
-### Smart Features
-- **Machine Learning**: Pattern recognition pentru bonuri necunoscute
-- **OCR Integration**: Extracție automată text din PDF-uri
-- **Regex Patterns**: Parsing complex structuri bonuri
-- **Event-Driven Architecture**: Comunicare componente prin evenimente
-- **State Management**: Svelte stores pentru management state global
-
-### 🚀 Performance Optimizations (NEW!)
-- **Lazy Loading**: Code splitting pentru componente grele cu cache inteligent
-- **Virtual Scrolling**: Rendering eficient liste mari (1000+ tranzacții)
-- **Advanced Caching**: Sistem cache cu TTL pentru îmbunătățirea performanței
-- **Debounce/Throttle**: Utilities optimizare input și scroll handling
-- **Error Boundaries**: Gestionare gracioasă erori cu recovery opțiuni
-- **PWA Support**: Progressive Web App cu offline functionality
-- **Service Worker**: Background sync, push notifications, cache management
-
-## 🚀 Instalare și Configurare
-
-### Cerințe de Sistem
 ```bash
-Node.js 18+ 
-npm 8+
-```
-
-### Instalare
-```bash
-# Clonează repository
 git clone https://github.com/ioan-nomad/finante-svelte-2025.git
-cd finante-svelte-2025
-
-# Instalează dependențe
+cd finante-app
 npm install
-
-# Pornește aplicația în development
 npm run dev
 ```
 
-### Build Production
-```bash
-# Build pentru production
-npm run build
+Aplicația va rula pe `http://localhost:5173`
 
-# Preview build local
-npm run preview
-```
+## 🔧 Tech Stack
 
-## 📁 Structura Proiectului
+- **Frontend**: Svelte 4.2.0 cu arhitectură modulară
+- **Build Tool**: Vite pentru development rapid
+- **Charts**: Chart.js pentru vizualizări interactive
+- **AI/ML**: Brain.js pentru machine learning
+- **Storage**: localStorage pentru persistența datelor
+- **Styling**: CSS Variables pentru theming dinamic
 
+## 🏗️ Arhitectură
+
+### Structură Modulară
 ```
 src/
-├── components/
-│   ├── ChartManager.svelte        # Manager grafice interactive
-│   ├── ReceiptParser.svelte       # Smart receipt parser cu AI
-│   ├── GroceryDashboard.svelte    # Dashboard inventar alimente
-│   ├── EditModal.svelte           # Modal editare tranzacții
-│   ├── FilterPanel.svelte         # Panel filtre avansate
-│   ├── Budgeturi.svelte           # Management bugete
-│   ├── Obiective.svelte           # Obiective financiare
-│   ├── Reconciliere.svelte        # Reconciliere conturi
-│   ├── GlobalNotifications.svelte # Sistem notificări
-│   ├── LazyComponent.svelte       # Lazy loading wrapper component
-│   ├── VirtualList.svelte         # Virtual scrolling pentru liste mari
-│   └── ErrorBoundary.svelte       # Error boundary cu recovery opțiuni
-├── lib/
-│   ├── lazyLoader.js              # Sistem lazy loading cu cache
-│   ├── utils.js                   # Performance utilities (debounce/throttle)
-│   └── store.js                   # Store principal cu advanced caching
-├── stores/
-│   └── groceryStore.js            # Store Smart Pantry
-├── public/
-│   ├── manifest.json              # PWA manifest
-│   └── sw.js                      # Service Worker pentru offline
-└── App.svelte                     # Componenta principală
+├── modules/
+│   ├── finance/          # Modul Finance cu 10 tab-uri
+│   ├── pantry/           # Modul Pantry cu inventory management
+│   └── nutrition/        # Modul Nutrition cu CODEX
+├── components/           # Componente reutilizabile
+├── lib/                  # Utilitare și servicii
+└── stores/              # State management
 ```
 
-## 🔧 Configurări Avansate
+### Componente Principale
+- **FinanceModule.svelte**: Management complet financiar
+- **PantryModule.svelte**: Gestionare pantry cu 4 tab-uri
+- **NutritionModule.svelte**: Tracking nutrițional cu mTOR
+- **Dashboard.svelte**: Grafice și statistici interactive
 
-### Smart Pantry Settings
-```javascript
-// Configurare praguri stoc minim
-const LOW_STOCK_THRESHOLD = 2;
+## 🛒 Magazine Suportate (Receipt Parser)
 
-// Configurare categorii produse
-const CATEGORIES = [
-  'Lactate', 'Carne', 'Legume', 'Fructe', 
-  'Pâine', 'Conserve', 'Băuturi', 'Igienă', 'Altele'
-];
+- **Kaufland** - Pattern recognition complet
+- **Lidl** - Parser optimizat format specific
+- **Carrefour** - Suport hipermarket și express
+- **Mega Image** - Integrare categorii automate
+- **Auchan** - Parser dedicat
+- **Penny** - Recunoaștere automată
+- **Profi** - Learning system adaptiv
+
+## 🧬 CODEX N-OMAD Features
+
+### Recipe Generation
+- **Multi-profile support**: Profiluri personalizate (Ioan, Nico)
+- **Dietary restrictions**: Adaptare automată restricții alimentare
+- **Nutrition optimization**: Optimizare macro și micronutrienți
+- **Cooking methods**: Integrare metode de gătit (Instant Pot, etc.)
+
+### mTOR Tracker
+- **Protein scoring**: Target 25-30g proteină per masă
+- **Leucine optimization**: Minimum 2.5g leucină pentru activare
+- **Carb timing**: 30-50g carbohydrați post-antrenament
+- **Fasting windows**: Optimizare ferestre de post
+
+## 🎨 UI/UX Features
+
+### Design System
+- **Consistent theming**: Variabile CSS pentru culori și spacing
+- **Dark/Light mode**: Toggle cu persistență localStorage
+- **Responsive design**: Optimizat mobile-first
+- **Tab navigation**: Interfață tabbed pentru toate modulele
+
+### Interactive Elements
+- **Real-time updates**: HMR pentru development rapid
+- **Form validation**: Validare client-side pentru toate input-urile
+- **Loading states**: Spinners și placeholders pentru UX îmbunătățit
+- **Error handling**: Gestionare gracioasă erori
+
+## 🚀 Development
+
+### Scripts Disponibile
+```bash
+npm run dev          # Development server cu HMR
+npm run build        # Build pentru production
+npm run preview      # Preview build local
+npm run lint         # Linting cu ESLint
+npm run format       # Formatare cu Prettier
 ```
 
-### Pattern Training
-```javascript
-// Adaugă pattern nou magazin
-groceryStore.trainNewPattern({
-  storeName: "Magazin Nou",
-  totalPattern: /TOTAL:?\s*(\d+[,.]?\d*)/i,
-  itemPattern: /(.+?)\s+(\d+[,.]?\d*)\s*x\s*(\d+[,.]?\d*)/g
-});
+### Environment Variables
+```bash
+VITE_DISABLE_SECURITY=true    # Disable security pentru dev
+VITE_DISABLE_STORAGE=true     # Disable storage persistence
 ```
 
-## 🎯 Roadmap și Funcționalități Viitoare
+## 📊 Performance
 
-### V2.0 - În Dezvoltare
-- [ ] **Sync Cloud**: Sincronizare automată între dispozitive
-- [ ] **Barcode Scanner**: Scanare coduri de bare produse
-- [ ] **Shopping Lists**: Liste cumpărături inteligente
-- [ ] **Meal Planning**: Planificare mese bazată pe inventar
-- [ ] **Nutritional Data**: Informații nutriționale produse
-- [ ] **Bulk Import**: Import masiv bonuri și tranzacții
-- [ ] **API Integration**: Conectare bănci pentru import automat
+### Optimizări
+- **Code splitting**: Modulele sunt încărcate lazy
+- **Tree shaking**: Eliminare cod neutilizat
+- **Asset optimization**: Compresie imagini și CSS
+- **Caching**: LocalStorage pentru date frecvent accesate
 
-### V3.0 - Long Term
-- [ ] **AI Recommendations**: Sugestii economisire bazate pe ML
-- [ ] **Social Features**: Partajare bugete și obiective
-- [ ] **Multi-Currency**: Suport multiple valute
-- [ ] **Investment Tracking**: Tracking portofoliu investiții
-- [ ] **Tax Integration**: Calculare automată taxe și deduceri
+### Metrics
+- **Bundle size**: < 500KB comprimat
+- **Load time**: < 2s pe conexiuni 3G
+- **Performance score**: 90+ Lighthouse
 
-## 🤝 Contribuții și Suport
+## 🔐 Security
 
-### Development Guidelines
-- Fork repository și creează branch pentru feature nou
-- Respectă code style existent (Prettier + ESLint)
-- Adaugă teste pentru funcționalități noi
-- Update documentație pentru schimbări majore
+### Data Protection
+- **Client-side only**: Toate datele rămân în browser
+- **No external APIs**: Fără transmitere date către servere terțe
+- **Input sanitization**: Validare și sanitizare toate input-urile
+- **XSS protection**: Protecție împotriva atacurilor cross-site
 
-### Bug Reports
-Raportează bug-uri prin [GitHub Issues](https://github.com/ioan-nomad/finante-svelte-2025/issues) cu:
-- Descriere detaliată problema
-- Pași reproducere
-- Screenshots dacă relevant
-- Browser și versiune OS
+## 🗺️ Roadmap
 
-## 📄 Licență
+### V2.0 - În dezvoltare
+- [ ] PWA support cu offline mode
+- [ ] Backup/Restore cloud
+- [ ] Barcode scanner pentru produse
+- [ ] API integrare bănci românești
+- [ ] Multi-currency support
 
-MIT License - Vezi [LICENSE](LICENSE) pentru detalii complete.
+### V3.0 - Long term
+- [ ] AI recommendations pentru economii
+- [ ] Social features (sharing, leaderboards)
+- [ ] Investment portfolio tracking
+- [ ] Tax calculation și reporting
 
-## 🏆 Recunoașteri
+## 🤝 Contributing
 
-Dezvoltat cu ❤️ folosind:
-- [Svelte](https://svelte.dev/) - Framework reactive modern
+1. Fork repository-ul
+2. Creează branch pentru feature (`git checkout -b feature/amazing-feature`)
+3. Commit changes (`git commit -m 'Add amazing feature'`)
+4. Push to branch (`git push origin feature/amazing-feature`)
+5. Deschide Pull Request
+
+## 📄 License
+
+MIT License - Vezi [LICENSE](LICENSE) pentru detalii.
+
+## 🏆 Built With
+
+- [Svelte](https://svelte.dev/) - Framework reactive
+- [Vite](https://vitejs.dev/) - Build tool modern
 - [Chart.js](https://www.chartjs.org/) - Grafice interactive
-- [PDF.js](https://mozilla.github.io/pdf.js/) - PDF processing
 - [Claude Code](https://claude.ai/code) - AI development assistant
 
 ---
 
-**💡 Pro Tip**: Folosește Smart Pantry Tracker zilnic pentru economii maxime! Aplicația învață preferințele tale și îți oferă recomendări personalizate pentru reducerea costurilor cu alimentele.
+**💡 Quick Start**: Aplicația este gata de utilizare imediat după instalare. Toate modulele funcționează independent și datele sunt salvate automat în localStorage.
 
-**🔗 Demo Live**: [https://finante-svelte-2025.netlify.app](https://github.com/ioan-nomad/finante-svelte-2025)
+**🔗 Repository**: [https://github.com/ioan-nomad/finante-svelte-2025](https://github.com/ioan-nomad/finante-svelte-2025)
 
-Pentru întrebări și suport: [Creează un Issue](https://github.com/ioan-nomad/finante-svelte-2025/issues/new)
+Pentru suport și întrebări: [Creează un Issue](https://github.com/ioan-nomad/finante-svelte-2025/issues/new)
