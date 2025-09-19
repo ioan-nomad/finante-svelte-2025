@@ -14,6 +14,7 @@
     import ExportPanel from './components/ExportPanel.svelte';
     import ExcelExportButton from '../../components/ExcelExportButton.svelte';
     import { accounts, transactions, totalBalance } from './stores/financeStore.js';
+    import { populateDemoData } from '../../lib/demo-data.js';
 
     let activeTab = 'dashboard';
     let isLoading = false;
@@ -44,6 +45,12 @@
         activeTab = tabId;
         localStorage.setItem('financeActiveTab', tabId);
     }
+
+    function loadDemoData() {
+        populateDemoData();
+        alert('Demo data loaded successfully!');
+        window.location.reload();
+    }
 </script>
 
 <div class="finance-container">
@@ -59,6 +66,10 @@
                 <span>💰</span>
                 Finance Management
             </h1>
+            <button class="demo-data-button" on:click={loadDemoData}>
+                <span>🎲</span>
+                Load Demo Data
+            </button>
         </div>
 
         <!-- Tab Navigation -->
@@ -147,6 +158,11 @@
 
     .module-header {
         margin-bottom: 2rem;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 1rem;
     }
 
     .module-title {
@@ -286,6 +302,43 @@
         color: var(--text-secondary-dark, #9ca3af);
     }
 
+    .demo-data-button {
+        background: linear-gradient(135deg, #3b82f6, #1d4ed8);
+        color: white;
+        border: none;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+        font-weight: 600;
+        font-size: 0.875rem;
+        transition: all 0.3s ease;
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+
+    .demo-data-button:hover {
+        background: linear-gradient(135deg, #2563eb, #1e40af);
+        transform: translateY(-1px);
+        box-shadow: 0 4px 8px rgba(59, 130, 246, 0.3);
+    }
+
+    .demo-data-button:active {
+        transform: translateY(0);
+        box-shadow: 0 2px 4px rgba(59, 130, 246, 0.2);
+    }
+
+    :global(.dark-mode) .demo-data-button {
+        background: linear-gradient(135deg, #60a5fa, #3b82f6);
+        box-shadow: 0 2px 4px rgba(96, 165, 250, 0.2);
+    }
+
+    :global(.dark-mode) .demo-data-button:hover {
+        background: linear-gradient(135deg, #3b82f6, #2563eb);
+        box-shadow: 0 4px 8px rgba(96, 165, 250, 0.3);
+    }
+
     @media (max-width: 768px) {
         .finance-container {
             padding: 0.5rem;
@@ -302,6 +355,16 @@
 
         .tab-navigation {
             gap: 0.25rem;
+        }
+
+        .module-header {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+
+        .demo-data-button {
+            align-self: stretch;
+            justify-content: center;
         }
     }
 </style>

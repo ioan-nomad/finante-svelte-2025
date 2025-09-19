@@ -3,6 +3,7 @@
   import FinanceModule from './modules/finance/FinanceModule.svelte';
   import PantryModule from './modules/pantry/PantryModule.svelte';
   import NutritionModule from './modules/nutrition/NutritionModule.svelte';
+  import { populateDemoData } from './lib/demo-data.js';
 
   let activeModule = 'finance';
   let theme = 'light';
@@ -10,6 +11,9 @@
   onMount(() => {
     theme = localStorage.getItem('theme') || 'light';
     document.documentElement.setAttribute('data-theme', theme);
+
+    // Populate demo data on first load
+    populateDemoData();
   });
 
   function toggleTheme() {
