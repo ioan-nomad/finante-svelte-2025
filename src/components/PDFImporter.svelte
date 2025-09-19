@@ -1,5 +1,6 @@
 <script>
   import * as pdfjsLib from 'pdfjs-dist';
+  import pdfParse from 'pdf-parse';
   
   // Inițializare PDF.js cu worker path corect și error handling
   if (typeof window !== 'undefined') {
@@ -9,6 +10,7 @@
 
   import { createEventDispatcher } from 'svelte';
   import { onMount } from 'svelte';
+  import { transactions } from '../modules/finance/stores/financeStore.js';
 
   // IMPORT ML ENGINE MODULAR - SECȚIUNE NOUĂ
   let mlEngine = null;
@@ -72,76 +74,95 @@
     console.log('📄 Processing:', file.name, file.size, 'bytes', 'Type:', file.type);
     
     try {
-      // STRATEGIA 1: Încearcă cu pdf.js versiune simplă
+      // STRATEGIA 1: Încearcă cu pdf-parse (mai robust)
       let pdfText = '';
       let pdfProcessed = false;
-      
+
       try {
-        console.log('🔧 Strategy 1: Simple pdf.js...');
+        console.log('🔧 Strategy 1: Using pdf-parse...');
         const arrayBuffer = await file.arrayBuffer();
-        const uint8Array = new Uint8Array(arrayBuffer);
-        
-        // Cea mai simplă formă posibilă
-        const loadingTask = pdfjsLib.getDocument(uint8Array);
-        loadingTask.onProgress = function(progress) {
-          console.log(`Loading: ${progress.loaded}/${progress.total}`);
-        };
-        
-        const pdf = await loadingTask.promise;
-        console.log('✅ PDF opened, pages:', pdf.numPages);
-        
-        // Extrage text
-        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-          try {
-            const page = await pdf.getPage(pageNum);
-            const textContent = await page.getTextContent();
-            const pageText = textContent.items
-              .map(item => item.str)
-              .join(' ');
-            pdfText += pageText + '\n';
-            console.log(`✅ Page ${pageNum}: ${pageText.length} chars`);
-          } catch (pageError) {
-            console.error(`❌ Page ${pageNum} error:`, pageError);
-          }
-        }
-        
+        const buffer = Buffer.from(arrayBuffer);
+
+        const pdfData = await pdfParse(buffer);
+        pdfText = pdfData.text;
         pdfProcessed = true;
-        console.log('✅ PDF text extracted:', pdfText.length, 'chars');
-        
-      } catch (pdfError) {
-        console.error('❌ PDF.js failed:', pdfError);
-        console.log('🔧 Strategy 2: Try as text file...');
-        
-        // STRATEGIA 2: Poate e de fapt un text file numit .pdf
+        console.log('✅ PDF text extracted with pdf-parse:', pdfText.length, 'chars');
+        console.log('📄 PDF Info:', {
+          pages: pdfData.numpages,
+          info: pdfData.info,
+          metadata: pdfData.metadata
+        });
+
+      } catch (pdfParseError) {
+        console.warn('❌ pdf-parse failed:', pdfParseError);
+        console.log('🔧 Strategy 2: Fallback to pdf.js...');
+
+        // STRATEGIA 2: Fallback la pdf.js
         try {
-          pdfText = await file.text();
-          if (pdfText && pdfText.length > 0) {
-            console.log('✅ Read as text:', pdfText.length, 'chars');
-            pdfProcessed = true;
+          const arrayBuffer = await file.arrayBuffer();
+          const uint8Array = new Uint8Array(arrayBuffer);
+
+          const loadingTask = pdfjsLib.getDocument(uint8Array);
+          loadingTask.onProgress = function(progress) {
+            console.log(`Loading: ${progress.loaded}/${progress.total}`);
+          };
+
+          const pdf = await loadingTask.promise;
+          console.log('✅ PDF opened with pdf.js, pages:', pdf.numPages);
+
+          // Extrage text
+          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
+            try {
+              const page = await pdf.getPage(pageNum);
+              const textContent = await page.getTextContent();
+              const pageText = textContent.items
+                .map(item => item.str)
+                .join(' ');
+              pdfText += pageText + '\n';
+              console.log(`✅ Page ${pageNum}: ${pageText.length} chars`);
+            } catch (pageError) {
+              console.error(`❌ Page ${pageNum} error:`, pageError);
+            }
           }
-        } catch (textError) {
-          console.error('❌ Text read failed:', textError);
+
+          pdfProcessed = true;
+          console.log('✅ PDF text extracted with pdf.js:', pdfText.length, 'chars');
+
+        } catch (pdfJsError) {
+          console.error('❌ PDF.js also failed:', pdfJsError);
+          console.log('🔧 Strategy 3: Try as text file...');
+
+          // STRATEGIA 3: Poate e de fapt un text file numit .pdf
+          try {
+            pdfText = await file.text();
+            if (pdfText && pdfText.length > 0) {
+              console.log('✅ Read as text:', pdfText.length, 'chars');
+              pdfProcessed = true;
+            }
+          } catch (textError) {
+            console.error('❌ Text read failed:', textError);
+          }
         }
       }
       
-      // STRATEGIA 3: OCR dacă nu avem text
+      // STRATEGIA 4: OCR dacă nu avem text (păstrăm logica existentă)
       if (!pdfProcessed || pdfText.length < 50) {
-        console.log('🔧 Strategy 3: Attempting OCR...');
-        
+        console.log('🔧 Strategy 4: Attempting OCR...');
+
         if (window.mlEngine && window.mlEngine.ocrEngine) {
           try {
             const arrayBuffer = await file.arrayBuffer();
             const blob = new Blob([arrayBuffer], { type: 'application/pdf' });
             const url = URL.createObjectURL(blob);
-            
+
             // Convertește PDF în imagine pentru OCR
             const canvas = document.createElement('canvas');
             const ctx = canvas.getContext('2d');
-            
+
             // Aici ar trebui să convertim PDF în imagine
             // Dar pentru moment, informăm utilizatorul
             console.log('⚠️ OCR pentru PDF nu e implementat complet');
-            
+
           } catch (ocrError) {
             console.error('❌ OCR failed:', ocrError);
           }
@@ -162,22 +183,48 @@
       console.log('🔍 Detecting bank from PDF text...');
       detectedBank = detectBank(pdfText);
       console.log('🏦 Detected bank:', detectedBank);
-      
-      // Verifică dacă e Banca Transilvania cu textul exact din extras
-      if (pdfText.includes('BANCA TRANSILVANIA') || 
-          pdfText.includes('BT24') || 
+
+      // Enhanced Romanian bank detection
+      let parsedTransactions = [];
+
+      // Banca Transilvania
+      if (pdfText.includes('BANCA TRANSILVANIA') ||
+          pdfText.includes('BT24') ||
           pdfText.includes('BTPay') ||
           pdfText.includes('POS ') ||
           /\d{2}\/\d{2}\/\d{4}/.test(pdfText)) {
         console.log('🏦 Using Banca Transilvania specific parser...');
-        console.log('📋 BT Detection - Real BT format detected');
-        transactions = parseBTStatementReal(pdfText);
+        parsedTransactions = parseBTStatementReal(pdfText);
         processingMethod = 'bt-specific';
         detectedBank = 'BT';
-        console.log(`✅ BT Parser result: ${transactions.length} transactions found`);
       }
-      // Încearcă ML Engine dacă e disponibil și nu am găsit BT
-      else if (mlReady && mlEngine && mlEngine.processPDF) {
+      // BCR (Banca Comercială Română)
+      else if (pdfText.includes('BCR') || pdfText.includes('BANCA COMERCIALA ROMANA')) {
+        console.log('🏦 Using BCR specific parser...');
+        parsedTransactions = parseBCRStatement(pdfText);
+        processingMethod = 'bcr-specific';
+        detectedBank = 'BCR';
+      }
+      // ING Bank
+      else if (pdfText.includes('ING BANK') || pdfText.includes('ING Personal')) {
+        console.log('🏦 Using ING specific parser...');
+        parsedTransactions = parseINGStatement(pdfText);
+        processingMethod = 'ing-specific';
+        detectedBank = 'ING';
+      }
+      // Raiffeisen Bank
+      else if (pdfText.includes('RAIFFEISEN BANK')) {
+        console.log('🏦 Using Raiffeisen specific parser...');
+        parsedTransactions = parseRaiffeisenStatement(pdfText);
+        processingMethod = 'raiffeisen-specific';
+        detectedBank = 'Raiffeisen';
+      }
+
+      transactions = parsedTransactions;
+      console.log(`✅ ${detectedBank} Parser result: ${transactions.length} transactions found`);
+
+      // Încearcă ML Engine dacă e disponibil și nu am găsit tranzacții
+      if (parsedTransactions.length === 0 && mlReady && mlEngine && mlEngine.processPDF) {
         console.log('🤖 Using ML Engine...');
         try {
           const mlResult = await mlEngine.processPDF(pdfText);
@@ -687,6 +734,141 @@
     return 'GENERIC';
   }
 
+  // BCR Parser
+  function parseBCRStatement(text) {
+    console.log('🏦 Parsing BCR format...');
+    const transactions = [];
+    const lines = text.split(/\r?\n/);
+
+    // BCR format: usually DD.MM.YYYY or DD/MM/YYYY with amounts
+    const bcrPatterns = [
+      // Pattern: DD.MM.YYYY Description Amount
+      /(\d{2}[.-]\d{2}[.-]\d{4})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})\s*(LEI|RON)?/,
+      // Pattern with multiple spaces: Date    Description    Amount
+      /(\d{2}[.-]\d{2}[.-]\d{4})\s{3,}(.+?)\s{3,}([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/
+    ];
+
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine.length < 10) continue;
+
+      for (const pattern of bcrPatterns) {
+        const match = cleanLine.match(pattern);
+        if (match) {
+          const date = formatDateSafe(match[1]);
+          const description = match[2].trim();
+          const amountStr = match[3].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+          const amount = parseFloat(amountStr);
+
+          if (!isNaN(amount) && amount !== 0) {
+            transactions.push({
+              data: date,
+              suma: Math.abs(amount),
+              descriere: description,
+              tip: amount < 0 ? 'expense' : 'income',
+              categorie: detectCategory(description),
+              confidence: 0.85
+            });
+            console.log('💰 BCR Transaction:', date, amount, description);
+            break;
+          }
+        }
+      }
+    }
+
+    return transactions;
+  }
+
+  // ING Parser
+  function parseINGStatement(text) {
+    console.log('🏦 Parsing ING format...');
+    const transactions = [];
+    const lines = text.split(/\r?\n/);
+
+    // ING format patterns
+    const ingPatterns = [
+      // Pattern: YYYY-MM-DD Description Amount
+      /(\d{4}[.-]\d{2}[.-]\d{2})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/,
+      // Pattern: DD-MM-YYYY Description Amount
+      /(\d{2}[.-]\d{2}[.-]\d{4})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/
+    ];
+
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine.length < 10) continue;
+
+      for (const pattern of ingPatterns) {
+        const match = cleanLine.match(pattern);
+        if (match) {
+          const date = formatDateSafe(match[1]);
+          const description = match[2].trim();
+          const amountStr = match[3].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+          const amount = parseFloat(amountStr);
+
+          if (!isNaN(amount) && amount !== 0) {
+            transactions.push({
+              data: date,
+              suma: Math.abs(amount),
+              descriere: description,
+              tip: amount < 0 ? 'expense' : 'income',
+              categorie: detectCategory(description),
+              confidence: 0.85
+            });
+            console.log('💰 ING Transaction:', date, amount, description);
+            break;
+          }
+        }
+      }
+    }
+
+    return transactions;
+  }
+
+  // Raiffeisen Parser
+  function parseRaiffeisenStatement(text) {
+    console.log('🏦 Parsing Raiffeisen format...');
+    const transactions = [];
+    const lines = text.split(/\r?\n/);
+
+    // Raiffeisen format patterns
+    const raiffeisenPatterns = [
+      // Pattern: DD.MM.YYYY Description Amount RON
+      /(\d{2}[.]\d{2}[.]\d{4})\s+(.+?)\s+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})\s+RON/,
+      // Pattern with tabs: Date\tDescription\tAmount
+      /(\d{2}[.]\d{2}[.]\d{4})\t+(.+?)\t+([+-]?\d{1,3}(?:[.,]\d{3})*[.,]\d{2})/
+    ];
+
+    for (const line of lines) {
+      const cleanLine = line.trim();
+      if (cleanLine.length < 10) continue;
+
+      for (const pattern of raiffeisenPatterns) {
+        const match = cleanLine.match(pattern);
+        if (match) {
+          const date = formatDateSafe(match[1]);
+          const description = match[2].trim();
+          const amountStr = match[3].replace(/\s/g, '').replace(/\./g, '').replace(',', '.');
+          const amount = parseFloat(amountStr);
+
+          if (!isNaN(amount) && amount !== 0) {
+            transactions.push({
+              data: date,
+              suma: Math.abs(amount),
+              descriere: description,
+              tip: amount < 0 ? 'expense' : 'income',
+              categorie: detectCategory(description),
+              confidence: 0.85
+            });
+            console.log('💰 Raiffeisen Transaction:', date, amount, description);
+            break;
+          }
+        }
+      }
+    }
+
+    return transactions;
+  }
+
   // Funcția de feedback pentru ML learning
   async function provideFeedback(transactionIndex, feedback) {
     if (!mlReady || !mlEngine) return;
@@ -726,6 +908,32 @@
   }
 
   async function confirmImport() {
+    // Add transactions to the finance store
+    if (extractedData && extractedData.length > 0) {
+      const newTransactions = extractedData.map((tx, index) => ({
+        id: Date.now() + index,
+        accountId: 1, // Default to first account, user can change later
+        date: tx.data,
+        description: tx.descriere,
+        category: tx.categorie,
+        amount: tx.tip === 'expense' ? -Math.abs(tx.suma) : Math.abs(tx.suma),
+        type: tx.tip,
+        source: 'pdf_import',
+        bank: detectedBank,
+        confidence: tx.confidence || 0.8
+      }));
+
+      // Update transactions store
+      transactions.update(currentTransactions => {
+        const updated = [...currentTransactions, ...newTransactions];
+        // Save to localStorage
+        localStorage.setItem('transactions', JSON.stringify(updated));
+        return updated;
+      });
+
+      console.log(`✅ Added ${newTransactions.length} transactions to store`);
+    }
+
     // Învață din tranzacțiile confirmate cu noul ML Engine
     if (enhancedTransactions && enhancedTransactions.length > 0) {
       for (const enhancedTx of enhancedTransactions) {
@@ -741,36 +949,39 @@
             bank: detectedBank,
             timestamp: Date.now()
           };
-          
+
           // Învață din feedback cu noul ML Engine
-          const learningResult = await mlEngine.learnFromFeedback(feedback);
-          
-          console.log(`🧠 ML Engine învățat: ${enhancedTx.enhancedTransaction.descriere} - accuracy: ${Math.round(learningResult.accuracy * 100)}%`);
-          
+          if (mlEngine && mlEngine.learnFromFeedback) {
+            const learningResult = await mlEngine.learnFromFeedback(feedback);
+            console.log(`🧠 ML Engine învățat: ${enhancedTx.enhancedTransaction.descriere} - accuracy: ${Math.round(learningResult.accuracy * 100)}%`);
+          }
+
           // Actualizează modelele neural networks
-          if (enhancedTx.merchantData) {
+          if (enhancedTx.merchantData && mlEngine && mlEngine.neuralNetworkEngine) {
             await mlEngine.neuralNetworkEngine.learnMerchantPattern(
               enhancedTx.enhancedTransaction.descriere,
               enhancedTx.merchantData.name
             );
           }
-          
+
         } catch (error) {
           console.warn(`⚠️ Eroare la învățare ML pentru tranzacția: ${enhancedTx.enhancedTransaction.descriere}`, error);
         }
       }
-      
+
       // Salvează toate modelele actualizate
       try {
-        await mlEngine.saveModels();
-        console.log(`💾 Modele ML salvate cu succes pentru banca ${detectedBank}`);
+        if (mlEngine && mlEngine.saveModels) {
+          await mlEngine.saveModels();
+          console.log(`💾 Modele ML salvate cu succes pentru banca ${detectedBank}`);
+        }
       } catch (error) {
         console.warn('⚠️ Eroare la salvarea modelelor ML:', error);
       }
-      
+
       console.log(`🎓 Import completat cu învățare ML avansată pentru banca ${detectedBank}`);
     }
-    
+
     dispatch('import', extractedData);
     closeImporter();
   }
@@ -826,8 +1037,8 @@
           {:else}
             <div class="upload-icon">📄</div>
             <p>Click pentru selectare PDF sau trage fișierul aici</p>
-            <small>✅ Support COMPLET: Banca Transilvania (format real)</small>
-            <small>Suport generic: BCR, ING, Raiffeisen, UniCredit</small>
+            <small>✅ Support COMPLET: Banca Transilvania, BCR, ING, Raiffeisen</small>
+            <small>📋 Detectare automată format bancar român</small>
           {/if}
         </label>
       </div>

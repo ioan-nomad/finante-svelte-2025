@@ -201,21 +201,21 @@
   input, select {
     width: 100%;
     padding: 10px;
-    border: 1px solid #28304b;
+    border: 1px solid var(--border-color);
     border-radius: 10px;
-    background: var(--panel2);
-    color: var(--ink);
+    background: var(--input-bg);
+    color: var(--text-primary);
   }
   
   input:focus, select:focus {
     outline: none;
-    border-color: var(--acc);
-    box-shadow: 0 0 0 3px rgba(128,184,255,.18);
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.18);
   }
   
   button {
-    background: var(--acc);
-    color: #08131a;
+    background: var(--accent-color);
+    color: white;
     border: 0;
     border-radius: 10px;
     padding: 10px 14px;
@@ -231,16 +231,16 @@
   
   button.ghost {
     background: transparent;
-    outline: 1px solid #2a3354;
-    color: var(--ink);
+    outline: 1px solid var(--border-color);
+    color: var(--text-primary);
   }
   
   button.red {
-    background: var(--err);
+    background: var(--error-color);
   }
-  
+
   button.green {
-    background: var(--ok);
+    background: var(--success-color);
   }
   
   .row {
@@ -297,8 +297,8 @@
     display: inline-block;
     padding: 2px 8px;
     border-radius: 999px;
-    background: #243056;
-    color: #cfe1ff;
+    background: var(--accent-color);
+    color: white;
     font-size: .75rem;
     margin-left: 6px;
   }

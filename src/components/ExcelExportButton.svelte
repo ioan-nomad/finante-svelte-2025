@@ -1,6 +1,6 @@
 <script>
     import { onMount, onDestroy } from 'svelte';
-    import { excelExporter } from '../lib/services/ExcelExporter.js';
+    import * as XLSX from 'xlsx';
     import { transactions, accounts, totalBalance } from '../modules/finance/stores/financeStore.js';
     import { toastStore } from '../lib/toastStore.js';
 
@@ -140,7 +140,7 @@
                 duration: 2000
             });
 
-            const blob = await excelExporter.generateFinanceExcel(data, exportOptions);
+            const blob = await generateExcelFile(data, 'finance');
 
             exportProgress = 80;
 
@@ -185,7 +185,7 @@
                 duration: 2000
             });
 
-            const blob = await excelExporter.generatePantryExcel(data, exportOptions);
+            const blob = await generateExcelFile(data, 'pantry');
 
             exportProgress = 80;
 
@@ -230,7 +230,7 @@
                 duration: 2000
             });
 
-            const blob = await excelExporter.generateNutritionExcel(data, exportOptions);
+            const blob = await generateExcelFile(data, 'nutrition');
 
             exportProgress = 80;
 
@@ -290,10 +290,8 @@
             });
 
             // Create comprehensive Excel export
-            const blob = await excelExporter.generateFinanceExcel(financeData, {
-                ...exportOptions,
-                includeAllModules: true
-            });
+            const allData = { financeData, pantryData, nutritionData };
+            const blob = await generateExcelFile(allData, 'all');
 
             exportProgress = 90;
 
@@ -486,6 +484,161 @@
     }
 
     // Click outside handler
+    // Generate Excel file using XLSX library
+    async function generateExcelFile(data, type) {
+        const workbook = XLSX.utils.book_new();
+
+        if (type === 'finance' || type === 'all') {
+            const financeData = type === 'all' ? data.financeData : data;
+
+            // Accounts Sheet
+            if (financeData.accounts && financeData.accounts.length > 0) {
+                const accountsData = financeData.accounts.map(account => ({
+                    'Nume Cont': account.name,
+                    'Tip': account.type,
+                    'Banca': account.bank,
+                    'Valuta': account.currency,
+                    'Sold': account.balance,
+                    'Status': account.isActive ? 'Activ' : 'Inactiv',
+                    'IBAN': account.number
+                }));
+                const accountsSheet = XLSX.utils.json_to_sheet(accountsData);
+                XLSX.utils.book_append_sheet(workbook, accountsSheet, 'Conturi');
+            }
+
+            // Transactions Sheet
+            if (financeData.transactions && financeData.transactions.length > 0) {
+                const transactionsData = financeData.transactions.map(tx => ({
+                    'Data': new Date(tx.date).toLocaleDateString('ro-RO'),
+                    'Descriere': tx.description,
+                    'Categorie': tx.category,
+                    'Suma': tx.amount,
+                    'Tip': tx.type === 'income' ? 'Venit' : tx.type === 'expense' ? 'Cheltuială' : 'Transfer',
+                    'Cont ID': tx.accountId
+                }));
+                const transactionsSheet = XLSX.utils.json_to_sheet(transactionsData);
+                XLSX.utils.book_append_sheet(workbook, transactionsSheet, 'Tranzacții');
+            }
+
+            // Budgets Sheet (using localStorage data)
+            const budgetsData = JSON.parse(localStorage.getItem('budgets') || '[]');
+            if (budgetsData.length > 0) {
+                const budgetsFormatted = budgetsData.map(budget => ({
+                    'Categorie': budget.category,
+                    'Buget Planificat': budget.budget,
+                    'Suma Cheltuită': budget.spent,
+                    'Diferență': budget.budget - budget.spent,
+                    'Procent Folosit': Math.round((budget.spent / budget.budget) * 100) + '%',
+                    'Luna': budget.month
+                }));
+                const budgetsSheet = XLSX.utils.json_to_sheet(budgetsFormatted);
+                XLSX.utils.book_append_sheet(workbook, budgetsSheet, 'Bugete');
+            }
+
+            // Goals Sheet (using localStorage data)
+            const goalsData = JSON.parse(localStorage.getItem('goals') || '[]');
+            if (goalsData.length > 0) {
+                const goalsFormatted = goalsData.map(goal => ({
+                    'Nume Obiectiv': goal.name,
+                    'Suma Țintă': goal.targetAmount,
+                    'Suma Actuală': goal.currentAmount,
+                    'Progres': Math.round((goal.currentAmount / goal.targetAmount) * 100) + '%',
+                    'Termen Limită': goal.deadline,
+                    'Categorie': goal.category
+                }));
+                const goalsSheet = XLSX.utils.json_to_sheet(goalsFormatted);
+                XLSX.utils.book_append_sheet(workbook, goalsSheet, 'Obiective');
+            }
+
+            // Recurring Payments Sheet (using localStorage data)
+            const recurringData = JSON.parse(localStorage.getItem('recurringPayments') || '[]');
+            if (recurringData.length > 0) {
+                const recurringFormatted = recurringData.map(payment => ({
+                    'Nume Plată': payment.name,
+                    'Suma': payment.amount,
+                    'Frecvență': payment.frequency,
+                    'Data Următoare': payment.nextDate,
+                    'Categorie': payment.category,
+                    'Cont ID': payment.accountId
+                }));
+                const recurringSheet = XLSX.utils.json_to_sheet(recurringFormatted);
+                XLSX.utils.book_append_sheet(workbook, recurringSheet, 'Plăți Recurente');
+            }
+        }
+
+        if (type === 'pantry' || type === 'all') {
+            const pantryData = type === 'all' ? data.pantryData : data;
+
+            // Pantry Inventory Sheet
+            if (pantryData.inventory && pantryData.inventory.length > 0) {
+                const inventoryFormatted = pantryData.inventory.map(item => ({
+                    'Produs': item.name,
+                    'Categorie': item.category,
+                    'Cantitate': item.quantity,
+                    'Unitate': item.unit,
+                    'Data Expirării': item.expiryDate ? new Date(item.expiryDate).toLocaleDateString('ro-RO') : '',
+                    'Locație': item.location,
+                    'Preț': item.price
+                }));
+                const inventorySheet = XLSX.utils.json_to_sheet(inventoryFormatted);
+                XLSX.utils.book_append_sheet(workbook, inventorySheet, 'Inventar');
+            }
+
+            // Shopping List Sheet
+            if (pantryData.shoppingList && pantryData.shoppingList.length > 0) {
+                const shoppingFormatted = pantryData.shoppingList.map(item => ({
+                    'Produs': item.name,
+                    'Categorie': item.category,
+                    'Cantitate': item.quantity,
+                    'Unitate': item.unit,
+                    'Prioritate': item.priority,
+                    'Preț Estimat': item.estimated_price
+                }));
+                const shoppingSheet = XLSX.utils.json_to_sheet(shoppingFormatted);
+                XLSX.utils.book_append_sheet(workbook, shoppingSheet, 'Listă Cumpărături');
+            }
+        }
+
+        if (type === 'nutrition' || type === 'all') {
+            const nutritionData = type === 'all' ? data.nutritionData : data;
+
+            // Recipes Sheet
+            if (nutritionData.recipes && nutritionData.recipes.length > 0) {
+                const recipesFormatted = nutritionData.recipes.map(recipe => ({
+                    'Nume Rețetă': recipe.name,
+                    'Calorii': recipe.calories,
+                    'Proteine (g)': recipe.protein,
+                    'Carbohidrați (g)': recipe.carbs,
+                    'Grăsimi (g)': recipe.fat,
+                    'Timp Preparare (min)': recipe.cookingTime,
+                    'Dificultate': recipe.difficulty,
+                    'Ingrediente': Array.isArray(recipe.ingredients) ? recipe.ingredients.join(', ') : recipe.ingredients
+                }));
+                const recipesSheet = XLSX.utils.json_to_sheet(recipesFormatted);
+                XLSX.utils.book_append_sheet(workbook, recipesSheet, 'Rețete');
+            }
+
+            // mTOR Tracking Sheet
+            const mTORData = JSON.parse(localStorage.getItem('mTORTracking') || '{}');
+            if (Object.keys(mTORData).length > 0) {
+                const mTORFormatted = Object.entries(mTORData).map(([date, data]) => ({
+                    'Data': new Date(date).toLocaleDateString('ro-RO'),
+                    'Proteine (g)': data.protein,
+                    'Leucină (g)': data.leucine,
+                    'Carbohidrați Post-Antrenament (g)': data.carbs_post_workout,
+                    'Fereastră Post (ore)': data.fasting_window,
+                    'Scor mTOR': data.score
+                }));
+                const mTORSheet = XLSX.utils.json_to_sheet(mTORFormatted);
+                XLSX.utils.book_append_sheet(workbook, mTORSheet, 'mTOR Tracking');
+            }
+        }
+
+        // Convert workbook to blob
+        const excelBuffer = XLSX.write(workbook, { bookType: 'xlsx', type: 'array' });
+        return new Blob([excelBuffer], { type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' });
+    }
+
     function handleClickOutside(event) {
         if (!event.target.closest('.excel-export-container')) {
             showDropdown = false;

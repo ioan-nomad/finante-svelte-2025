@@ -663,15 +663,15 @@
   }
   
   .tx-amount.income {
-    color: #10b981;
+    color: var(--success-color);
   }
-  
+
   .tx-amount.expense {
-    color: #ef4444;
+    color: var(--error-color);
   }
-  
+
   .tx-amount.transfer {
-    color: #3b82f6;
+    color: var(--accent-color);
   }
   
   .tx-actions {
@@ -684,7 +684,7 @@
     width: 32px;
     height: 32px;
     border: none;
-    background: var(--bg-tertiary, #f3f4f6);
+    background: var(--bg-tertiary);
     border-radius: 4px;
     cursor: pointer;
     display: flex;
@@ -694,12 +694,12 @@
   }
   
   .btn-icon:hover {
-    background: var(--primary-light, #dbeafe);
+    background: var(--bg-secondary);
     transform: translateY(-2px);
   }
   
   .btn-icon.delete:hover {
-    background: #fee2e2;
+    background: rgba(239, 68, 68, 0.1);
   }
   
   .empty {

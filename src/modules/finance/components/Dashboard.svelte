@@ -4,6 +4,7 @@
   import { transactions, accounts, totalBalance } from '../stores/financeStore.js';
   import ExportPanel from './ExportPanel.svelte';
   import ExcelExportButton from '../../../components/ExcelExportButton.svelte';
+  import { mlPredictor } from '../../../lib/ml-predictor.js';
 
   let chartInstances = {};
   let chartUpdateTimeout;
@@ -15,6 +16,15 @@
     savings: 0,
     percentSaved: 0
   };
+
+  // ML Predictions
+  let mlInitialized = false;
+  let predictions = {
+    nextMonthExpenses: null,
+    insights: [],
+    anomalies: []
+  };
+  let budgets = [];
 
   // Calculate statistics
   function calculateStats() {
@@ -29,9 +39,9 @@
       const txDate = new Date(tx.date);
       if (txDate.getMonth() === currentMonth && txDate.getFullYear() === currentYear) {
         if (tx.type === 'income') {
-          monthlyIncome += tx.amount;
+          monthlyIncome += Math.abs(tx.amount);
         } else if (tx.type === 'expense') {
-          monthlyExpenses += tx.amount;
+          monthlyExpenses += Math.abs(tx.amount);
         }
       }
     });
@@ -40,6 +50,61 @@
     stats.expenses = monthlyExpenses;
     stats.savings = monthlyIncome - monthlyExpenses;
     stats.percentSaved = monthlyIncome > 0 ? Math.round((stats.savings / monthlyIncome) * 100) : 0;
+  }
+
+  // Initialize ML Predictor
+  async function initializeMLPredictor() {
+    try {
+      console.log('🧠 Initializing ML Predictor...');
+
+      // Load budgets from localStorage
+      budgets = JSON.parse(localStorage.getItem('budgets') || '[]');
+
+      // Try to load existing models first
+      const modelsLoaded = mlPredictor.loadModels();
+
+      if (!modelsLoaded || $transactions.length > 50) {
+        // Initialize with current transaction data
+        const success = await mlPredictor.initialize($transactions, budgets);
+        if (success) {
+          // Save the trained models
+          mlPredictor.saveModels();
+        }
+      }
+
+      mlInitialized = true;
+      await updateMLPredictions();
+
+    } catch (error) {
+      console.error('❌ ML Predictor initialization failed:', error);
+    }
+  }
+
+  // Update ML predictions
+  async function updateMLPredictions() {
+    if (!mlInitialized) return;
+
+    try {
+      // Get next month expense predictions
+      predictions.nextMonthExpenses = mlPredictor.predictNextMonthExpenses();
+
+      // Get insights and recommendations
+      predictions.insights = mlPredictor.getInsights($transactions, budgets);
+
+      // Check recent transactions for anomalies
+      predictions.anomalies = $transactions
+        .slice(-10)
+        .map(tx => {
+          const anomaly = mlPredictor.detectAnomaly(tx);
+          return { transaction: tx, anomaly };
+        })
+        .filter(item => item.anomaly.isAnomaly);
+
+      console.log('🔮 ML Predictions updated:', predictions);
+
+    } catch (error) {
+      console.error('❌ ML Predictions update failed:', error);
+    }
   }
 
   // Destroy all existing charts properly
@@ -323,11 +388,14 @@
     }, 500); // Increased debounce time to 500ms for better performance
   }
 
-  onMount(() => {
+  onMount(async () => {
     console.log('🎯 Dashboard mounting...');
 
     // Calculate initial statistics
     calculateStats();
+
+    // Initialize ML Predictor
+    await initializeMLPredictor();
 
     // Initialize charts after DOM is ready with intersection observer for performance
     const initializeChartsWhenVisible = () => {
@@ -411,6 +479,11 @@
 
       calculateStats();
 
+      // Update ML predictions when data changes
+      if (mlInitialized) {
+        updateMLPredictions();
+      }
+
       if (typeof window !== 'undefined' && chartsInitialized) {
         updateChartsDebounced();
       }
@@ -431,22 +504,90 @@
   <div class="stats-grid">
     <div class="stat-card income-card">
       <div class="stat-label">Venituri (luna curentă)</div>
-      <div class="stat-value income">{stats.income.toFixed(2)}</div>
+      <div class="stat-value income">{stats.income.toFixed(2)} RON</div>
       <div class="stat-percent">+0% față de luna trecută</div>
     </div>
 
     <div class="stat-card expense-card">
       <div class="stat-label">Cheltuieli (luna curentă)</div>
-      <div class="stat-value expense">{stats.expenses.toFixed(2)}</div>
+      <div class="stat-value expense">{stats.expenses.toFixed(2)} RON</div>
       <div class="stat-percent">+0% față de luna trecută</div>
     </div>
 
     <div class="stat-card savings-card">
       <div class="stat-label">Economii (luna curentă)</div>
-      <div class="stat-value savings">{stats.savings.toFixed(2)}</div>
+      <div class="stat-value savings">{stats.savings.toFixed(2)} RON</div>
       <div class="stat-percent">{stats.percentSaved}% din venituri</div>
     </div>
+
+    {#if predictions.nextMonthExpenses}
+      <div class="stat-card prediction-card">
+        <div class="stat-label">🔮 Predicție Luna Viitoare</div>
+        <div class="stat-value prediction">
+          {Object.values(predictions.nextMonthExpenses).reduce((a, b) => a + b, 0).toLocaleString()} RON
+        </div>
+        <div class="stat-percent">Bazat pe AI</div>
+      </div>
+    {/if}
   </div>
+
+  <!-- ML Insights Section -->
+  {#if mlInitialized && (predictions.insights.length > 0 || predictions.anomalies.length > 0)}
+    <div class="ml-insights-section">
+      <h2 class="insights-title">🧠 AI Insights & Predicții</h2>
+
+      <div class="insights-grid">
+        <!-- Predictions -->
+        {#if predictions.nextMonthExpenses}
+          <div class="insight-card prediction-insight">
+            <h3>🔮 Predicții Cheltuieli Luna Viitoare</h3>
+            <div class="prediction-details">
+              {#each Object.entries(predictions.nextMonthExpenses) as [category, amount]}
+                {#if amount > 0}
+                  <div class="prediction-item">
+                    <span class="category">{category}</span>
+                    <span class="amount">{amount.toLocaleString()} RON</span>
+                  </div>
+                {/if}
+              {/each}
+            </div>
+          </div>
+        {/if}
+
+        <!-- Insights -->
+        {#each predictions.insights as insight}
+          <div class="insight-card {insight.type}-insight">
+            <h3>{insight.title}</h3>
+            <p>{insight.message}</p>
+            {#if insight.details && insight.type === 'warning'}
+              <div class="warning-details">
+                <span class="risk-level">Risc: {insight.details.risk}</span>
+                <span class="probability">Probabilitate: {insight.details.probability}%</span>
+              </div>
+            {/if}
+          </div>
+        {/each}
+
+        <!-- Anomalies -->
+        {#if predictions.anomalies.length > 0}
+          <div class="insight-card anomaly-insight">
+            <h3>⚠️ Tranzacții Neobișnuite Detectate</h3>
+            <div class="anomaly-list">
+              {#each predictions.anomalies as item}
+                <div class="anomaly-item">
+                  <span class="transaction-desc">{item.transaction.description}</span>
+                  <span class="transaction-amount">{Math.abs(item.transaction.amount).toFixed(2)} RON</span>
+                  <span class="confidence-badge {item.anomaly.severity}">
+                    {Math.round(item.anomaly.confidence * 100)}% anomalie
+                  </span>
+                </div>
+              {/each}
+            </div>
+          </div>
+        {/if}
+      </div>
+    </div>
+  {/if}
 
   <!-- Charts Grid -->
   <div class="charts-grid">
@@ -521,28 +662,28 @@
   }
 
   .stat-card {
-    background: white;
+    background: var(--card-bg);
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid #e5e7eb;
+    box-shadow: 0 1px 3px var(--card-shadow);
+    border: 1px solid var(--card-border);
   }
 
-  :global(.dark-mode) .stat-card {
-    background: #2d3748;
-    border-color: #4a5568;
+  .stat-card.prediction-card {
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), var(--card-bg));
+    border-left: 4px solid var(--info-color);
   }
+
+  /* Dark mode handled by CSS variables */
 
   .stat-label {
     font-size: 0.875rem;
-    color: #6b7280;
+    color: var(--text-secondary);
     margin-bottom: 0.5rem;
     font-weight: 500;
   }
 
-  :global(.dark-mode) .stat-label {
-    color: #a0aec0;
-  }
+  /* Dark mode handled by CSS variables */
 
   .stat-value {
     font-size: 2rem;
@@ -550,13 +691,14 @@
     margin-bottom: 0.25rem;
   }
 
-  .stat-value.income { color: #10b981; }
-  .stat-value.expense { color: #ef4444; }
-  .stat-value.savings { color: #3b82f6; }
+  .stat-value.income { color: var(--success-color); }
+  .stat-value.expense { color: var(--error-color); }
+  .stat-value.savings { color: var(--accent-color); }
+  .stat-value.prediction { color: var(--info-color); }
 
   .stat-percent {
     font-size: 0.75rem;
-    color: #9ca3af;
+    color: var(--text-muted);
   }
 
   /* Charts Grid */
@@ -571,8 +713,8 @@
     background: var(--card-bg);
     border-radius: 12px;
     padding: 1.5rem;
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-    border: 1px solid var(--border-color);
+    box-shadow: 0 1px 3px var(--card-shadow);
+    border: 1px solid var(--card-border);
   }
 
 
@@ -589,6 +731,145 @@
     position: relative;
   }
 
+  /* ML Insights Styles */
+  .ml-insights-section {
+    margin: 2rem 0;
+  }
+
+  .insights-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--text-primary);
+  }
+
+  .insights-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+
+  .insight-card {
+    background: var(--card-bg);
+    border-radius: 12px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 8px var(--card-shadow);
+    border-left: 4px solid;
+  }
+
+  .insight-card.prediction-insight {
+    border-left-color: var(--info-color);
+    background: linear-gradient(135deg, rgba(139, 92, 246, 0.05), var(--card-bg));
+  }
+
+  .insight-card.warning-insight {
+    border-left-color: var(--warning-color);
+    background: linear-gradient(135deg, rgba(245, 158, 11, 0.05), var(--card-bg));
+  }
+
+  .insight-card.anomaly-insight {
+    border-left-color: var(--error-color);
+    background: linear-gradient(135deg, rgba(239, 68, 68, 0.05), var(--card-bg));
+  }
+
+  .insight-card h3 {
+    margin: 0 0 1rem 0;
+    font-size: 1.1rem;
+    font-weight: 600;
+  }
+
+  .prediction-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+  }
+
+  .prediction-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.5rem;
+    background: rgba(139, 92, 246, 0.1);
+    border-radius: 6px;
+  }
+
+  .prediction-item .category {
+    font-weight: 500;
+  }
+
+  .prediction-item .amount {
+    font-weight: 600;
+    color: var(--info-color);
+  }
+
+  .warning-details {
+    display: flex;
+    gap: 1rem;
+    margin-top: 0.5rem;
+  }
+
+  .risk-level,
+  .probability {
+    background: rgba(245, 158, 11, 0.1);
+    padding: 0.25rem 0.5rem;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    font-weight: 500;
+  }
+
+  .anomaly-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+  }
+
+  .anomaly-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0.75rem;
+    background: rgba(239, 68, 68, 0.05);
+    border-radius: 8px;
+    border: 1px solid rgba(239, 68, 68, 0.1);
+  }
+
+  .transaction-desc {
+    flex: 1;
+    font-weight: 500;
+  }
+
+  .transaction-amount {
+    font-weight: 600;
+    margin: 0 1rem;
+  }
+
+  .confidence-badge {
+    padding: 0.25rem 0.5rem;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: white;
+  }
+
+  .confidence-badge.critical {
+    background: #dc2626;
+  }
+
+  .confidence-badge.high {
+    background: #ea580c;
+  }
+
+  .confidence-badge.medium {
+    background: #d97706;
+  }
+
+  .confidence-badge.low {
+    background: #65a30d;
+  }
+
+  /* Dark mode handled by CSS variables */
+
   @media (max-width: 768px) {
     .charts-grid {
       grid-template-columns: 1fr;
@@ -596,6 +877,21 @@
 
     .stats-grid {
       grid-template-columns: 1fr;
+    }
+
+    .insights-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .anomaly-item {
+      flex-direction: column;
+      gap: 0.5rem;
+      align-items: stretch;
+    }
+
+    .transaction-amount {
+      margin: 0;
+      text-align: center;
     }
   }
 </style>
