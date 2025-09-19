@@ -56,21 +56,67 @@
 
 <style>
   :global(:root) {
+    /* Light theme colors */
     --bg-primary: #ffffff;
-    --bg-secondary: #f3f4f6;
-    --text-primary: #1f2937;
-    --text-secondary: #6b7280;
-    --border-color: #e5e7eb;
+    --bg-secondary: #f8fafc;
+    --bg-tertiary: #f1f5f9;
+    --text-primary: #1e293b;
+    --text-secondary: #64748b;
+    --text-muted: #94a3b8;
+    --border-color: #e2e8f0;
+    --border-light: #f1f5f9;
     --accent-color: #3b82f6;
+    --accent-hover: #2563eb;
+    --success-color: #10b981;
+    --warning-color: #f59e0b;
+    --error-color: #ef4444;
+    --info-color: #8b5cf6;
+
+    /* Card and surface colors */
+    --card-bg: #ffffff;
+    --card-border: #e2e8f0;
+    --card-shadow: rgba(0, 0, 0, 0.1);
+
+    /* Input and form colors */
+    --input-bg: #ffffff;
+    --input-border: #d1d5db;
+    --input-focus: #3b82f6;
+
+    /* Chart and graph colors */
+    --chart-grid: rgba(100, 116, 139, 0.1);
+    --chart-text: #64748b;
   }
 
   :global([data-theme='dark']) {
-    --bg-primary: #111827;
-    --bg-secondary: #1f2937;
-    --text-primary: #f9fafb;
-    --text-secondary: #9ca3af;
-    --border-color: #374151;
+    /* Dark theme colors */
+    --bg-primary: #0f172a;
+    --bg-secondary: #1e293b;
+    --bg-tertiary: #334155;
+    --text-primary: #f8fafc;
+    --text-secondary: #cbd5e1;
+    --text-muted: #94a3b8;
+    --border-color: #475569;
+    --border-light: #334155;
     --accent-color: #60a5fa;
+    --accent-hover: #3b82f6;
+    --success-color: #22d3ee;
+    --warning-color: #fbbf24;
+    --error-color: #f87171;
+    --info-color: #a78bfa;
+
+    /* Card and surface colors */
+    --card-bg: #1e293b;
+    --card-border: #475569;
+    --card-shadow: rgba(0, 0, 0, 0.3);
+
+    /* Input and form colors */
+    --input-bg: #334155;
+    --input-border: #475569;
+    --input-focus: #60a5fa;
+
+    /* Chart and graph colors */
+    --chart-grid: rgba(203, 213, 225, 0.1);
+    --chart-text: #cbd5e1;
   }
 
   :global(body) {

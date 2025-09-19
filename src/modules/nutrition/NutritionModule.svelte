@@ -444,12 +444,12 @@
   }
 
   .score-display.medium {
-    background: #fbbf24;
+    background: var(--warning-color);
     color: white;
   }
 
   .score-display.high {
-    background: #10b981;
+    background: var(--success-color);
     color: white;
   }
 

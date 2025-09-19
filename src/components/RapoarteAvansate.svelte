@@ -157,12 +157,12 @@
           {
             label: 'Cheltuieli',
             data: sortedCategories.map(([,d]) => d.expense),
-            backgroundColor: '#ef4444'
+            backgroundColor: 'var(--error-color)'
           },
           {
             label: 'Venituri', 
             data: sortedCategories.map(([,d]) => d.income),
-            backgroundColor: '#10b981'
+            backgroundColor: 'var(--success-color)'
           }
         ]
       },
@@ -517,10 +517,10 @@
     font-weight: 700;
   }
   
-  .card.income .value { color: #10b981; }
-  .card.expense .value { color: #ef4444; }
-  .card.savings .value { color: #3b82f6; }
-  .card.count .value { color: #6b7280; }
+  .card.income .value { color: var(--success-color); }
+  .card.expense .value { color: var(--error-color); }
+  .card.savings .value { color: var(--accent-color); }
+  .card.count .value { color: var(--text-muted); }
   
   .main-grid {
     display: grid;
@@ -574,9 +574,9 @@
     transition: all 0.2s;
   }
   
-  .export-btn.pdf { background: #dc2626; }
-  .export-btn.excel { background: #10b981; }
-  .export-btn.csv { background: #3b82f6; }
+  .export-btn.pdf { background: var(--error-color); }
+  .export-btn.excel { background: var(--success-color); }
+  .export-btn.csv { background: var(--accent-color); }
   
   .export-btn:hover {
     transform: translateY(-2px);
@@ -631,9 +631,9 @@
     border-bottom: 1px solid var(--border-color, #e5e7eb);
   }
   
-  td.income { color: #10b981; }
-  td.expense { color: #ef4444; }
-  td.positive { color: #3b82f6; }
+  td.income { color: var(--success-color); }
+  td.expense { color: var(--error-color); }
+  td.positive { color: var(--accent-color); }
   
   :global(body.dark) .card,
   :global(body.dark) .chart-container,

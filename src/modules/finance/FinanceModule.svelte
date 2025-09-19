@@ -172,14 +172,14 @@
         display: flex;
         align-items: center;
         gap: 0.5rem;
-        color: var(--text-primary, #333);
+        color: var(--text-primary);
     }
 
     .tab-navigation {
         display: flex;
         gap: 0.5rem;
         margin-bottom: 2rem;
-        border-bottom: 1px solid var(--border-color, #e0e0e0);
+        border-bottom: 1px solid var(--border-color);
         padding-bottom: 0;
         overflow-x: auto;
     }
@@ -193,7 +193,7 @@
         align-items: center;
         gap: 0.5rem;
         font-weight: 600;
-        color: var(--text-secondary, #666);
+        color: var(--text-secondary);
         border-bottom: 3px solid transparent;
         transition: all 0.3s ease;
         white-space: nowrap;
@@ -201,13 +201,13 @@
     }
 
     .tab-button:hover {
-        color: var(--text-primary, #333);
-        background: rgba(0, 0, 0, 0.05);
+        color: var(--text-primary);
+        background: var(--bg-tertiary);
     }
 
     .tab-button.active {
-        color: #3b82f6;
-        border-bottom-color: #3b82f6;
+        color: var(--accent-color);
+        border-bottom-color: var(--accent-color);
         background: rgba(59, 130, 246, 0.1);
     }
 
@@ -222,33 +222,33 @@
     .coming-soon {
         text-align: center;
         padding: 3rem;
-        background: var(--card-bg, white);
+        background: var(--card-bg);
         border-radius: 12px;
-        border: 1px solid var(--border-color, #e0e0e0);
+        border: 1px solid var(--card-border);
     }
 
     .coming-soon h3 {
         font-size: 1.5rem;
         margin-bottom: 1rem;
-        color: var(--text-primary, #333);
+        color: var(--text-primary);
     }
 
     .coming-soon p {
-        color: var(--text-secondary, #666);
+        color: var(--text-secondary);
         margin-bottom: 0.5rem;
     }
 
     .export-section, .import-section {
-        background: var(--card-bg, white);
+        background: var(--card-bg);
         border-radius: 12px;
         padding: 2rem;
-        border: 1px solid var(--border-color, #e0e0e0);
+        border: 1px solid var(--card-border);
     }
 
     .export-section h3, .import-section h3 {
         font-size: 1.5rem;
         margin-bottom: 1.5rem;
-        color: var(--text-primary, #333);
+        color: var(--text-primary);
     }
 
     .export-options {
@@ -256,51 +256,7 @@
         gap: 2rem;
     }
 
-    /* Dark mode support */
-    :global(.dark-mode) .finance-container {
-        background: var(--bg-dark, #1a1f2e);
-        color: var(--text-dark, #e5e7eb);
-    }
-
-    :global(.dark-mode) .module-title {
-        color: var(--text-dark, #e5e7eb);
-    }
-
-    :global(.dark-mode) .tab-navigation {
-        border-bottom-color: var(--border-dark, #374151);
-    }
-
-    :global(.dark-mode) .tab-button {
-        color: var(--text-secondary-dark, #9ca3af);
-    }
-
-    :global(.dark-mode) .tab-button:hover {
-        color: var(--text-dark, #e5e7eb);
-        background: rgba(255, 255, 255, 0.05);
-    }
-
-    :global(.dark-mode) .tab-button.active {
-        color: #60a5fa;
-        background: rgba(96, 165, 250, 0.1);
-        border-bottom-color: #60a5fa;
-    }
-
-    :global(.dark-mode) .export-section,
-    :global(.dark-mode) .import-section,
-    :global(.dark-mode) .coming-soon {
-        background: var(--card-bg-dark, #252a3a);
-        border-color: var(--border-dark, #374151);
-    }
-
-    :global(.dark-mode) .export-section h3,
-    :global(.dark-mode) .import-section h3,
-    :global(.dark-mode) .coming-soon h3 {
-        color: var(--text-dark, #e5e7eb);
-    }
-
-    :global(.dark-mode) .coming-soon p {
-        color: var(--text-secondary-dark, #9ca3af);
-    }
+    /* Dark mode support - now handled by CSS variables */
 
     .demo-data-button {
         background: linear-gradient(135deg, #3b82f6, #1d4ed8);
