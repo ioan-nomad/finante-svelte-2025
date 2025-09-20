@@ -177,17 +177,17 @@
 
     .tab-navigation {
         display: flex;
+        flex-wrap: wrap;
         gap: 0.5rem;
         margin-bottom: 2rem;
         border-bottom: 1px solid var(--border-color);
         padding-bottom: 0;
-        overflow-x: auto;
     }
 
     .tab-button {
         background: none;
         border: none;
-        padding: 1rem 1.5rem;
+        padding: 0.5rem 0.8rem;
         cursor: pointer;
         display: flex;
         align-items: center;
@@ -197,7 +197,9 @@
         border-bottom: 3px solid transparent;
         transition: all 0.3s ease;
         white-space: nowrap;
-        min-width: max-content;
+        flex: 1 1 auto;
+        min-width: 100px;
+        max-width: 150px;
     }
 
     .tab-button:hover {

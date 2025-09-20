@@ -1,6 +1,5 @@
 <script>
   import * as pdfjsLib from 'pdfjs-dist';
-  import pdfParse from 'pdf-parse';
   
   // Inițializare PDF.js cu worker path corect și error handling
   if (typeof window !== 'undefined') {
@@ -74,74 +73,54 @@
     console.log('📄 Processing:', file.name, file.size, 'bytes', 'Type:', file.type);
     
     try {
-      // STRATEGIA 1: Încearcă cu pdf-parse (mai robust)
+      // STRATEGIA PRINCIPALĂ: Folosește pdf.js (browser-compatible)
       let pdfText = '';
       let pdfProcessed = false;
 
       try {
-        console.log('🔧 Strategy 1: Using pdf-parse...');
+        console.log('🔧 Using pdfjs-dist for PDF parsing...');
         const arrayBuffer = await file.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
+        const uint8Array = new Uint8Array(arrayBuffer);
 
-        const pdfData = await pdfParse(buffer);
-        pdfText = pdfData.text;
-        pdfProcessed = true;
-        console.log('✅ PDF text extracted with pdf-parse:', pdfText.length, 'chars');
-        console.log('📄 PDF Info:', {
-          pages: pdfData.numpages,
-          info: pdfData.info,
-          metadata: pdfData.metadata
-        });
+        const loadingTask = pdfjsLib.getDocument(uint8Array);
+        loadingTask.onProgress = function(progress) {
+          console.log(`Loading: ${progress.loaded}/${progress.total}`);
+        };
 
-      } catch (pdfParseError) {
-        console.warn('❌ pdf-parse failed:', pdfParseError);
-        console.log('🔧 Strategy 2: Fallback to pdf.js...');
+        const pdf = await loadingTask.promise;
+        console.log('✅ PDF opened with pdf.js, pages:', pdf.numPages);
 
-        // STRATEGIA 2: Fallback la pdf.js
-        try {
-          const arrayBuffer = await file.arrayBuffer();
-          const uint8Array = new Uint8Array(arrayBuffer);
-
-          const loadingTask = pdfjsLib.getDocument(uint8Array);
-          loadingTask.onProgress = function(progress) {
-            console.log(`Loading: ${progress.loaded}/${progress.total}`);
-          };
-
-          const pdf = await loadingTask.promise;
-          console.log('✅ PDF opened with pdf.js, pages:', pdf.numPages);
-
-          // Extrage text
-          for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
-            try {
-              const page = await pdf.getPage(pageNum);
-              const textContent = await page.getTextContent();
-              const pageText = textContent.items
-                .map(item => item.str)
-                .join(' ');
-              pdfText += pageText + '\n';
-              console.log(`✅ Page ${pageNum}: ${pageText.length} chars`);
-            } catch (pageError) {
-              console.error(`❌ Page ${pageNum} error:`, pageError);
-            }
-          }
-
-          pdfProcessed = true;
-          console.log('✅ PDF text extracted with pdf.js:', pdfText.length, 'chars');
-
-        } catch (pdfJsError) {
-          console.error('❌ PDF.js also failed:', pdfJsError);
-          console.log('🔧 Strategy 3: Try as text file...');
-
-          // STRATEGIA 3: Poate e de fapt un text file numit .pdf
+        // Extrage text
+        for (let pageNum = 1; pageNum <= pdf.numPages; pageNum++) {
           try {
-            pdfText = await file.text();
-            if (pdfText && pdfText.length > 0) {
-              console.log('✅ Read as text:', pdfText.length, 'chars');
-              pdfProcessed = true;
-            }
-          } catch (textError) {
-            console.error('❌ Text read failed:', textError);
+            const page = await pdf.getPage(pageNum);
+            const textContent = await page.getTextContent();
+            const pageText = textContent.items
+              .map(item => item.str)
+              .join(' ');
+            pdfText += pageText + '\n';
+            console.log(`✅ Page ${pageNum}: ${pageText.length} chars`);
+          } catch (pageError) {
+            console.error(`❌ Page ${pageNum} error:`, pageError);
           }
+        }
+
+        pdfProcessed = true;
+        console.log('✅ PDF text extracted with pdf.js:', pdfText.length, 'chars');
+
+      } catch (pdfJsError) {
+        console.error('❌ PDF.js failed:', pdfJsError);
+        console.log('🔧 Strategy 2: Try as text file...');
+
+        // STRATEGIA 2: Poate e de fapt un text file numit .pdf
+        try {
+          pdfText = await file.text();
+          if (pdfText && pdfText.length > 0) {
+            console.log('✅ Read as text:', pdfText.length, 'chars');
+            pdfProcessed = true;
+          }
+        } catch (textError) {
+          console.error('❌ Text read failed:', textError);
         }
       }
       

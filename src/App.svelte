@@ -49,7 +49,14 @@
     {:else if activeModule === 'pantry'}
       <PantryModule />
     {:else if activeModule === 'nutrition'}
-      <NutritionModule />
+      {#if typeof NutritionModule !== 'undefined'}
+        <NutritionModule />
+      {:else}
+        <div class="module-error">
+          <h2>🍽️ Nutrition Module</h2>
+          <p>Nutrition components will initialize when dependencies are available.</p>
+        </div>
+      {/if}
     {/if}
   </main>
 </div>
@@ -181,5 +188,25 @@
     flex: 1;
     padding: 2rem;
     background: var(--bg-primary);
+  }
+
+  .module-error {
+    text-align: center;
+    padding: 3rem;
+    background: var(--card-bg);
+    border-radius: 12px;
+    border: 1px solid var(--card-border);
+    max-width: 600px;
+    margin: 2rem auto;
+  }
+
+  .module-error h2 {
+    color: var(--text-primary);
+    margin-bottom: 1rem;
+  }
+
+  .module-error p {
+    color: var(--text-secondary);
+    margin: 0;
   }
 </style>

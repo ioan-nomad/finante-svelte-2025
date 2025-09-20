@@ -57,6 +57,12 @@
     try {
       console.log('🧠 Initializing ML Predictor...');
 
+      // Check if mlPredictor is available
+      if (!mlPredictor) {
+        console.log('ML Predictor will initialize when data is available');
+        return;
+      }
+
       // Load budgets from localStorage
       budgets = JSON.parse(localStorage.getItem('budgets') || '[]');
 
@@ -77,12 +83,13 @@
 
     } catch (error) {
       console.error('❌ ML Predictor initialization failed:', error);
+      console.log('ML Predictor will initialize when data is available');
     }
   }
 
   // Update ML predictions
   async function updateMLPredictions() {
-    if (!mlInitialized) return;
+    if (!mlInitialized || !mlPredictor) return;
 
     try {
       // Get next month expense predictions
@@ -480,7 +487,7 @@
       calculateStats();
 
       // Update ML predictions when data changes
-      if (mlInitialized) {
+      if (mlInitialized && mlPredictor) {
         updateMLPredictions();
       }
 

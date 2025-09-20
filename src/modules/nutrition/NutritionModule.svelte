@@ -62,9 +62,13 @@
       initializeNutrientDatabase(NutrientDatabase);
       console.log('🧬 CODEX N-OMAD v3.0 initialized with complete nutrient database');
 
-      // Initialize RecipeEngine
-      recipeEngine = new RecipeEngine();
-      console.log('🚀 RecipeEngine v3.0 initialized with orchestration system');
+      // Initialize RecipeEngine with conditional check
+      if (typeof RecipeEngine !== 'undefined') {
+        recipeEngine = new RecipeEngine();
+        console.log('🚀 RecipeEngine v3.0 initialized with orchestration system');
+      } else {
+        console.log('RecipeEngine not available - skipping initialization');
+      }
     } catch (error) {
       console.log('CODEX initialization skipped - components not available');
     }
@@ -117,7 +121,7 @@
 
   // CODEX N-OMAD v3.0 Event Handlers
   async function handleGenerateRecipe(event) {
-    if (!recipeEngine) return;
+    if (!recipeEngine || typeof RecipeEngine === 'undefined') return;
 
     isGeneratingRecipe = true;
     const profile = event.detail?.profile || currentProfile;

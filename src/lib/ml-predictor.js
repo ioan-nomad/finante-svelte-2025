@@ -1,4 +1,4 @@
-import brain from 'brain.js';
+import * as brain from 'brain.js';
 
 class MLPredictor {
   constructor() {

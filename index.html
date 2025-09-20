@@ -171,6 +171,7 @@
     <script type="module" src="/src/main.js"></script>
     
     <!-- Service Worker Registration -->
+    <!-- Commented out to prevent PWA errors until properly configured
     <script>
       // Service Worker Registration
       if ('serviceWorker' in navigator) {
@@ -178,7 +179,7 @@
           navigator.serviceWorker.register('/sw.js', { scope: '/' })
             .then((registration) => {
               console.log('SW registered: ', registration);
-              
+
               // Check for updates
               registration.addEventListener('updatefound', () => {
                 const newWorker = registration.installing;
@@ -201,7 +202,7 @@
         // Listen for service worker messages
         navigator.serviceWorker.addEventListener('message', (event) => {
           const { type, count } = event.data;
-          
+
           if (type === 'TRANSACTIONS_SYNCED') {
             console.log(`${count} tranzacții sincronizate`);
             // You could show a notification here
@@ -214,7 +215,7 @@
       window.addEventListener('beforeinstallprompt', (e) => {
         e.preventDefault();
         deferredPrompt = e;
-        
+
         // Show install button if you have one
         const installButton = document.getElementById('install-button');
         if (installButton) {
@@ -231,7 +232,9 @@
           });
         }
       });
+    -->
 
+    <script>
       // Hide loading screen when app loads
       window.addEventListener('DOMContentLoaded', () => {
         const loadingScreen = document.getElementById('loading-screen');

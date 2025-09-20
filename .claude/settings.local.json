@@ -80,7 +80,10 @@
       "Bash(test:*)",
       "Bash(timeout:*)",
       "Bash(git checkout:*)",
-      "Bash(git merge:*)"
+      "Bash(git merge:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(start firefox \"C:\\Users\\ciupe\\Desktop\\FinanteNoiAugust2025\\finante-app\\generate-favicons.html\")",
+      "Bash(del \"public\\favicon-16x16.png\")"
     ],
     "deny": [],
     "ask": []
